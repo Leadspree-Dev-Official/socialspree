@@ -50,6 +50,9 @@ export const PublicNavbar: React.FC<PublicNavbarProps> = ({
                 <span className="text-[10px] font-bold bg-purple-100 text-[#5D3FD3] px-2 py-0.5 rounded-full border border-purple-200 uppercase tracking-wider font-mono">
                   PRO
                 </span>
+                <span className="text-[10px] font-bold bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full border border-amber-200 uppercase tracking-wider font-mono">
+                  BETA v1.1.0
+                </span>
               </div>
               <p className="text-[11px] text-slate-500 font-medium">Multi-Channel SaaS Engine</p>
             </div>
