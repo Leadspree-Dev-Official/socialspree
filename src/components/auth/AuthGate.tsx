@@ -96,7 +96,16 @@ export function AuthGate({ onAuthenticated, onCancel }: AuthGateProps) {
   return (
     <div className="min-h-screen bg-[#F8FAFF] flex items-center justify-center p-5">
       <div className="w-full max-w-md rounded-3xl bg-white border border-slate-200 shadow-2xl shadow-violet-100 p-7 md:p-9">
-        <button type="button" onClick={onCancel} className="text-sm font-semibold text-slate-500 hover:text-slate-900">
+        <button
+          type="button"
+          onClick={() => {
+            if (typeof window !== 'undefined') {
+              window.history.replaceState({}, document.title, window.location.pathname);
+            }
+            onCancel();
+          }}
+          className="text-sm font-semibold text-slate-500 hover:text-slate-900 cursor-pointer"
+        >
           ← Back to website
         </button>
         <div className="mt-8 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#5D3FD3] text-white">
