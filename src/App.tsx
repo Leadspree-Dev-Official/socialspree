@@ -123,7 +123,7 @@ export function App() {
   useEffect(() => {
     const hash = typeof window !== 'undefined' ? window.location.hash : '';
     const search = typeof window !== 'undefined' ? window.location.search : '';
-    const recoveryLink = hash.includes('type=recovery') || new URLSearchParams(search).get('type') === 'recovery';
+    const recoveryLink = hash.includes('type=recovery') || new URLSearchParams(search).get('type') === 'recovery' || hash.includes('access_token=');
     const hasHashError = hash.includes('error=') || search.includes('error=');
 
     if (recoveryLink || hasHashError) {

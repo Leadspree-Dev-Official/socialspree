@@ -60,8 +60,10 @@ export const auth = {
     supabase.auth.signInWithPassword({ email, password }),
   signUp: (email: string, password: string) =>
     supabase.auth.signUp({ email, password }),
-  resetPassword: (email: string, redirectTo?: string) =>
-    supabase.auth.resetPasswordForEmail(email, { redirectTo: redirectTo || `${window.location.origin}/` }),
+  resetPassword: (email: string, redirectTo?: string) => {
+    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://socialspree.leadspree.in';
+    return supabase.auth.resetPasswordForEmail(email, { redirectTo: redirectTo || `${origin}/` });
+  },
   updatePassword: (password: string) => supabase.auth.updateUser({ password }),
   signOut: () => supabase.auth.signOut(),
   getSession: async () => (await supabase.auth.getSession()).data.session ?? null,
