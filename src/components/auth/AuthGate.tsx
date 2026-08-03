@@ -16,7 +16,7 @@ export function AuthGate({ onAuthenticated, onCancel }: AuthGateProps) {
       if (hash.includes('error_code=') || search.includes('error_code=') || hash.includes('error=')) {
         return 'forgot';
       }
-      if (hash.includes('type=recovery') || search.includes('type=recovery') || hash.includes('access_token=')) {
+      if (hash.includes('type=recovery') || search.includes('type=recovery') || hash.includes('access_token')) {
         return 'reset';
       }
     }
@@ -34,17 +34,15 @@ export function AuthGate({ onAuthenticated, onCancel }: AuthGateProps) {
 
     // Listen for PASSWORD_RECOVERY auth event when Supabase processes recovery token hash
     const { data } = auth.onAuthStateChange((event, session) => {
-      if (event === 'PASSWORD_RECOVERY') {
+      if (event === 'PASSWORD_RECOVERY' || (session && (hash.includes('access_token') || hash.includes('type=recovery')))) {
         setMode('reset');
       }
     });
 
-    // Check existing session on mount
+    // Check existing session on mount: if session exists without explicit error, check if user came via recovery flow
     void auth.getSession().then((session) => {
       if (session && !isError) {
-        if (hash.includes('access_token') || hash.includes('type=recovery') || search.includes('type=recovery')) {
-          setMode('reset');
-        }
+        setMode('reset');
       }
     });
 
