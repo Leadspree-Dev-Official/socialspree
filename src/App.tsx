@@ -137,7 +137,17 @@ export function App() {
 
     const { data } = auth.onAuthStateChange((event, nextSession) => {
       setSession(nextSession);
-      if (event === 'PASSWORD_RECOVERY') setViewMode('auth');
+      if (event === 'PASSWORD_RECOVERY') {
+        setViewMode('auth');
+        return;
+      }
+      if (event === 'SIGNED_IN' && viewMode === 'auth') {
+        // Only load dashboard if not in recovery mode
+        const hash = typeof window !== 'undefined' ? window.location.hash : '';
+        if (!hash.includes('type=recovery') && !hash.includes('access_token')) {
+          void loadAuthenticatedWorkspace();
+        }
+      }
       if (!nextSession && viewMode === 'app') {
         setProfile(null);
         setIsSuperAdminMode(false);
