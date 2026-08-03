@@ -5,20 +5,23 @@ import { SUPER_ADMIN_EMAIL } from '../../lib/store';
 interface SuperAdminBannerProps {
   isSuperAdminMode: boolean;
   onToggleSuperAdmin: () => void;
+  userEmail?: string;
 }
 
 export const SuperAdminBanner: React.FC<SuperAdminBannerProps> = ({
   isSuperAdminMode,
-  onToggleSuperAdmin
+  onToggleSuperAdmin,
+  userEmail
 }) => {
   if (!isSuperAdminMode) return null;
+  const activeEmail = userEmail || SUPER_ADMIN_EMAIL;
 
   return (
     <div className="bg-gradient-to-r from-amber-600 via-purple-700 to-indigo-800 text-white px-4 py-2 text-sm flex items-center justify-between shadow-md">
       <div className="flex items-center gap-2 font-medium">
         <ShieldCheck className="w-5 h-5 text-amber-300 animate-pulse" />
         <span>
-          <strong>SUPER ADMIN ACCESS ACTIVE</strong> &mdash; Logged in as <code className="bg-black/30 px-2 py-0.5 rounded text-amber-200">{SUPER_ADMIN_EMAIL}</code>
+          <strong>SUPER ADMIN ACCESS ACTIVE</strong> &mdash; Logged in as <code className="bg-black/30 px-2 py-0.5 rounded text-amber-200">{activeEmail}</code>
         </span>
       </div>
 

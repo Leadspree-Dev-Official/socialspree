@@ -12,6 +12,7 @@ interface HeaderProps {
   pageTitle: string;
   onReturnToPublic?: () => void;
   onSignOut?: () => void;
+  userEmail?: string;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -22,8 +23,11 @@ export const Header: React.FC<HeaderProps> = ({
   onToggleSuperAdmin,
   pageTitle,
   onReturnToPublic,
-  onSignOut
+  onSignOut,
+  userEmail
 }) => {
+  const activeEmail = userEmail || (isSuperAdminMode ? SUPER_ADMIN_EMAIL : currentTenant.ownerEmail);
+  const displayName = isSuperAdminMode ? 'LeadSpree Super Admin' : (activeEmail.split('@')[0] || 'User');
   return (
     <header className="sticky top-0 z-40 bg-[#F8FAFF]/90 backdrop-blur-xl border-b border-slate-200/80 flex justify-between items-center h-16 px-6 w-full">
       {/* Title & Search Bar */}
@@ -101,10 +105,10 @@ export const Header: React.FC<HeaderProps> = ({
           />
           <div className="hidden sm:block text-left text-xs">
             <div className="font-bold text-slate-900 leading-none">
-              {isSuperAdminMode ? 'LeadSpree Super Admin' : currentTenant.ownerEmail.split('@')[0]}
+              {displayName}
             </div>
             <div className="text-[10px] text-slate-500 font-mono mt-0.5">
-              {isSuperAdminMode ? SUPER_ADMIN_EMAIL : currentTenant.ownerEmail}
+              {activeEmail}
             </div>
           </div>
 

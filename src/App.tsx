@@ -664,6 +664,7 @@ export function App() {
             <SuperAdminBanner
               isSuperAdminMode={isSuperAdminMode}
               onToggleSuperAdmin={handleToggleSuperAdmin}
+              userEmail={profile?.email || session?.user?.email || undefined}
             />
 
             <Header
@@ -675,6 +676,7 @@ export function App() {
               pageTitle={getPageTitle(activeTab)}
               onReturnToPublic={() => setViewMode('public')}
               onSignOut={handleSignOut}
+              userEmail={profile?.email || session?.user?.email || undefined}
             />
 
             <main className="flex-1 p-4 md:p-6 lg:p-8 overflow-y-auto">
