@@ -143,6 +143,9 @@ export function App() {
     void auth.getSession().then(existing => {
       setSession(existing);
       setCloudLoading(false);
+      if (existing && !recoveryLink && !hasHashError && viewMode === 'app') {
+        void loadAuthenticatedWorkspace();
+      }
     });
 
     const { data } = auth.onAuthStateChange((event, nextSession) => {

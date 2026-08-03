@@ -13,10 +13,10 @@ export function AuthGate({ onAuthenticated, onCancel }: AuthGateProps) {
     if (typeof window !== 'undefined') {
       const hash = window.location.hash;
       const search = window.location.search;
-      if (hash.includes('error_code=otp_expired') || search.includes('error_code=otp_expired')) {
+      if (hash.includes('error_code=') || search.includes('error_code=') || hash.includes('error=')) {
         return 'forgot';
       }
-      if (hash.includes('type=recovery') || search.includes('type=recovery') || hash.includes('access_token')) {
+      if (hash.includes('type=recovery') || search.includes('type=recovery') || hash.includes('access_token=')) {
         return 'reset';
       }
     }
@@ -24,18 +24,25 @@ export function AuthGate({ onAuthenticated, onCancel }: AuthGateProps) {
   });
 
   useEffect(() => {
+    const hash = window.location.hash;
+    const search = window.location.search;
+    const isError = hash.includes('error_code=') || search.includes('error_code=') || hash.includes('error=');
+    if (isError) {
+      setMode('forgot');
+      return;
+    }
+
     // Listen for PASSWORD_RECOVERY auth event when Supabase processes recovery token hash
     const { data } = auth.onAuthStateChange((event, session) => {
-      if (event === 'PASSWORD_RECOVERY' || (session && (window.location.hash.includes('access_token') || window.location.hash.includes('type=recovery')))) {
+      if (event === 'PASSWORD_RECOVERY') {
         setMode('reset');
       }
     });
 
     // Check existing session on mount
     void auth.getSession().then((session) => {
-      if (session) {
-        const hash = window.location.hash;
-        if (hash.includes('access_token') || hash.includes('type=recovery') || window.location.search.includes('type=recovery')) {
+      if (session && !isError) {
+        if (hash.includes('access_token') || hash.includes('type=recovery') || search.includes('type=recovery')) {
           setMode('reset');
         }
       }
