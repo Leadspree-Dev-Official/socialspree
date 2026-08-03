@@ -82,7 +82,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <div className="flex items-center gap-2 mt-0.5">
               <p className="text-[11px] text-slate-400">Multi-Channel SaaS Engine</p>
               <span className="text-[9px] bg-amber-500/20 text-amber-300 px-1.5 py-0.2 rounded font-mono font-bold border border-amber-500/30">
-                BETA v1.1.3
+                BETA v1.1.4
               </span>
             </div>
           </div>

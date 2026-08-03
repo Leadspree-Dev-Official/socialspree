@@ -53,19 +53,19 @@ export const Header: React.FC<HeaderProps> = ({
         {onReturnToPublic && (
           <button
             onClick={onReturnToPublic}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-purple-50 rounded-xl border border-slate-200 hover:border-purple-300 text-xs font-bold text-slate-700 hover:text-[#5D3FD3] transition-all whitespace-nowrap"
+            className="flex items-center gap-1 px-2.5 py-1.5 bg-white hover:bg-purple-50 rounded-xl border border-slate-200 hover:border-purple-300 text-[11px] font-bold text-slate-700 hover:text-[#5D3FD3] transition-all whitespace-nowrap leading-none shrink-0"
             title="Return to Public Marketing Site"
           >
-            <Globe className="w-3.5 h-3.5 text-[#5D3FD3]" />
-            <span className="hidden md:inline">Marketing Site</span>
+            <Globe className="w-3.5 h-3.5 text-[#5D3FD3] shrink-0" />
+            <span className="whitespace-nowrap leading-none">Marketing Site</span>
           </button>
         )}
 
         {/* Strict Workspace Badge */}
-        <div className="flex items-center gap-2.5 px-3 py-1.5 bg-white rounded-xl border border-slate-200 text-xs font-semibold text-slate-900 shadow-2xs whitespace-nowrap">
-          <Building2 className="w-4 h-4 text-[#5D3FD3]" />
-          <span className="font-bold max-w-[160px] truncate">{currentTenant.name}</span>
-          <span className={`text-[10px] px-1.5 py-0.2 rounded font-mono font-bold uppercase ${
+        <div className="flex items-center gap-2 px-2.5 py-1.5 bg-white rounded-xl border border-slate-200 text-xs font-semibold text-slate-900 shadow-2xs whitespace-nowrap leading-none shrink-0">
+          <Building2 className="w-3.5 h-3.5 text-[#5D3FD3] shrink-0" />
+          <span className="font-bold max-w-[140px] truncate leading-none">{currentTenant.name}</span>
+          <span className={`text-[9px] px-1.5 py-0.5 rounded font-mono font-bold uppercase leading-none ${
             currentTenant.tierPlan === 'pro' ? 'bg-purple-100 text-purple-700' : 'bg-amber-100 text-amber-800'
           }`}>
             {currentTenant.tierPlan}
@@ -75,15 +75,15 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Super Admin Mode Toggle Button */}
         <button
           onClick={onToggleSuperAdmin}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all border whitespace-nowrap ${
+          className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-[11px] font-bold transition-all border whitespace-nowrap leading-none shrink-0 ${
             isSuperAdminMode
               ? 'bg-amber-400 text-slate-950 border-amber-500 shadow-xs'
               : 'bg-slate-900 text-amber-300 border-slate-700 hover:bg-slate-800'
           }`}
           title="Toggle LeadSpree Super Admin Portal"
         >
-          <ShieldCheck className="w-3.5 h-3.5 text-amber-400" />
-          <span className="hidden sm:inline">
+          <ShieldCheck className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+          <span className="whitespace-nowrap leading-none">
             {isSuperAdminMode ? 'Exit Super Admin' : 'Super Admin Mode'}
           </span>
         </button>
