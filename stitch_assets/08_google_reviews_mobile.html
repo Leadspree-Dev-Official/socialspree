@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>SocialSpree Pro | Google Reviews Management</title>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Typography: Inter, Hanken Grotesk, JetBrains Mono -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Hanken+Grotesk:wght@600;700&amp;family=JetBrains+Mono:wght@500&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "primary-fixed": "#e6deff",
+                        "on-surface": "#0b1c30",
+                        "surface-container-low": "#eff4ff",
+                        "on-primary": "#ffffff",
+                        "secondary-fixed-dim": "#c6c6c9",
+                        "on-error": "#ffffff",
+                        "surface-variant": "#d3e4fe",
+                        "error": "#ba1a1a",
+                        "surface-bright": "#f8f9ff",
+                        "primary": "#451ebb",
+                        "secondary-container": "#e2e2e5",
+                        "on-primary-fixed-variant": "#4723be",
+                        "surface-container-highest": "#d3e4fe",
+                        "secondary-fixed": "#e2e2e5",
+                        "surface-container-high": "#dce9ff",
+                        "surface-container-lowest": "#ffffff",
+                        "on-secondary-fixed-variant": "#454749",
+                        "on-secondary-container": "#636467",
+                        "tertiary-fixed-dim": "#c3c7cb",
+                        "tertiary": "#404548",
+                        "surface": "#f8f9ff",
+                        "tertiary-container": "#585c60",
+                        "outline": "#797586",
+                        "on-surface-variant": "#484554",
+                        "on-tertiary-container": "#d1d4d8",
+                        "inverse-on-surface": "#eaf1ff",
+                        "on-tertiary-fixed-variant": "#43474b",
+                        "on-secondary": "#ffffff",
+                        "on-error-container": "#93000a",
+                        "primary-container": "#5d3fd3",
+                        "on-primary-fixed": "#1c0062",
+                        "surface-container": "#e5eeff",
+                        "on-tertiary-fixed": "#181c1f",
+                        "on-tertiary": "#ffffff",
+                        "primary-fixed-dim": "#cabeff",
+                        "tertiary-fixed": "#e0e3e7",
+                        "surface-dim": "#cbdbf5",
+                        "background": "#f8f9ff",
+                        "outline-variant": "#c9c4d7",
+                        "inverse-primary": "#cabeff",
+                        "on-primary-container": "#d8ceff",
+                        "surface-tint": "#6042d6",
+                        "error-container": "#ffdad6",
+                        "secondary": "#5d5e61",
+                        "inverse-surface": "#213145",
+                        "on-secondary-fixed": "#1a1c1e",
+                        "on-background": "#0b1c30"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "sm": "8px",
+                        "md": "16px",
+                        "base": "4px",
+                        "container-max": "1440px",
+                        "sidebar-width": "260px",
+                        "lg": "24px",
+                        "xs": "4px",
+                        "xl": "32px",
+                        "gutter": "24px"
+                    },
+                    "fontFamily": {
+                        "label-md": ["JetBrains Mono"],
+                        "headline-lg-mobile": ["Hanken Grotesk"],
+                        "display-lg": ["Hanken Grotesk"],
+                        "label-sm": ["Inter"],
+                        "headline-md": ["Hanken Grotesk"],
+                        "title-lg": ["Inter"],
+                        "headline-lg": ["Hanken Grotesk"],
+                        "body-md": ["Inter"],
+                        "body-lg": ["Inter"]
+                    },
+                    "fontSize": {
+                        "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                        "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "label-sm": ["11px", {"lineHeight": "16px", "fontWeight": "600"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "title-lg": ["18px", {"lineHeight": "24px", "fontWeight": "600"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "600"}],
+                        "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .active-tab-indicator {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            height: 2px;
+            background-color: #451ebb;
+            transition: all 0.3s ease;
+        }
+        body {
+            background-color: #f8f9ff;
+            font-family: 'Inter', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .review-card {
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+        .review-card:active {
+            transform: scale(0.98);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="text-on-surface overflow-x-hidden pb-24">
+<!-- TopAppBar -->
+<header class="bg-surface-bright dark:bg-surface-container-lowest fixed top-0 w-full z-50 flex justify-between items-center px-md h-16 border-b border-outline-variant dark:border-outline">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full overflow-hidden bg-primary-container flex items-center justify-center">
+<img class="w-full h-full object-cover" data-alt="A professional headshot of a female digital marketing manager, medium shot, soft studio lighting, high-end corporate office background in soft focus, social media aesthetic, clean light mode skin tones, 8k resolution." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCEkTn8x7Asakv7tbcrI2ZC8rG_5uLCX3B3Y4_UsMx9vcFMIgcJ-B4ugh5iDhC9T9TR-noDYLthmSAuwFCx19gtCxtmoLyMrEatzCJLfT-jUdFIbVqWbDXdqF7fPu5mpvjRorqo_QXZ8IxPif84tqfnTuok7pLelebo-_I0nuHtbYqdYWlTeQYsbae1_zNlZrd4-raI7VKbdTVM9XVtK8I8uGCfOzeSnBMWBktoluOyBtp6lRZqnBxunw"/>
+</div>
+<span class="font-headline-md text-headline-md font-bold text-primary dark:text-primary-fixed">SocialSpree Pro</span>
+</div>
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container-low dark:hover:bg-surface-container-highest transition-colors active:scale-95 duration-150 text-on-surface-variant dark:text-outline">
+<span class="material-symbols-outlined">settings</span>
+</button>
+</header>
+<main class="mt-16 px-md pt-md">
+<!-- Segmented Tabs -->
+<div class="sticky top-16 bg-background z-40 py-sm">
+<div class="flex bg-surface-container-low rounded-xl p-1 relative">
+<button class="flex-1 py-2 text-center font-label-sm text-label-sm z-10 text-primary transition-colors duration-200" onclick="switchTab(this, 'internal')">Internal</button>
+<button class="flex-1 py-2 text-center font-label-sm text-label-sm z-10 text-on-surface-variant transition-colors duration-200" onclick="switchTab(this, 'public')">Public</button>
+<div class="absolute top-1 left-1 h-[calc(100%-8px)] w-[calc(50%-4px)] bg-white shadow-sm rounded-lg transition-transform duration-300" id="tab-slider"></div>
+</div>
+</div>
+<!-- Dashboard Stats Bento Grid -->
+<section class="grid grid-cols-2 gap-sm mt-md">
+<div class="col-span-1 bg-white p-md rounded-xl border border-outline-variant shadow-sm flex flex-col gap-1">
+<span class="font-label-md text-label-md text-on-surface-variant">AVG RATING</span>
+<div class="flex items-baseline gap-1">
+<span class="font-headline-md text-headline-md text-primary">4.8</span>
+<span class="material-symbols-outlined text-primary text-[18px]" style="font-variation-settings: 'FILL' 1;">star</span>
+</div>
+</div>
+<div class="col-span-1 bg-white p-md rounded-xl border border-outline-variant shadow-sm flex flex-col gap-1">
+<span class="font-label-md text-label-md text-on-surface-variant">RESPONSIVE</span>
+<div class="flex items-baseline gap-1">
+<span class="font-headline-md text-headline-md text-primary">94%</span>
+<span class="material-symbols-outlined text-primary text-[18px]">bolt</span>
+</div>
+</div>
+</section>
+<!-- Reviews List -->
+<section class="mt-lg space-y-md" id="reviews-container">
+<!-- Review Card 1 (High Rating) -->
+<div class="review-card bg-white rounded-xl border border-outline-variant shadow-sm p-md flex flex-col gap-md">
+<div class="flex justify-between items-start">
+<div class="flex gap-sm">
+<div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center font-bold text-primary">JD</div>
+<div>
+<h4 class="font-title-lg text-title-lg">Julianne Dorsey</h4>
+<p class="font-label-sm text-label-sm text-on-surface-variant">2 hours ago</p>
+</div>
+</div>
+<div class="flex text-[#FFB800]">
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">star</span>
+</div>
+</div>
+<p class="font-body-md text-body-md text-on-surface">The service was absolutely impeccable. I've never seen such attention to detail in a social media management suite. Highly recommend SocialSpree Pro!</p>
+<div class="flex gap-sm">
+<button class="flex-1 bg-primary text-on-primary py-2 px-md rounded-lg font-label-md text-label-md flex items-center justify-center gap-sm active:scale-95 transition-transform">
+<span class="material-symbols-outlined text-[18px]">open_in_new</span>
+                        Redirect to GBP
+                    </button>
+<button class="w-12 border border-outline-variant rounded-lg flex items-center justify-center text-on-surface-variant active:bg-surface-container">
+<span class="material-symbols-outlined">more_horiz</span>
+</button>
+</div>
+</div>
+<!-- Review Card 2 (Low Rating) -->
+<div class="review-card bg-white rounded-xl border border-outline-variant shadow-sm p-md flex flex-col gap-md">
+<div class="flex justify-between items-start">
+<div class="flex gap-sm">
+<div class="w-10 h-10 rounded-full bg-surface-container-highest flex items-center justify-center font-bold text-primary">MK</div>
+<div>
+<h4 class="font-title-lg text-title-lg">Marcus Kane</h4>
+<p class="font-label-sm text-label-sm text-on-surface-variant">Yesterday</p>
+</div>
+</div>
+<div class="flex text-[#FFB800]">
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[18px]">star</span>
+<span class="material-symbols-outlined text-[18px]">star</span>
+<span class="material-symbols-outlined text-[18px]">star</span>
+</div>
+</div>
+<p class="font-body-md text-body-md text-on-surface">Had some trouble with the initial onboarding. The dashboard felt a bit overwhelming at first glance. Could use more tooltips.</p>
+<div class="flex gap-sm">
+<button class="flex-1 bg-surface-container text-primary border border-primary py-2 px-md rounded-lg font-label-md text-label-md flex items-center justify-center gap-sm active:scale-95 transition-transform">
+<span class="material-symbols-outlined text-[18px]">support_agent</span>
+                        Internal Handle
+                    </button>
+<button class="w-12 border border-outline-variant rounded-lg flex items-center justify-center text-on-surface-variant active:bg-surface-container">
+<span class="material-symbols-outlined">more_horiz</span>
+</button>
+</div>
+</div>
+<!-- Review Card 3 -->
+<div class="review-card bg-white rounded-xl border border-outline-variant shadow-sm p-md flex flex-col gap-md">
+<div class="flex justify-between items-start">
+<div class="flex gap-sm">
+<div class="w-10 h-10 rounded-full bg-primary-fixed flex items-center justify-center font-bold text-on-primary-fixed">SC</div>
+<div>
+<h4 class="font-title-lg text-title-lg">Sarah Chen</h4>
+<p class="font-label-sm text-label-sm text-on-surface-variant">Oct 12, 2023</p>
+</div>
+</div>
+<div class="flex text-[#FFB800]">
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-[18px]">star</span>
+</div>
+</div>
+<p class="font-body-md text-body-md text-on-surface">Great integration with Instagram. Waiting for better TikTok metrics but overall a solid 4 stars.</p>
+<div class="flex gap-sm">
+<button class="flex-1 bg-primary text-on-primary py-2 px-md rounded-lg font-label-md text-label-md flex items-center justify-center gap-sm active:scale-95 transition-transform">
+<span class="material-symbols-outlined text-[18px]">open_in_new</span>
+                        Redirect to GBP
+                    </button>
+<button class="w-12 border border-outline-variant rounded-lg flex items-center justify-center text-on-surface-variant active:bg-surface-container">
+<span class="material-symbols-outlined">more_horiz</span>
+</button>
+</div>
+</div>
+</section>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-sm pb-4 pt-2 bg-surface-container dark:bg-inverse-surface border-t border-outline-variant shadow-sm rounded-t-full">
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-secondary-fixed-variant hover:bg-primary-fixed-dim/20 transition-all active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined">home</span>
+<span class="font-label-sm text-label-sm">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-secondary-fixed-variant hover:bg-primary-fixed-dim/20 transition-all active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined">add_circle</span>
+<span class="font-label-sm text-label-sm">Compose</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-secondary-fixed-variant hover:bg-primary-fixed-dim/20 transition-all active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined">manage_accounts</span>
+<span class="font-label-sm text-label-sm">Accounts</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-secondary-fixed-variant hover:bg-primary-fixed-dim/20 transition-all active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined">history_edu</span>
+<span class="font-label-sm text-label-sm">Logs</span>
+</a>
+<!-- ACTIVE TAB: Reviews -->
+<a class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-full px-4 py-1 active:scale-90 transition-all duration-200" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">rate_review</span>
+<span class="font-label-sm text-label-sm">Reviews</span>
+</a>
+</nav>
+<script>
+        function switchTab(btn, type) {
+            const slider = document.getElementById('tab-slider');
+            const buttons = btn.parentElement.querySelectorAll('button');
+            
+            buttons.forEach(b => {
+                b.classList.remove('text-primary');
+                b.classList.add('text-on-surface-variant');
+            });
+            
+            btn.classList.add('text-primary');
+            btn.classList.remove('text-on-surface-variant');
+            
+            if (type === 'internal') {
+                slider.style.transform = 'translateX(0)';
+                updateReviews('internal');
+            } else {
+                slider.style.transform = 'translateX(100%)';
+                updateReviews('public');
+            }
+        }
+
+        function updateReviews(type) {
+            const container = document.getElementById('reviews-container');
+            container.style.opacity = '0';
+            
+            setTimeout(() => {
+                // In a real app, this would filter or fetch new data
+                // For this demo, we'll just toggle a simple visual state
+                container.style.opacity = '1';
+                container.style.transition = 'opacity 0.3s ease';
+            }, 200);
+        }
+
+        // Simple star interaction simulation
+        document.querySelectorAll('.material-symbols-outlined').forEach(icon => {
+            if (icon.innerText === 'star') {
+                icon.addEventListener('click', () => {
+                    icon.style.transform = 'scale(1.5)';
+                    setTimeout(() => icon.style.transform = 'scale(1)', 200);
+                });
+            }
+        });
+    </script>
+</body></html>

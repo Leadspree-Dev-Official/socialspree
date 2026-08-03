@@ -1,0 +1,366 @@
+<!DOCTYPE html><html class="light" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>SocialSpree Pro - Activity Logs</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600;700&amp;family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@500&amp;display=swap" rel="stylesheet">
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "error-container": "#ffdad6",
+                        "tertiary": "#404548",
+                        "primary-fixed-dim": "#cabeff",
+                        "on-error-container": "#93000a",
+                        "surface-dim": "#cbdbf5",
+                        "primary-fixed": "#e6deff",
+                        "error": "#ba1a1a",
+                        "surface-variant": "#d3e4fe",
+                        "surface-tint": "#6042d6",
+                        "inverse-surface": "#213145",
+                        "secondary-fixed": "#e2e2e5",
+                        "surface-bright": "#f8f9ff",
+                        "tertiary-fixed-dim": "#c3c7cb",
+                        "primary-container": "#5d3fd3",
+                        "on-tertiary-fixed": "#181c1f",
+                        "secondary": "#5d5e61",
+                        "on-tertiary-fixed-variant": "#43474b",
+                        "surface-container": "#e5eeff",
+                        "on-primary-container": "#d8ceff",
+                        "on-surface-variant": "#484554",
+                        "on-surface": "#0b1c30",
+                        "background": "#f8f9ff",
+                        "surface": "#f8f9ff",
+                        "on-secondary-container": "#636467",
+                        "on-background": "#0b1c30",
+                        "outline": "#797586",
+                        "on-primary-fixed": "#1c0062",
+                        "on-secondary-fixed-variant": "#454749",
+                        "tertiary-container": "#585c60",
+                        "surface-container-low": "#eff4ff",
+                        "on-tertiary-container": "#d1d4d8",
+                        "surface-container-high": "#dce9ff",
+                        "on-primary": "#ffffff",
+                        "on-tertiary": "#ffffff",
+                        "surface-container-highest": "#d3e4fe",
+                        "inverse-primary": "#cabeff",
+                        "outline-variant": "#c9c4d7",
+                        "secondary-container": "#e2e2e2",
+                        "tertiary-fixed": "#e0e3e7",
+                        "secondary-fixed-dim": "#c6c6c9",
+                        "on-secondary-fixed": "#1a1c1e",
+                        "inverse-on-surface": "#eaf1ff",
+                        "on-primary-fixed-variant": "#4723be",
+                        "primary": "#451ebb",
+                        "on-secondary": "#ffffff",
+                        "surface-container-lowest": "#ffffff",
+                        "on-error": "#ffffff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "sm": "8px",
+                        "lg": "24px",
+                        "container-max": "1440px",
+                        "base": "4px",
+                        "md": "16px",
+                        "xl": "32px",
+                        "xs": "4px",
+                        "sidebar-width": "260px",
+                        "gutter": "24px"
+                    },
+                    "fontFamily": {
+                        "headline-lg": ["Hanken Grotesk"],
+                        "headline-lg-mobile": ["Hanken Grotesk"],
+                        "label-sm": ["Inter"],
+                        "label-md": ["JetBrains Mono"],
+                        "body-md": ["Inter"],
+                        "title-lg": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "headline-md": ["Hanken Grotesk"],
+                        "display-lg": ["Hanken Grotesk"]
+                    },
+                    "fontSize": {
+                        "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "600"}],
+                        "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "label-sm": ["11px", {"lineHeight": "16px", "fontWeight": "600"}],
+                        "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                        "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "title-lg": ["18px", {"lineHeight": "24px", "fontWeight": "600"}],
+                        "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .log-item-swipe-container {
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface min-h-screen pb-20">
+<!-- Top App Bar -->
+<header class="w-full top-0 sticky z-40 bg-surface border-b border-outline-variant flex justify-between items-center px-lg py-sm">
+<div class="flex items-center gap-md">
+<div class="w-8 h-8 rounded-full overflow-hidden border border-outline-variant">
+<img class="w-full h-full object-cover" data-alt="A professional headshot of a social media manager in a high-key corporate setting, soft studio lighting, sharp focus on facial features, representing the SocialHub brand identity with a clean and empowered aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCFOfJRfhTjEPPzX1sNvwUIJ-1iAGfcXd5R4A3X2Wmjz0B5tYvAmd3CZDL2ZRV0VocGRNeQOnG5GcCc-46i2C-FlfRZw_8vUVwULwxb_qa-K9POg9XYSpnM9HZuKXcUHvuSxNyZ2us5QhKRqMbhK7HpNHNMAJ0-mElBMXKtrrqkAoWyyzPWmdhINrGJiysjEYN31zE_Eokfb2JvQsgRnYnxac9wbOBQceDLQEqZj7N2nK5BHYevTQ9sJOwpVPN2sFl6nhvqQ7In35fX">
+</div>
+<h1 class="font-headline-md text-headline-md font-bold text-primary">SocialSpree Pro</h1>
+</div>
+<a href="/settings/api" class="cursor-pointer active:opacity-80 p-xs hover:bg-surface-container transition-colors rounded-lg">
+<span class="material-symbols-outlined text-primary">settings</span>
+</a>
+</header>
+<!-- Sticky Filter Section -->
+<section class="sticky top-[57px] z-30 bg-surface/90 backdrop-blur-md px-md py-md space-y-md border-b border-outline-variant/30">
+<!-- Search Bar -->
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
+<input class="w-full bg-surface-container-low border border-outline-variant rounded-xl py-2.5 pl-10 pr-4 text-body-md focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all" placeholder="Search logs, campaigns, or status..." type="text">
+</div>
+<!-- Horizontal Scroll Filters -->
+<div class="flex gap-sm overflow-x-auto hide-scrollbar pb-1">
+<button class="flex items-center gap-xs px-md py-2 bg-primary text-on-primary rounded-full font-label-sm whitespace-nowrap shadow-sm">
+<span class="material-symbols-outlined text-[18px]">filter_list</span>
+                All Status
+            </button>
+<button class="flex items-center gap-xs px-md py-2 bg-surface-container-high text-on-surface-variant rounded-full font-label-sm whitespace-nowrap hover:bg-surface-container-highest transition-colors">
+<span class="material-symbols-outlined text-[18px]">calendar_today</span>
+                Last 7 Days
+            </button>
+<button class="flex items-center gap-xs px-md py-2 bg-surface-container-high text-on-surface-variant rounded-full font-label-sm whitespace-nowrap hover:bg-surface-container-highest transition-colors">
+<span class="material-symbols-outlined text-[18px]">language</span>
+                All Platforms
+            </button>
+</div>
+</section>
+<!-- Logs Content -->
+<main class="p-md space-y-md">
+<!-- Log Entry: Failed -->
+<div class="relative overflow-hidden rounded-xl bg-surface-container-lowest shadow-sm border border-outline-variant/20 group">
+<div class="flex items-center p-md gap-md relative z-10 bg-surface-container-lowest">
+<!-- Thumbnail -->
+<div class="w-16 h-16 rounded-lg overflow-hidden shrink-0 border border-outline-variant/30">
+<img class="w-full h-full object-cover" data-alt="A vibrant digital marketing graphic with abstract fluid shapes in purple and blue, styled for a modern social media post, high contrast, studio lighting, professional and polished look." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDBGi3TrMFEZDKOS883_6-kOJM0HSOIZJ9H0jsDxgsLg1v5_3h0ObmJCajaG3Rl7ugKLDvLwoV2HCeFF9p5pCR2I_yi7mFmnIwYDQ3yHfh-iVtI2spKevoV6Wij2q5o6f9spP7Gj_FnUAvKldOrTJmSCMJsS4XnMmgoa-ZEEI0f75aJSIwYgceqNGLWoAZeCndSnySyQMC0QOavdRXsfIFLbdnrcZOjD19axKtrb8RLlqk8MtCOdTl-tj-F80cu3gSwTKkzWCr83ULY">
+</div>
+<!-- Details -->
+<div class="flex-1 min-w-0">
+<div class="flex justify-between items-start">
+<h3 class="font-title-lg text-on-surface truncate pr-2">Summer Launch Reel</h3>
+<div class="flex -space-x-1">
+<span class="material-symbols-outlined text-primary text-[18px]">video_library</span>
+</div>
+</div>
+<div class="flex items-center gap-xs mt-1">
+<span class="px-2 py-0.5 rounded-full bg-error-container text-on-error-container font-label-sm uppercase tracking-wider text-[10px]">Failed</span>
+<div class="flex items-center gap-1 ml-auto text-on-surface-variant">
+<span class="material-symbols-outlined text-[14px]">public</span>
+<span class="font-label-md text-[10px]">IG, FB</span>
+</div>
+</div>
+<div class="mt-2 text-on-surface-variant flex flex-col">
+<span class="font-label-sm">Oct 24, 2023</span>
+<span class="font-label-md text-[10px]">10:45 AM • GMT-7</span>
+</div>
+</div>
+<!-- Action -->
+<div class="flex flex-col gap-sm">
+<button class="p-2 bg-surface-container rounded-lg hover:bg-primary-container/20 text-primary transition-colors">
+<span class="material-symbols-outlined">refresh</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Log Entry: Published -->
+<div class="relative overflow-hidden rounded-xl bg-surface-container-lowest shadow-sm border border-outline-variant/20">
+<div class="flex items-center p-md gap-md bg-surface-container-lowest">
+<div class="w-16 h-16 rounded-lg overflow-hidden shrink-0 border border-outline-variant/30">
+<img class="w-full h-full object-cover" data-alt="A minimalist architectural photograph of a modern tech office building, sharp angles, glass reflections, serene atmosphere with bright daylight, corporate professional aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCYqNJwt0lM_OkJAdpVdF6fKKBUsHpZGA2ezNLq7H04R3-VdsCpq0zEBrGWkloD_xRb2GcmTLrHRajDtkPup4FVPZADITmIF6EUzqMjLZn5iWykbKu5WUZGbcVdrFE8aVinNymsu_KU2qTslIECzuhF0Fhz8mk3GPQudxkkNOFNhsqnKb4OiiUBxP7Uk6zoTwOMIxiQxRt2_CetyGtZyHxmZqDTcEuo6kNRjUWI6TS6jdzS2VNz9rU-IIuyKKrRNB07EUoegercRcBS">
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex justify-between items-start">
+<h3 class="font-title-lg text-on-surface truncate pr-2">Q4 Strategic Overview</h3>
+<span class="material-symbols-outlined text-primary text-[18px]">article</span>
+</div>
+<div class="flex items-center gap-xs mt-1">
+<span class="px-2 py-0.5 rounded-full bg-surface-container text-on-surface-variant font-label-sm uppercase tracking-wider text-[10px]">Published</span>
+<div class="flex items-center gap-1 ml-auto text-on-surface-variant">
+<span class="material-symbols-outlined text-[14px]">link</span>
+<span class="font-label-md text-[10px]">LinkedIn, TW</span>
+</div>
+</div>
+<div class="mt-2 text-on-surface-variant flex flex-col">
+<span class="font-label-sm">Oct 23, 2023</span>
+<span class="font-label-md text-[10px]">09:12 AM • GMT-7</span>
+</div>
+</div>
+<div class="flex flex-col gap-sm">
+<button class="p-2 text-on-surface-variant hover:text-error transition-colors">
+<span class="material-symbols-outlined">delete</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Log Entry: Uploading -->
+<div class="relative overflow-hidden rounded-xl bg-surface-container-lowest shadow-sm border border-outline-variant/20">
+<div class="absolute bottom-0 left-0 h-1 bg-primary w-2/3 transition-all duration-1000"></div>
+<div class="flex items-center p-md gap-md bg-surface-container-lowest">
+<div class="w-16 h-16 rounded-lg overflow-hidden shrink-0 border border-outline-variant/30 relative">
+<img class="w-full h-full object-cover opacity-60" data-alt="Close-up of high-end camera equipment on a desk, soft bokeh background, warm professional lighting, symbolizing content creation and quality media production." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAShzyjd5GJ5JPi2OcATvRAZS-X2JVSZkCP70cXeTUddACY7zo3Sm1JQZhacQb7L6jL6Kh78BGJFelhsstCT5cvgKyGiZ63XzuG14T2WcdJ6R2PtQO2EnCyjyE7HY7sbxqSFLWXE-izyu7COA_5AuzWdxT_bRY8sPWnFYbP71C718hN2wMx2dADw5TsI-hVy4WLpzOABoYHb4_JXHeAyI7YyJpmZPROfIgW3ResCl9o6fpsC3GL9qCcPZ3sh8bG8N2BMOtBLeh11eKv">
+<div class="absolute inset-0 flex items-center justify-center">
+<span class="material-symbols-outlined animate-spin text-primary">sync</span>
+</div>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex justify-between items-start">
+<h3 class="font-title-lg text-on-surface truncate pr-2">Weekly Podcast Teaser</h3>
+<span class="material-symbols-outlined text-primary text-[18px]">graphic_eq</span>
+</div>
+<div class="flex items-center gap-xs mt-1">
+<span class="px-2 py-0.5 rounded-full bg-primary-container/20 text-primary font-label-sm uppercase tracking-wider text-[10px]">Uploading</span>
+</div>
+<div class="mt-2 text-on-surface-variant flex flex-col">
+<span class="font-label-sm">Oct 24, 2023</span>
+<span class="font-label-md text-[10px]">Just Now</span>
+</div>
+</div>
+<button class="p-2 text-on-surface-variant">
+<span class="material-symbols-outlined">close</span>
+</button>
+</div>
+</div>
+<!-- Log Entry: Scheduled -->
+<div class="relative overflow-hidden rounded-xl bg-surface-container-lowest shadow-sm border border-outline-variant/20">
+<div class="flex items-center p-md gap-md bg-surface-container-lowest">
+<div class="w-16 h-16 rounded-lg overflow-hidden shrink-0 border border-outline-variant/30">
+<img class="w-full h-full object-cover" data-alt="A sophisticated flat-lay of professional workspace items: notebook, sleek pen, and a high-tech smartphone on a light blue desk, minimalist and productive atmosphere." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCm1BaiIUeclu_AxB0BfFaH3kGtn5iakyO_aXmoTH2adCotqTgnImCJ2D9ug7NQqBFT08cB-BZKWHhaLRGd9Xn1cyVOqKE0aHyoKxJ3MamXp_lbBRvPmccd4O39zlUdKgv4381cgc3da6a2FGxM7OWzT-uZ1un-80OPhDtE-zVArQUQeoVaA9CIm1K7k9HYFxwBE5dApGjt7U16lV2NKyR95JAaX8LtAkM4fOIh3oOQRwMVi5bTAuDUxqJWW9RbphohXd_g5A_v4V0e">
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex justify-between items-start">
+<h3 class="font-title-lg text-on-surface truncate pr-2">Brand Identity Update</h3>
+<span class="material-symbols-outlined text-primary text-[18px]">photo_library</span>
+</div>
+<div class="flex items-center gap-xs mt-1">
+<span class="px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container font-label-sm uppercase tracking-wider text-[10px]">Scheduled</span>
+<div class="flex items-center gap-1 ml-auto text-on-surface-variant">
+<span class="material-symbols-outlined text-[14px]">share</span>
+<span class="font-label-md text-[10px]">Omni-Channel</span>
+</div>
+</div>
+<div class="mt-2 text-on-surface-variant flex flex-col">
+<span class="font-label-sm">Oct 26, 2023</span>
+<span class="font-label-md text-[10px]">03:00 PM • GMT-7</span>
+</div>
+</div>
+<button class="p-2 text-on-surface-variant">
+<span class="material-symbols-outlined">edit</span>
+</button>
+</div>
+</div>
+<!-- Log Entry: Published (Another) -->
+<div class="relative overflow-hidden rounded-xl bg-surface-container-lowest shadow-sm border border-outline-variant/20">
+<div class="flex items-center p-md gap-md bg-surface-container-lowest">
+<div class="w-16 h-16 rounded-lg overflow-hidden shrink-0 border border-outline-variant/30">
+<img class="w-full h-full object-cover" data-alt="Stunning sunset landscape view from an airplane window, cinematic lighting, purple and orange hues, professional photography style, high quality resolution." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB9stKQoy25A8xTMj3CXx_aY4lNvjT7adKrWfXqLab8TLV_9V_PTKJmdz0D3yZtv0gHj9X0gCXObVAto1QiIv4u9bfwU4Z5miajmny9h-jewncles7WhbLps58KrPeZPRxz2UNPSKcLqjDCkD2sLgeRFedE65uuWxefICYSH1vCrVZJjjvdIZHNaBbRRCHPsRB9YXefoNjJIBHCF7ngDkQ9VX4ES73TH9gRuzqtNgBFakz8IT8VydsHQDJAGn_fAmb7xpQ3XZ1Aj3Uy">
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex justify-between items-start">
+<h3 class="font-title-lg text-on-surface truncate pr-2">Travel Vlog Highlights</h3>
+<span class="material-symbols-outlined text-primary text-[18px]">play_circle</span>
+</div>
+<div class="flex items-center gap-xs mt-1">
+<span class="px-2 py-0.5 rounded-full bg-surface-container text-on-surface-variant font-label-sm uppercase tracking-wider text-[10px]">Published</span>
+<div class="flex items-center gap-1 ml-auto text-on-surface-variant">
+<span class="material-symbols-outlined text-[14px]">public</span>
+<span class="font-label-md text-[10px]">YouTube, TikTok</span>
+</div>
+</div>
+<div class="mt-2 text-on-surface-variant flex flex-col">
+<span class="font-label-sm">Oct 22, 2023</span>
+<span class="font-label-md text-[10px]">11:30 PM • GMT-7</span>
+</div>
+</div>
+<button class="p-2 text-on-surface-variant">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</div>
+</div>
+</main>
+<!-- Bottom Nav Bar -->
+<nav class="fixed bottom-0 w-full z-50 bg-surface border-t border-outline-variant shadow-md flex justify-around items-center h-16 px-md"><a class="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary transition-all scale-95 active:scale-90" href="#">
+<span class="material-symbols-outlined">home</span>
+<span class="font-label-sm text-label-sm mt-1">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary transition-all scale-95 active:scale-90" href="#">
+<span class="material-symbols-outlined">add_box</span>
+<span class="font-label-sm text-label-sm mt-1">Compose</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary transition-all scale-95 active:scale-90" href="#">
+<span class="material-symbols-outlined">sync_alt</span>
+<span class="font-label-sm text-label-sm mt-1">Accounts</span>
+</a>
+<a class="flex flex-col items-center justify-center text-primary bg-primary-container/20 rounded-full px-4 py-1 scale-95 active:scale-90" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">history</span>
+<span class="font-label-sm text-label-sm mt-1">Logs</span>
+</a></nav>
+<!-- Micro-interactions Script -->
+<script>
+        // Simple swipe action simulation logic (visual only for this demo)
+        document.querySelectorAll('.log-item-swipe-container').forEach(container => {
+            let startX = 0;
+            let currentX = 0;
+
+            container.addEventListener('touchstart', (e) => {
+                startX = e.touches[0].clientX;
+            });
+
+            container.addEventListener('touchmove', (e) => {
+                currentX = e.touches[0].clientX;
+                const diff = currentX - startX;
+                if (diff < 0 && diff > -100) { // Swiping left
+                    container.style.transform = `translateX(${diff}px)`;
+                }
+            });
+
+            container.addEventListener('touchend', () => {
+                const diff = currentX - startX;
+                if (diff < -50) {
+                    container.style.transform = `translateX(-80px)`;
+                } else {
+                    container.style.transform = `translateX(0px)`;
+                }
+            });
+        });
+    </script>
+
+
+
+
+</body></html>

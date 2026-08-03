@@ -1,0 +1,397 @@
+<!DOCTYPE html><html class="light" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>SocialSpree Pro - Compose</title>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600;700&amp;family=Inter:wght@400;600;700&amp;family=JetBrains+Mono:wght@500&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "error-container": "#ffdad6",
+                    "tertiary": "#404548",
+                    "primary-fixed-dim": "#cabeff",
+                    "on-error-container": "#93000a",
+                    "surface-dim": "#cbdbf5",
+                    "primary-fixed": "#e6deff",
+                    "error": "#ba1a1a",
+                    "surface-variant": "#d3e4fe",
+                    "surface-tint": "#6042d6",
+                    "inverse-surface": "#213145",
+                    "secondary-fixed": "#e2e2e5",
+                    "surface-bright": "#f8f9ff",
+                    "tertiary-fixed-dim": "#c3c7cb",
+                    "primary-container": "#5d3fd3",
+                    "on-tertiary-fixed": "#181c1f",
+                    "secondary": "#5d5e61",
+                    "on-tertiary-fixed-variant": "#43474b",
+                    "surface-container": "#e5eeff",
+                    "on-primary-container": "#d8ceff",
+                    "on-surface-variant": "#484554",
+                    "on-surface": "#0b1c30",
+                    "background": "#f8f9ff",
+                    "surface": "#f8f9ff",
+                    "on-secondary-container": "#636467",
+                    "on-background": "#0b1c30",
+                    "outline": "#797586",
+                    "on-primary-fixed": "#1c0062",
+                    "on-secondary-fixed-variant": "#454749",
+                    "tertiary-container": "#585c60",
+                    "surface-container-low": "#eff4ff",
+                    "on-tertiary-container": "#d1d4d8",
+                    "surface-container-high": "#dce9ff",
+                    "on-primary": "#ffffff",
+                    "on-tertiary": "#ffffff",
+                    "surface-container-highest": "#d3e4fe",
+                    "inverse-primary": "#cabeff",
+                    "outline-variant": "#c9c4d7",
+                    "secondary-container": "#e2e2e5",
+                    "tertiary-fixed": "#e0e3e7",
+                    "secondary-fixed-dim": "#c6c6c9",
+                    "on-secondary-fixed": "#1a1c1e",
+                    "inverse-on-surface": "#eaf1ff",
+                    "on-primary-fixed-variant": "#4723be",
+                    "primary": "#451ebb",
+                    "on-secondary": "#ffffff",
+                    "surface-container-lowest": "#ffffff",
+                    "on-error": "#ffffff"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "spacing": {
+                    "sm": "8px",
+                    "lg": "24px",
+                    "container-max": "1440px",
+                    "base": "4px",
+                    "md": "16px",
+                    "xl": "32px",
+                    "xs": "4px",
+                    "sidebar-width": "260px",
+                    "gutter": "24px"
+            },
+            "fontFamily": {
+                    "headline-lg": ["Hanken Grotesk"],
+                    "headline-lg-mobile": ["Hanken Grotesk"],
+                    "label-sm": ["Inter"],
+                    "label-md": ["JetBrains Mono"],
+                    "body-md": ["Inter"],
+                    "title-lg": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "headline-md": ["Hanken Grotesk"],
+                    "display-lg": ["Hanken Grotesk"]
+            },
+            "fontSize": {
+                    "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "600"}],
+                    "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "label-sm": ["11px", {"lineHeight": "16px", "fontWeight": "600"}],
+                    "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                    "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "title-lg": ["18px", {"lineHeight": "24px", "fontWeight": "600"}],
+                    "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(226, 232, 240, 0.5);
+        }
+        .active-pill {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface text-on-surface font-body-md min-h-screen pb-24">
+<!-- TopAppBar -->
+<header class="w-full top-0 sticky z-40 bg-surface border-b border-outline-variant flex justify-between items-center px-lg py-sm w-full">
+<div class="flex items-center gap-md">
+<div class="w-8 h-8 rounded-full overflow-hidden border border-primary/20">
+<img class="w-full h-full object-cover" data-alt="A professional close-up portrait of a digital marketing executive with a friendly smile, set against a blurred high-end office background with soft indigo lighting. The aesthetic is clean, corporate modern, and highly focused, using a crisp color palette of whites and deep purples." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD-sla7bSuQ_zDh_OIzVXXsENtm0RP2r_5uTD5Qs0wYWU0eXzpIfqoR4BlSZv0bZ7TEu7NIQosiy7HHV61KlZCM-LOSpfyuwRatpD1-e4DiVv4ecL8CYyDQDzf9jC3XUMzZpLEXWU_SGKwobxV3wu55J28wjo1G5T1GAxLdt0HtBSMouSEQyelZrIpZSY9l1Tg7awFriF2MX2cCzyW2m16BJjix-qzSuRn9Yfh8bPuTAqXNbpJvTy-CG0qG3kTtPxaFIIUaBEZ34P1T">
+</div>
+<h1 class="font-headline-md text-headline-md font-bold text-primary">SocialSpree Pro</h1>
+</div>
+<button class="material-symbols-outlined text-primary cursor-pointer active:opacity-80">settings</button>
+</header>
+<main class="px-md py-lg max-w-md mx-auto space-y-lg">
+<!-- Step 1: Channel Selection -->
+<section class="space-y-md">
+<div class="flex justify-between items-end">
+<h2 class="font-title-lg text-title-lg text-on-surface">Select Channels</h2>
+<span class="text-label-sm font-label-sm text-outline uppercase tracking-wider">Step 1 of 4</span>
+</div>
+<div class="flex gap-md overflow-x-auto hide-scrollbar py-2">
+<!-- Instagram -->
+<button class="flex-shrink-0 flex flex-col items-center gap-sm group transition-all" onclick="toggleChannel(this)">
+<div class="w-16 h-16 rounded-xl border-2 border-primary bg-primary-container/10 flex items-center justify-center text-primary transition-all">
+<span class="material-symbols-outlined text-3xl" style="font-variation-settings: 'FILL' 1;">camera</span>
+</div>
+<span class="font-label-sm text-label-sm text-primary font-bold">Instagram</span>
+</button>
+<!-- LinkedIn -->
+<button class="flex-shrink-0 flex flex-col items-center gap-sm group transition-all opacity-40 grayscale" onclick="toggleChannel(this)">
+<div class="w-16 h-16 rounded-xl border-2 border-outline-variant bg-surface-container flex items-center justify-center text-on-surface-variant transition-all">
+<span class="material-symbols-outlined text-3xl">work</span>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant">LinkedIn</span>
+</button>
+<!-- X / Twitter -->
+<button class="flex-shrink-0 flex flex-col items-center gap-sm group transition-all opacity-40 grayscale" onclick="toggleChannel(this)">
+<div class="w-16 h-16 rounded-xl border-2 border-outline-variant bg-surface-container flex items-center justify-center text-on-surface-variant transition-all">
+<span class="material-symbols-outlined text-3xl font-bold">close</span>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant">X Post</span>
+</button>
+<!-- Facebook -->
+<button class="flex-shrink-0 flex flex-col items-center gap-sm group transition-all opacity-40 grayscale" onclick="toggleChannel(this)">
+<div class="w-16 h-16 rounded-xl border-2 border-outline-variant bg-surface-container flex items-center justify-center text-on-surface-variant transition-all">
+<span class="material-symbols-outlined text-3xl">qr_code_2</span>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Facebook</span>
+</button>
+</div>
+</section>
+<!-- Step 2: Content Draft -->
+<section class="space-y-md">
+<div class="flex justify-between items-end">
+<h2 class="font-title-lg text-title-lg text-on-surface">Post Draft</h2>
+<span class="text-label-sm font-label-sm text-outline uppercase tracking-wider">Step 2 of 4</span>
+</div>
+<div class="glass-card rounded-xl overflow-hidden shadow-sm">
+<div class="p-md">
+<textarea class="w-full h-32 bg-transparent border-none focus:ring-0 text-body-lg font-body-lg resize-none placeholder:text-outline/50" id="post-text" oninput="updateCharCount()" placeholder="What's on your mind? High-performing posts start here..."></textarea>
+</div>
+<div class="px-md py-sm bg-surface-container-low flex justify-between items-center border-t border-outline-variant/30">
+<div class="flex items-center gap-sm">
+<span class="font-label-md text-label-md text-primary" id="char-count">0</span>
+<span class="text-outline text-label-md">/ 2200</span>
+</div>
+<button class="flex items-center gap-xs px-md py-sm bg-primary text-on-primary rounded-full hover:bg-primary-container transition-colors shadow-sm active:scale-95 duration-200">
+<span class="material-symbols-outlined text-[18px]">auto_awesome</span>
+<span class="font-label-sm text-label-sm">AI Enhance</span>
+</button>
+</div>
+</div>
+</section>
+<!-- Step 3: Media Library -->
+<section class="space-y-md">
+<div class="flex justify-between items-end">
+<h2 class="font-title-lg text-title-lg text-on-surface">Media Assets</h2>
+<span class="text-label-sm font-label-sm text-outline uppercase tracking-wider">Step 3 of 4</span>
+</div>
+<div class="grid grid-cols-3 gap-sm">
+<div class="aspect-square rounded-lg border-2 border-dashed border-outline-variant flex flex-col items-center justify-center text-outline-variant hover:border-primary hover:text-primary transition-colors cursor-pointer group">
+<span class="material-symbols-outlined text-2xl group-hover:scale-110 transition-transform">add_a_photo</span>
+<span class="font-label-sm text-[10px] mt-1">Upload</span>
+</div>
+<div class="aspect-square rounded-lg overflow-hidden relative group">
+<img class="w-full h-full object-cover" data-alt="A clean, minimalist product photograph of a modern tech gadget on a white marble surface, illuminated by soft afternoon sunlight filtering through a window. The style is professional and high-end, suitable for a corporate social media campaign. Colors are neutral with subtle violet shadows." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC8551JeYnHCZFeiPmFsPgSnWTFCr0afha0RYe7Osrr22zGJ8HSzeg7h71UTUp1LX7Vwl4Uj8PAFV_4H4PbfgrVf8_Qm7FJ0CEJ2b3qu_LvqVMgmN9BANWkxeL_qCPPeWcpgQj3RxAwj8DZxKZQnuAC05yvjxSwsjXIvlQjSHY6Uyz-heoIyyfcWEP_77uHMxkmbRfOpxDZWFNsHbsF6kBejGwsUQ3PYYEEjgcpF3oBS_ngQyNzWf8bDn83RewaTXBYIDhmoAdHyo7N">
+<div class="absolute inset-0 bg-primary/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+<span class="material-symbols-outlined text-on-primary">check_circle</span>
+</div>
+</div>
+<div class="aspect-square rounded-lg overflow-hidden relative group">
+<img class="w-full h-full object-cover" data-alt="A vibrant lifestyle photograph showing a diverse team of professionals collaborating in a bright, modern co-working space with large plants and glass walls. The image has a clean, airy feel with a professional light-mode aesthetic, emphasizing connection and productivity in a high-tech corporate environment." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCCliMyQtx04czJdtKpRGt9apj--nPYdg5aGBLSAy6o7jYDn__RcsqLX1j7aA71KX1lxL0caL_EUiDtoLugawj7QGHhI9R5yFoMk66Z15AdztGSN5UtEDd0DxUSAj36_hfqAsbge1lsRWNHglyAB9Vw0dnkkEThiaatWkMB3NKEFzD1I5ac6QmR-5yPS3ue_LMJil_KQbGLeDh9VgAunUL3gIR4mkuC4YW4tB93tgDcb-u6j8IyFJnBxhhROqoZyG0TjzsXj1vC9AA3">
+<div class="absolute inset-0 bg-primary/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+<span class="material-symbols-outlined text-on-primary">check_circle</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Step 4: Scheduling -->
+<section class="space-y-md">
+<div class="flex justify-between items-end">
+<h2 class="font-title-lg text-title-lg text-on-surface">Publishing Schedule</h2>
+<span class="text-label-sm font-label-sm text-outline uppercase tracking-wider">Step 4 of 4</span>
+</div>
+<div class="flex gap-sm">
+<button class="flex-1 py-md rounded-xl border border-primary bg-primary-container/10 text-primary font-title-lg flex flex-col items-center gap-xs active-pill" id="btn-now" onclick="setSchedule('now')">
+<span class="material-symbols-outlined">send</span>
+<span class="text-body-md">Post Now</span>
+</button>
+<button class="flex-1 py-md rounded-xl border border-outline-variant bg-surface text-on-surface-variant font-title-lg flex flex-col items-center gap-xs active-pill opacity-70" id="btn-later" onclick="setSchedule('later')">
+<span class="material-symbols-outlined">calendar_today</span>
+<span class="text-body-md">Schedule</span>
+</button>
+</div>
+<div class="hidden animate-in fade-in slide-in-from-top-2 duration-300 space-y-sm" id="date-picker-area">
+<div class="flex gap-sm">
+<div class="flex-1 p-md rounded-xl bg-surface-container-low border border-outline-variant flex items-center justify-between">
+<span class="text-body-md font-semibold">Oct 24, 2023</span>
+<span class="material-symbols-outlined text-primary">event</span>
+</div>
+<div class="flex-1 p-md rounded-xl bg-surface-container-low border border-outline-variant flex items-center justify-between">
+<span class="text-body-md font-semibold">10:30 AM</span>
+<span class="material-symbols-outlined text-primary">schedule</span>
+</div>
+</div>
+<p class="text-label-md text-center text-on-surface-variant">Recommended: <span class="text-primary font-bold">Best time for reach</span></p>
+</div>
+</section>
+<!-- Live Preview Toggle -->
+<div class="py-md">
+<button class="w-full flex items-center justify-between p-lg rounded-xl bg-on-surface text-white hover:bg-on-surface/90 transition-colors shadow-lg active:scale-[0.98]" onclick="togglePreview()">
+<div class="flex items-center gap-md">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">visibility</span>
+<span class="font-title-lg">Live Post Preview</span>
+</div>
+<span class="material-symbols-outlined transition-transform duration-300" id="preview-chevron">expand_more</span>
+</button>
+</div>
+<!-- Collapsible Preview Section -->
+<div class="hidden overflow-hidden transition-all duration-500 ease-in-out" id="preview-section">
+<div class="glass-card rounded-2xl p-sm shadow-xl mt-sm border-2 border-primary/20">
+<div class="bg-white rounded-xl p-md space-y-md">
+<!-- Instagram-like Header -->
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-sm">
+<div class="w-8 h-8 rounded-full bg-gradient-to-tr from-yellow-400 via-red-500 to-purple-600 p-[2px]">
+<div class="w-full h-full rounded-full border-2 border-white overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="A small profile icon showing a confident woman with professional attire, with a clean corporate branding background, matching the primary color scheme of deep indigo and soft lavenders." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAKUPbImWAvXNv0bHGy2dB_O3Xgh_eNOJnFw89TMulAFYDSnZCzuiTr6sFc_sja-ju6a7i2W6GjvdmdlPOWASqMf9rCHS7MwHHI2ktLmsfjWlaTHI-jMYRvt1CgZjcDXfRflUzijn9-W9gbP56fISrMuUffnZw8YPLIMvWW-7pl5n9UPrtyWr47gGJ7ddwTHkqvZ0q_noNHreefAnb3X7RbnHDtTdXYFrPH4SescXSZ-fYOML81CMh3qlwEQKh8aFAbJfnXrlBc0HMR">
+</div>
+</div>
+<div>
+<p class="text-label-sm font-bold leading-none">socialscale_pro</p>
+<p class="text-[10px] text-outline leading-none mt-1">London, United Kingdom</p>
+</div>
+</div>
+<span class="material-symbols-outlined">more_horiz</span>
+</div>
+<!-- Post Image -->
+<div class="aspect-square rounded-lg overflow-hidden bg-surface-container">
+<img class="w-full h-full object-cover" data-alt="A vibrant, professional high-resolution image of a modern minimalist office setup with a high-end laptop, a cup of coffee, and clean brand notebooks. The scene is brightly lit with a clean, high-contrast style that communicates productivity and executive-level planning, featuring subtle deep indigo highlights." id="preview-img" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCbAnBkTpE5ZMP9VlC3jXMnLC5b6tgYGHAWx4R_WtbJksrUS4twyrxRqGt3kg8bkWZSrewfoM8ERawkWsY6XrAccFKB9Fm9UFzYvEUvTB1ORtz4VyeFVu626OICXDJrIFKgv223DSC37hH9Js8PYfOjDCKg6CaQortSgGIyHMSrHwXS7VDEIF6xKrRC3b5Yt-m8n_nUsWyPLczvFQvq6AAiRoQy_FquzluUXgBzrGHToFc3HLGX1sW30UgE4GGXsVyPbOxjV2tIYXFF">
+</div>
+<!-- Interaction Bar -->
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-md">
+<span class="material-symbols-outlined">favorite</span>
+<span class="material-symbols-outlined">chat_bubble_outline</span>
+<span class="material-symbols-outlined">send</span>
+</div>
+<span class="material-symbols-outlined">bookmark_border</span>
+</div>
+<!-- Caption -->
+<div>
+<p class="text-body-md"><span class="font-bold">socialscale_pro</span> <span id="preview-text-content" class="">The future of social scheduling is here. Scale your reach effortlessly with our new AI-enhanced insights. #ScaleUp</span></p>
+<p class="text-[11px] text-outline mt-1 uppercase">2 minutes ago</p>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 w-full z-50 bg-surface border-t border-outline-variant shadow-md flex justify-around items-center h-16 w-full px-md"><!-- Home -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary transition-all scale-95 active:scale-90" href="#">
+<span class="material-symbols-outlined">home</span>
+<span class="font-label-sm text-label-sm">Home</span>
+</a>
+<!-- Compose (Active) -->
+<a class="flex flex-col items-center justify-center text-primary bg-primary-container/20 rounded-full px-4 py-1 transition-all scale-95 active:scale-90" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">add_box</span>
+<span class="font-label-sm text-label-sm">Compose</span>
+</a>
+<!-- Accounts -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary transition-all scale-95 active:scale-90" href="#">
+<span class="material-symbols-outlined">sync_alt</span>
+<span class="font-label-sm text-label-sm">Accounts</span>
+</a>
+<!-- Logs -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary transition-all scale-95 active:scale-90" href="#">
+<span class="material-symbols-outlined">history</span>
+<span class="font-label-sm text-label-sm">Logs</span>
+</a></nav>
+<script>
+        function toggleChannel(btn) {
+            const allBtns = btn.parentElement.querySelectorAll('button');
+            btn.classList.toggle('opacity-40');
+            btn.classList.toggle('grayscale');
+            const iconDiv = btn.querySelector('div');
+            const label = btn.querySelector('span:last-child');
+            
+            if (btn.classList.contains('opacity-40')) {
+                iconDiv.classList.replace('border-primary', 'border-outline-variant');
+                iconDiv.classList.replace('bg-primary-container/10', 'bg-surface-container');
+                iconDiv.classList.replace('text-primary', 'text-on-surface-variant');
+                label.classList.replace('text-primary', 'text-on-surface-variant');
+                label.classList.remove('font-bold');
+                iconDiv.querySelector('.material-symbols-outlined').style.fontVariationSettings = "'FILL' 0";
+            } else {
+                iconDiv.classList.replace('border-outline-variant', 'border-primary');
+                iconDiv.classList.replace('bg-surface-container', 'bg-primary-container/10');
+                iconDiv.classList.replace('text-on-surface-variant', 'text-primary');
+                label.classList.replace('text-on-surface-variant', 'text-primary');
+                label.classList.add('font-bold');
+                iconDiv.querySelector('.material-symbols-outlined').style.fontVariationSettings = "'FILL' 1";
+            }
+        }
+
+        function updateCharCount() {
+            const textarea = document.getElementById('post-text');
+            const count = document.getElementById('char-count');
+            const previewText = document.getElementById('preview-text-content');
+            count.innerText = textarea.value.length;
+            previewText.innerText = textarea.value || "Your high-performing post content will appear here...";
+        }
+
+        function setSchedule(mode) {
+            const btnNow = document.getElementById('btn-now');
+            const btnLater = document.getElementById('btn-later');
+            const picker = document.getElementById('date-picker-area');
+
+            if (mode === 'now') {
+                btnNow.classList.remove('opacity-70', 'bg-surface', 'border-outline-variant');
+                btnNow.classList.add('bg-primary-container/10', 'border-primary');
+                btnLater.classList.add('opacity-70', 'bg-surface', 'border-outline-variant');
+                btnLater.classList.remove('bg-primary-container/10', 'border-primary');
+                picker.classList.add('hidden');
+            } else {
+                btnLater.classList.remove('opacity-70', 'bg-surface', 'border-outline-variant');
+                btnLater.classList.add('bg-primary-container/10', 'border-primary');
+                btnNow.classList.add('opacity-70', 'bg-surface', 'border-outline-variant');
+                btnNow.classList.remove('bg-primary-container/10', 'border-primary');
+                picker.classList.remove('hidden');
+            }
+        }
+
+        function togglePreview() {
+            const preview = document.getElementById('preview-section');
+            const chevron = document.getElementById('preview-chevron');
+            preview.classList.toggle('hidden');
+            chevron.classList.toggle('rotate-180');
+        }
+    </script>
+
+
+
+
+</body></html>

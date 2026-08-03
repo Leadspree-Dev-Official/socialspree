@@ -1,0 +1,366 @@
+<!DOCTYPE html><html class="light" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport">
+<title>SocialSpree Pro Analytics</title>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600;700&amp;family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@500&amp;display=swap" rel="stylesheet">
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-low": "#eff4ff",
+                        "outline-variant": "#c9c4d7",
+                        "surface-bright": "#f8f9ff",
+                        "on-secondary-fixed-variant": "#454749",
+                        "tertiary-fixed": "#e0e3e7",
+                        "tertiary": "#404548",
+                        "on-secondary-container": "#636467",
+                        "error-container": "#ffdad6",
+                        "surface-container-lowest": "#ffffff",
+                        "outline": "#797586",
+                        "on-tertiary-fixed": "#181c1f",
+                        "surface-tint": "#6042d6",
+                        "secondary-container": "#e2e2e5",
+                        "on-secondary": "#ffffff",
+                        "on-primary-fixed": "#1c0062",
+                        "on-background": "#0b1c30",
+                        "surface-dim": "#cbdbf5",
+                        "error": "#ba1a1a",
+                        "on-primary-container": "#d8ceff",
+                        "surface-container-highest": "#d3e4fe",
+                        "secondary-fixed": "#e2e2e5",
+                        "on-tertiary-container": "#d1d4d8",
+                        "inverse-primary": "#cabeff",
+                        "surface-container-high": "#dce9ff",
+                        "primary-fixed-dim": "#cabeff",
+                        "surface": "#f8f9ff",
+                        "background": "#f8f9ff",
+                        "on-error": "#ffffff",
+                        "tertiary-fixed-dim": "#c3c7cb",
+                        "surface-variant": "#d3e4fe",
+                        "primary": "#451ebb",
+                        "inverse-on-surface": "#eaf1ff",
+                        "primary-fixed": "#e6deff",
+                        "on-tertiary": "#ffffff",
+                        "tertiary-container": "#585c60",
+                        "primary-container": "#5d3fd3",
+                        "on-secondary-fixed": "#1a1c1e",
+                        "on-primary": "#ffffff",
+                        "inverse-surface": "#213145",
+                        "on-surface": "#0b1c30",
+                        "secondary": "#5d5e61",
+                        "on-tertiary-fixed-variant": "#43474b",
+                        "on-surface-variant": "#484554",
+                        "on-primary-fixed-variant": "#4723be",
+                        "secondary-fixed-dim": "#c6c6c9",
+                        "surface-container": "#e5eeff",
+                        "on-error-container": "#93000a"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "xl": "32px",
+                        "sidebar-width": "260px",
+                        "base": "4px",
+                        "xs": "4px",
+                        "md": "16px",
+                        "sm": "8px",
+                        "container-max": "1440px",
+                        "lg": "24px",
+                        "gutter": "24px"
+                    },
+                    "fontFamily": {
+                        "headline-md": ["Hanken Grotesk"],
+                        "body-lg": ["Inter"],
+                        "label-md": ["JetBrains Mono"],
+                        "headline-lg": ["Hanken Grotesk"],
+                        "label-sm": ["Inter"],
+                        "headline-lg-mobile": ["Hanken Grotesk"],
+                        "title-lg": ["Inter"],
+                        "body-md": ["Inter"],
+                        "display-lg": ["Hanken Grotesk"]
+                    },
+                    "fontSize": {
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "600"}],
+                        "label-sm": ["11px", {"lineHeight": "16px", "fontWeight": "600"}],
+                        "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "title-lg": ["18px", {"lineHeight": "24px", "fontWeight": "600"}],
+                        "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            -webkit-tap-highlight-color: transparent;
+            overscroll-behavior-y: contain;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .chart-container {
+            height: 180px;
+            width: 100%;
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-surface font-body-md">
+<!-- TopAppBar Component -->
+<header class="bg-surface dark:bg-surface fixed top-0 w-full z-50 flex justify-between items-center px-md h-16 border-b border-outline-variant dark:border-outline">
+<div class="flex items-center gap-sm active:scale-95 duration-150">
+<span class="material-symbols-outlined text-primary dark:text-primary-fixed">insights</span>
+<h1 class="font-headline-md text-headline-md-mobile font-bold text-primary dark:text-primary-fixed">SocialSpree Pro</h1>
+</div>
+<button class="material-symbols-outlined text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-container-low dark:hover:bg-surface-container-high transition-colors p-2 rounded-full active:scale-95 duration-150">
+            settings
+        </button>
+</header>
+<main class="pt-20 pb-24 px-md max-w-md mx-auto space-y-md">
+<!-- Filter Toggle -->
+<div class="bg-surface-container-low rounded-xl p-1 flex items-center justify-between">
+<button class="flex-1 py-2 text-center rounded-lg font-label-sm text-on-surface-variant hover:bg-white/50 transition-all duration-200">7 Days</button>
+<button class="flex-1 py-2 text-center rounded-lg font-label-sm bg-primary text-white shadow-sm transition-all duration-200">30 Days</button>
+<button class="flex-1 py-2 text-center rounded-lg font-label-sm text-on-surface-variant hover:bg-white/50 transition-all duration-200">All Time</button>
+</div>
+<!-- Performance Summary Cards -->
+<section class="grid grid-cols-1 gap-md">
+<!-- Total Reach Card -->
+<div class="bg-surface-container-lowest p-md rounded-xl border border-outline-variant/30 shadow-sm flex items-center justify-between" style="transition: transform 0.15s ease-out;">
+<div>
+<p class="font-label-sm text-on-surface-variant mb-1">Total Reach</p>
+<h3 class="font-headline-md text-headline-md-mobile text-on-surface">85.4K</h3>
+</div>
+<div class="flex items-center text-primary bg-primary-container/10 px-2 py-1 rounded-lg">
+<span class="material-symbols-outlined text-sm">trending_up</span>
+<span class="font-label-sm ml-1">+12%</span>
+</div>
+</div>
+<!-- Two Column Stats -->
+<div class="grid grid-cols-2 gap-md">
+<div class="bg-surface-container-lowest p-md rounded-xl border border-outline-variant/30 shadow-sm" style="transition: transform 0.15s ease-out;">
+<p class="font-label-sm text-on-surface-variant mb-1">Avg. Engagement</p>
+<h3 class="font-headline-md text-headline-md-mobile text-on-surface">4.2%</h3>
+<p class="text-[10px] text-outline mt-2 font-medium">Industry Avg: 2.8%</p>
+</div>
+<div class="bg-surface-container-lowest p-md rounded-xl border border-outline-variant/30 shadow-sm" style="transition: transform 0.15s ease-out;">
+<p class="font-label-sm text-on-surface-variant mb-1">New Followers</p>
+<h3 class="font-headline-md text-headline-md-mobile text-on-surface">+1.2K</h3>
+<p class="text-[10px] text-primary mt-2 font-medium">Growing steadily</p>
+</div>
+</div>
+</section>
+<!-- Daily Reach Line Chart -->
+<section class="bg-surface-container-lowest p-md rounded-xl border border-outline-variant/30 shadow-sm" style="transition: transform 0.15s ease-out;">
+<div class="flex justify-between items-center mb-md">
+<h4 class="font-title-lg text-on-surface">Daily Reach</h4>
+<span class="material-symbols-outlined text-outline text-lg">info</span>
+</div>
+<div class="chart-container relative flex items-end justify-between gap-1 pb-6 border-b border-outline-variant/20">
+<!-- Simple visual mock of a line chart using CSS segments -->
+<div class="w-2 bg-primary/20 rounded-t-sm h-[30%]"></div>
+<div class="w-2 bg-primary/30 rounded-t-sm h-[45%]"></div>
+<div class="w-2 bg-primary/40 rounded-t-sm h-[60%]"></div>
+<div class="w-2 bg-primary/50 rounded-t-sm h-[80%]"></div>
+<div class="w-2 bg-primary/60 rounded-t-sm h-[50%]"></div>
+<div class="w-2 bg-primary/70 rounded-t-sm h-[75%]"></div>
+<div class="w-2 bg-primary/80 rounded-t-sm h-[90%]"></div>
+<div class="w-2 bg-primary/90 rounded-t-sm h-[65%]"></div>
+<div class="w-2 bg-primary rounded-t-sm h-[100%]"></div>
+<div class="absolute bottom-0 w-full flex justify-between px-1 text-[10px] text-outline font-label-md">
+<span class="">01 May</span>
+<span class="">15 May</span>
+<span class="">30 May</span>
+</div>
+</div>
+</section>
+<!-- Platform Distribution -->
+<section class="bg-surface-container-lowest p-md rounded-xl border border-outline-variant/30 shadow-sm" style="transition: transform 0.15s ease-out;">
+<h4 class="font-title-lg text-on-surface mb-md">Platform Distribution</h4>
+<div class="flex items-center gap-xl">
+<!-- Donut Chart Mock -->
+<div class="relative w-24 h-24 flex items-center justify-center">
+<svg class="w-24 h-24 transform -rotate-90">
+<circle cx="48" cy="48" fill="transparent" r="38" stroke="#e2e2e5" stroke-width="12"></circle>
+<circle cx="48" cy="48" fill="transparent" r="38" stroke="#451ebb" stroke-dasharray="238.76" stroke-dashoffset="100" stroke-width="12"></circle>
+<circle cx="48" cy="48" fill="transparent" r="38" stroke="#5d3fd3" stroke-dasharray="238.76" stroke-dashoffset="200" stroke-width="12"></circle>
+</svg>
+<div class="absolute text-center">
+<span class="font-label-sm text-outline">Total</span>
+</div>
+</div>
+<div class="flex-1 space-y-sm">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-xs">
+<div class="w-2 h-2 rounded-full bg-primary"></div>
+<span class="font-label-sm">Instagram</span>
+</div>
+<span class="font-label-sm text-on-surface">58%</span>
+</div>
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-xs">
+<div class="w-2 h-2 rounded-full bg-primary-container"></div>
+<span class="font-label-sm">LinkedIn</span>
+</div>
+<span class="font-label-sm text-on-surface">32%</span>
+</div>
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-xs">
+<div class="w-2 h-2 rounded-full bg-secondary-container"></div>
+<span class="font-label-sm">X (Twitter)</span>
+</div>
+<span class="font-label-sm text-on-surface">10%</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Top Posts -->
+<section class="pb-8">
+<div class="flex items-center justify-between mb-md">
+<h4 class="font-title-lg text-on-surface">Top Performing Posts</h4>
+<button class="text-primary font-label-sm">View All</button>
+</div>
+<div class="space-y-sm">
+<!-- Post Item 1 -->
+<div class="bg-surface-container-lowest p-sm rounded-xl flex items-center gap-md border border-outline-variant/20 hover:bg-surface-container-low transition-colors duration-200" style="transition: transform 0.15s ease-out;">
+<div class="w-14 h-14 rounded-lg bg-surface-container overflow-hidden flex-shrink-0">
+<img class="w-full h-full object-cover" data-alt="A vibrant professional flat-lay photograph of high-tech workspace tools on a clean white desk, with kinetic purple and indigo accent lighting, shot in a high-contrast minimalist aesthetic for a social media post thumbnail." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBkn-ACiNewO8GPQUypNvNbzNEXyUAdHk_nBHxIWv3v1PEO50WwJ-Wmu9WcBNfqmZxjIV4h4Sr9iUdwcfzi2wClQAKA2hg8vfV8xy-4djLhMfNGoszZT6FkmJiNYiGBfsW4QVDbCCai9-M3J5VIjZXMDcapmpb3A6zBJPiTCVsE7nNup95I8-ngx9u_T2JSVvw04bcAey7UVJmbJKzbov1189BkAjnWwb5lntM-fXFC3HqbI0ObvilrQPpVN6tsQtCl8pozdzbztmf_">
+</div>
+<div class="flex-1 min-w-0">
+<p class="font-body-md text-on-surface truncate">Unlocking the power of SocialSpree Pro Analytics...</p>
+<div class="flex items-center gap-md mt-1">
+<div class="flex items-center gap-xs text-outline">
+<span class="material-symbols-outlined text-sm">favorite</span>
+<span class="text-[10px] font-label-md">1.2K</span>
+</div>
+<div class="flex items-center gap-xs text-outline">
+<span class="material-symbols-outlined text-sm">chat_bubble</span>
+<span class="text-[10px] font-label-md">84</span>
+</div>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline">chevron_right</span>
+</div>
+<!-- Post Item 2 -->
+<div class="bg-surface-container-lowest p-sm rounded-xl flex items-center gap-md border border-outline-variant/20 hover:bg-surface-container-low transition-colors duration-200" style="transition: transform 0.15s ease-out;">
+<div class="w-14 h-14 rounded-lg bg-surface-container overflow-hidden flex-shrink-0">
+<img class="w-full h-full object-cover" data-alt="A modern architectural shot featuring clean glass facades and deep purple shadows, capturing a high-tech corporate office building during blue hour, styled for an enterprise analytics brand's visual identity." src="https://lh3.googleusercontent.com/aida-public/AB6AXuClHnNj2ph24ftRQXB7r-TMZK5K3qsO8ziljI3-xElxdRqn4LpaVhHb776T0-u3m3OiefTwCECDPsjmwzmi-ruDtzpev0o-Bcx4aywO8a3wPc75l4JRn_tDMpqjHa1Zi4r7sqq7OcAzrxQc-3BHIq2BLTCgHmCH04BW1I_rg189FWRtAH572zUU3OF9fQ30HDUTCUcGsFqpG17EjVcADtOPjvR-FQPwHiHm2Vp37vEcGMZOeIjvLqZZukULrZg7GcludzbIC_MDlI5v">
+</div>
+<div class="flex-1 min-w-0">
+<p class="font-body-md text-on-surface truncate">Quarterly insights are live. Check the new...</p>
+<div class="flex items-center gap-md mt-1">
+<div class="flex items-center gap-xs text-outline">
+<span class="material-symbols-outlined text-sm">favorite</span>
+<span class="text-[10px] font-label-md">945</span>
+</div>
+<div class="flex items-center gap-xs text-outline">
+<span class="material-symbols-outlined text-sm">chat_bubble</span>
+<span class="text-[10px] font-label-md">32</span>
+</div>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline">chevron_right</span>
+</div>
+<!-- Post Item 3 -->
+<div class="bg-surface-container-lowest p-sm rounded-xl flex items-center gap-md border border-outline-variant/20 hover:bg-surface-container-low transition-colors duration-200" style="transition: transform 0.15s ease-out;">
+<div class="w-14 h-14 rounded-lg bg-surface-container overflow-hidden flex-shrink-0">
+<img class="w-full h-full object-cover" data-alt="Abstract digital network visualization with glowing fiber optic lines in indigo and violet hues, representing big data and high-speed connectivity, presented in a crisp, ultra-modern corporate style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC1G3yg_BKcBsVHmhGo2XoEv_J4TeaDM7o85K8tuHMr4qXl3b6Ymf34J7XbAuZ8rZOJDifbxQWjoI0LJs-m3stC1hbUvkesaT2bjOoO7M3C3svPu_uJyCS6HaPvp9p6AKoTHjzLKriCmQw1YXgtcPS9VEIGq_Aa_ks-nit66RZ_bQB78izy5Lk6Fl5DonN4Z13W8WMjEKX5NWi70LTnMMgPNti95XC1C2dtf5_FHr2BJuYMhoj6Dyjr7ka21lOuesIBrw8tWo0zFmO5">
+</div>
+<div class="flex-1 min-w-0">
+<p class="font-body-md text-on-surface truncate">Collaborating on global campaigns made easy...</p>
+<div class="flex items-center gap-md mt-1">
+<div class="flex items-center gap-xs text-outline">
+<span class="material-symbols-outlined text-sm">favorite</span>
+<span class="text-[10px] font-label-md">812</span>
+</div>
+<div class="flex items-center gap-xs text-outline">
+<span class="material-symbols-outlined text-sm">chat_bubble</span>
+<span class="text-[10px] font-label-md">11</span>
+</div>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline">chevron_right</span>
+</div>
+</div>
+</section>
+</main>
+<!-- BottomNavBar Component -->
+<nav class="fixed bottom-0 left-0 w-full flex justify-around items-center bg-surface dark:bg-surface py-2 pb-safe border-t border-outline-variant dark:border-outline shadow-sm z-50">
+<a class="flex flex-col items-center justify-center text-on-secondary-container dark:text-on-secondary-container-variant px-3 py-1 hover:bg-secondary-container/50 dark:hover:bg-secondary-container/20 transition-all active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined">home</span>
+<span class="font-label-sm text-label-sm">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-secondary-container dark:text-on-secondary-container-variant px-3 py-1 hover:bg-secondary-container/50 dark:hover:bg-secondary-container/20 transition-all active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined">add_circle</span>
+<span class="font-label-sm text-label-sm">Compose</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-secondary-container dark:text-on-secondary-container-variant px-3 py-1 hover:bg-secondary-container/50 dark:hover:bg-secondary-container/20 transition-all active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined">switch_left</span>
+<span class="font-label-sm text-label-sm">Accounts</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-secondary-container dark:text-on-secondary-container-variant px-3 py-1 hover:bg-secondary-container/50 dark:hover:bg-secondary-container/20 transition-all active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined">list_alt</span>
+<span class="font-label-sm text-label-sm">Logs</span>
+</a>
+<a class="flex flex-col items-center justify-center text-primary dark:text-primary-fixed font-bold bg-primary-container/10 rounded-xl px-3 py-1 transition-all active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">analytics</span>
+<span class="font-label-sm text-label-sm">Analytics</span>
+</a>
+</nav>
+<script>
+        // Micro-interactions for performance cards
+        document.querySelectorAll('.bg-surface-container-lowest').forEach(card => {
+            card.addEventListener('click', () => {
+                card.style.transform = 'scale(0.98)';
+                setTimeout(() => {
+                    card.style.transform = 'scale(1)';
+                }, 100);
+            });
+            card.style.transition = 'transform 0.15s ease-out';
+        });
+
+        // Filter button toggle logic
+        const filterButtons = document.querySelectorAll('.bg-surface-container-low button');
+        filterButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                filterButtons.forEach(b => {
+                    b.classList.remove('bg-primary', 'text-white', 'shadow-sm');
+                    b.classList.add('text-on-surface-variant', 'hover:bg-white/50');
+                });
+                btn.classList.add('bg-primary', 'text-white', 'shadow-sm');
+                btn.classList.remove('text-on-surface-variant', 'hover:bg-white/50');
+            });
+        });
+    </script>
+
+
+</body></html>

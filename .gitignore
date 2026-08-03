@@ -1,0 +1,19 @@
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Supabase local
+supabase/.temp/
+supabase/.gitignore
+supabase/.gitignore.tmp
+
+# Build / deps
+node_modules/
+dist/
+*.local
+
+# Misc
+.DS_Store
+*.log
+npm-debug.log*

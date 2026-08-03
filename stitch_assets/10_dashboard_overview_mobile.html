@@ -1,0 +1,310 @@
+<!DOCTYPE html><html class="light" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>SocialScale Pro - Dashboard</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600;700;800&amp;family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@500&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@100..900&amp;family=Inter:wght@100..900&amp;family=JetBrains+Mono:wght@100..900&amp;display=swap" rel="stylesheet">
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "secondary": "#5d5e61",
+                        "on-secondary-fixed": "#1a1c1e",
+                        "surface-dim": "#cbdbf5",
+                        "surface-container-low": "#eff4ff",
+                        "inverse-on-surface": "#eaf1ff",
+                        "outline-variant": "#c9c4d7",
+                        "tertiary-fixed": "#e0e3e7",
+                        "on-primary-fixed-variant": "#4723be",
+                        "inverse-surface": "#213145",
+                        "inverse-primary": "#cabeff",
+                        "tertiary-fixed-dim": "#c3c7cb",
+                        "surface-tint": "#6042d6",
+                        "surface-container-highest": "#d3e4fe",
+                        "surface": "#f8f9ff",
+                        "secondary-fixed": "#e2e2e5",
+                        "surface-container-high": "#dce9ff",
+                        "surface-bright": "#f8f9ff",
+                        "on-primary": "#ffffff",
+                        "tertiary-container": "#585c60",
+                        "primary-container": "#5d3fd3",
+                        "on-error-container": "#93000a",
+                        "tertiary": "#404548",
+                        "on-secondary-fixed-variant": "#454749",
+                        "secondary-container": "#e2e2e5",
+                        "on-error": "#ffffff",
+                        "surface-container": "#e5eeff",
+                        "on-surface-variant": "#484554",
+                        "on-secondary-container": "#636467",
+                        "primary-fixed": "#e6deff",
+                        "on-surface": "#0b1c30",
+                        "on-primary-container": "#d8ceff",
+                        "error": "#ba1a1a",
+                        "primary-fixed-dim": "#cabeff",
+                        "on-tertiary-fixed": "#181c1f",
+                        "primary": "#451ebb",
+                        "on-background": "#0b1c30",
+                        "on-tertiary-fixed-variant": "#43474b",
+                        "background": "#f8f9ff",
+                        "on-primary-fixed": "#1c0062",
+                        "error-container": "#ffdad6",
+                        "on-secondary": "#ffffff",
+                        "surface-container-lowest": "#ffffff",
+                        "outline": "#797586",
+                        "surface-variant": "#d3e4fe",
+                        "secondary-fixed-dim": "#c6c6c9",
+                        "on-tertiary-container": "#d1d4d8",
+                        "on-tertiary": "#ffffff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "sidebar-width": "260px",
+                        "xl": "32px",
+                        "gutter": "24px",
+                        "base": "4px",
+                        "xs": "4px",
+                        "md": "16px",
+                        "sm": "8px",
+                        "lg": "24px",
+                        "container-max": "1440px"
+                    },
+                    "fontFamily": {
+                        "headline-lg-mobile": ["Hanken Grotesk"],
+                        "label-sm": ["Inter"],
+                        "headline-md": ["Hanken Grotesk"],
+                        "display-lg": ["Hanken Grotesk"],
+                        "body-md": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "label-md": ["JetBrains Mono"],
+                        "headline-lg": ["Hanken Grotesk"],
+                        "title-lg": ["Inter"]
+                    },
+                    "fontSize": {
+                        "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "label-sm": ["11px", {"lineHeight": "16px", "fontWeight": "600"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "600"}],
+                        "title-lg": ["18px", {"lineHeight": "24px", "fontWeight": "600"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            display: inline-block;
+            line-height: 1;
+            text-transform: none;
+            letter-spacing: normal;
+            word-wrap: normal;
+            white-space: nowrap;
+            direction: ltr;
+        }
+        body {
+            background-color: #f8f9ff;
+            font-family: 'Inter', sans-serif;
+            color: #0b1c30;
+            -webkit-font-smoothing: antialiased;
+        }
+        .bento-card {
+            background: #ffffff;
+            border: 1px solid #E2E8F0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .bento-card:active {
+            transform: scale(0.98);
+        }
+        .glass-header {
+            background: rgba(248, 249, 255, 0.85);
+            backdrop-filter: blur(12px);
+        }
+    </style>
+<style>
+            .no-scrollbar::-webkit-scrollbar { display: none; }
+            .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        </style><style>
+            .no-scrollbar::-webkit-scrollbar { display: none; }
+            .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        </style><style>
+            .no-scrollbar::-webkit-scrollbar { display: none; }
+            .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        </style></head>
+<body class="pb-24">
+<!-- Top App Bar -->
+<nav class="fixed top-0 w-full z-50 glass-header flex justify-between items-center px-lg h-16 w-full border-b border-outline-variant dark:border-secondary">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-primary text-2xl" data-icon="signal_cellular_alt">signal_cellular_alt</span>
+<h1 class="font-headline-md text-headline-md-mobile font-bold text-primary dark:text-primary-fixed">SocialSpree Pro</h1>
+</div>
+<button class="p-2 hover:bg-surface-container-low transition-colors duration-200 rounded-full">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="settings">settings</span>
+</button><button class="relative p-2 hover:bg-surface-container-low transition-colors duration-200 rounded-full">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="notifications">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full"></span>
+</button>
+</nav>
+<!-- Main Content Canvas -->
+<main class="pt-20 px-md max-w-lg mx-auto">
+<!-- Welcome Section -->
+<header class="mt-4 mb-8">
+<h2 class="font-headline-md text-headline-md-mobile text-on-surface">Overview</h2>
+<p class="font-body-md text-on-surface-variant">Performance for the last 7 days</p>
+</header>
+<!-- Metrics Bento Grid -->
+<div class="grid grid-cols-2 gap-md mb-lg">
+<!-- Reach Card (Large) -->
+<div class="col-span-2 bento-card p-lg rounded-xl overflow-hidden relative">
+<div class="relative z-10">
+<span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Total Reach</span>
+<div class="flex items-baseline gap-xs mt-xs">
+<span class="font-display-lg text-4xl text-on-surface">85.4K</span>
+<span class="text-primary font-bold flex items-center text-sm">
+<span class="material-symbols-outlined text-sm" data-icon="trending_up">trending_up</span>
+                            12%
+                        </span>
+</div>
+</div>
+<!-- Abstract background pattern -->
+<div class="absolute right-[-20px] bottom-[-20px] opacity-10">
+<span class="material-symbols-outlined text-[120px] text-primary" data-icon="data_exploration">data_exploration</span>
+</div>
+</div>
+<!-- Engagement Rate -->
+<div class="bento-card p-md rounded-xl">
+<span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Engagement</span>
+<div class="mt-sm">
+<span class="font-headline-md text-headline-md text-on-surface">4.2%</span>
+</div>
+<div class="mt-md w-full bg-surface-container rounded-full h-1">
+<div class="bg-primary h-full rounded-full w-[42%]"></div>
+</div>
+</div>
+<!-- Total Posts -->
+<div class="bento-card p-md rounded-xl">
+<span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Total Posts</span>
+<div class="mt-sm">
+<span class="font-headline-md text-headline-md text-on-surface">24</span>
+</div>
+<div class="mt-sm flex -space-x-2">
+<div class="w-6 h-6 rounded-full border-2 border-white bg-surface-dim"></div>
+<div class="w-6 h-6 rounded-full border-2 border-white bg-primary-fixed"></div>
+<div class="w-6 h-6 rounded-full border-2 border-white bg-surface-container-high"></div>
+</div>
+</div>
+</div>
+<!-- Activity Section -->
+<section class="mb-lg">
+<div class="flex justify-between items-center mb-md">
+<h3 class="font-title-lg text-title-lg text-on-surface">Recent Activity</h3>
+<button class="text-primary font-bold text-sm">View all</button>
+</div>
+<div class="space-y-sm">
+<!-- Post 1 -->
+<div class="bento-card p-md rounded-xl flex items-center gap-md">
+<div class="w-12 h-12 rounded-lg bg-cover bg-center shrink-0" data-alt="A clean, minimalist high-key photo of a sleek workstation with a metallic laptop and a single architectural plant. The lighting is soft and diffused, creating a professional corporate vibe with a color palette of deep indigo and crisp whites." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuA19MamXGLthryoVXtTAA7h06u6WEEixxA7yMcQNbtFqVAn0R1DRWU-Q9VZDwTZtAw8NmBwjWTZQzD3bSADhbcZCbPmKPqKw89bmQnPxioF-DEulF9oK7g53WxK7d4gRHWnFGKtHpsH_koKVtjdHoTcYttd9YyB6pSYMqYH7iAmGFWFV0wf0PLo9j7IGbSQtJrgtkyTl8x_YgHRYZKfUAUL3fVqSTk_RK0CB2JuXAceE764pkIQ1I5SiiwDflaOLblyFve3_J0n2oPu')"></div>
+<div class="flex-1 min-w-0">
+<h4 class="font-body-md font-bold truncate">Modern Workflow Architecture</h4>
+<p class="text-xs text-on-surface-variant">Instagram • 2h ago</p>
+</div>
+<div class="px-sm py-1 bg-surface-container text-on-surface-variant text-[10px] font-bold rounded uppercase">Published</div>
+</div>
+<!-- Post 2 -->
+<div class="bento-card p-md rounded-xl flex items-center gap-md">
+<div class="w-12 h-12 rounded-lg bg-cover bg-center shrink-0" data-alt="A sophisticated close-up of a digital tablet displaying vibrant data visualizations and charts. The atmosphere is tech-forward and focused, with deep purple and electric blue light trails in the background, matching a modern enterprise aesthetic." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuANs01RSj2nQsA7tS7nziCeWd9nlKEFg1b6XnF1_M1sC0kBslgahDm7JK6zFcKuzJAXWtBjlUWGz_ADB1vl_FfXBez92kZUzHVpRoc70gJxVfp4wFfWahhr5rxkRLZSSrUoRn90q535XM9tlbmcCd15pLjzSArVdg54PRnmp1DrlDmB0uQaIuIXwpdMMVw1H06OshnWcRa3VPpyGTxRIaZwwK3pjezOokcqwe0cseiA4mebwAYecDXCyJSUkfOMBWl5uYoDjHetVHXC')"></div>
+<div class="flex-1 min-w-0">
+<h4 class="font-body-md font-bold truncate">Q3 Data Insights Report</h4>
+<p class="text-xs text-on-surface-variant">LinkedIn • Tomorrow 10:00 AM</p>
+</div>
+<div class="px-sm py-1 bg-primary-fixed/30 text-primary text-[10px] font-bold rounded uppercase">Scheduled</div>
+</div>
+<!-- Post 3 -->
+<div class="bento-card p-md rounded-xl flex items-center gap-md">
+<div class="w-12 h-12 rounded-lg bg-cover bg-center shrink-0" data-alt="An abstract artistic representation of global connectivity using thin glowing lines of light connecting points on a dark surface. The color scheme is dominated by deep indigo and professional slate grey, embodying a high-end corporate networking theme." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBEqLoqcmOlTS7g6aNHpvAQRwp1I7i_soESJc12_clejp8ynGPlbtsRwzmV8QexNJaqbPJx3UhQziKK9U1wSVW90ga0xKSoLWnhP7U8RileFuN-bL_2BAmeEgIJ-G0nhEfrXEvmw5x1n3l_KHyUUyQdEDYbjcEYAlELxWDh0_r0fk_T0wNO1_gCNwZIkSiq7VDzY3mc2tBUboEeBQAtAFdAzQWxIqLbcNCozCCeXxzls9VkfqgT04pa9lfEQr_ikuDYQLzFRAdIfoE4')"></div>
+<div class="flex-1 min-w-0">
+<h4 class="font-body-md font-bold truncate">Global Connectivity Campaign</h4>
+<p class="text-xs text-on-surface-variant">X (Twitter) • Jan 24</p>
+</div>
+<div class="px-sm py-1 bg-surface-container text-on-surface-variant text-[10px] font-bold rounded uppercase">Published</div>
+</div>
+</div>
+</section>
+<!-- Quick Actions (Optional but Premium touch) -->
+<section class="mb-8">
+<h3 class="font-title-lg text-title-lg text-on-surface mb-md">Quick Actions</h3>
+<div class="flex gap-md overflow-x-auto pb-4 -mx-md px-md no-scrollbar">
+<button class="shrink-0 flex items-center gap-sm px-lg py-3 bg-primary text-on-primary rounded-xl font-bold transition-transform active:scale-95 shadow-lg shadow-primary/20">
+<span class="material-symbols-outlined" data-icon="add_circle">add_circle</span>
+                    Create Post
+                </button>
+<button class="shrink-0 flex items-center gap-sm px-lg py-3 bg-white border border-outline-variant text-on-surface rounded-xl font-bold transition-transform active:scale-95">
+<span class="material-symbols-outlined" data-icon="bar_chart">bar_chart</span>
+                    Full Analytics
+                </button>
+</div>
+</section>
+</main>
+<!-- Bottom Navigation Bar -->
+<nav class="fixed bottom-0 w-full z-50 bg-surface dark:bg-on-surface border-t border-outline-variant dark:border-secondary flex justify-around items-center h-16 px-md w-full"><!-- Home (Active) -->
+<a class="flex flex-col items-center justify-center text-primary dark:text-primary-fixed font-bold bg-primary-fixed/10 rounded-xl px-4 py-1 scale-95 active:scale-90 transition-transform duration-150" href="#">
+<span class="material-symbols-outlined" data-icon="home" style="font-variation-settings: 'FILL' 1;">home</span>
+<span class="font-label-sm text-label-sm">Home</span>
+</a>
+<!-- Compose -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-secondary-fixed-dim hover:text-primary transition-transform active:scale-90 duration-150" href="#">
+<span class="material-symbols-outlined" data-icon="add_box">add_box</span>
+<span class="font-label-sm text-label-sm">Compose</span>
+</a>
+<!-- Accounts -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-secondary-fixed-dim hover:text-primary transition-transform active:scale-90 duration-150" href="#">
+<span class="material-symbols-outlined" data-icon="sync_alt">sync_alt</span>
+<span class="font-label-sm text-label-sm">Accounts</span>
+</a>
+<!-- Logs -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-secondary-fixed-dim hover:text-primary transition-transform active:scale-90 duration-150" href="#">
+<span class="material-symbols-outlined" data-icon="history">history</span>
+<span class="font-label-sm text-label-sm">Logs</span>
+</a><a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-secondary-fixed-dim hover:text-primary transition-transform active:scale-90 duration-150" href="#">
+<span class="material-symbols-outlined" data-icon="rate_review">rate_review</span>
+<span class="font-label-sm text-label-sm">Reviews</span>
+</a></nav>
+<!-- Simple interaction script -->
+<script>
+        document.querySelectorAll('.bento-card').forEach(card => {
+            card.addEventListener('click', () => {
+                // Tactical vibration or feedback could go here
+                console.log('Metric tapped');
+            });
+        });
+
+        // Hide scrollbar utility for the quick actions row
+        const style = document.createElement('style');
+        style.textContent = `
+            .no-scrollbar::-webkit-scrollbar { display: none; }
+            .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        `;
+        document.head.append(style);
+    </script>
+
+
+
+
+
+
+</body></html>

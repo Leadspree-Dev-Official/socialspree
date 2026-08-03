@@ -1,0 +1,468 @@
+<!DOCTYPE html><html class="light" lang="en" style=""><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Reviews Management | SocialSpree Pro</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Hanken+Grotesk:wght@600;700;800&amp;family=JetBrains+Mono:wght@500&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@100..900&amp;family=Inter:wght@100..900&amp;family=JetBrains+Mono:wght@100..900&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "primary-fixed": "#e6deff",
+                    "on-surface": "#0b1c30",
+                    "surface-container-low": "#eff4ff",
+                    "on-primary": "#ffffff",
+                    "secondary-fixed-dim": "#c6c6c9",
+                    "on-error": "#ffffff",
+                    "surface-variant": "#d3e4fe",
+                    "error": "#ba1a1a",
+                    "surface-bright": "#f8f9ff",
+                    "primary": "#451ebb",
+                    "secondary-container": "#e2e2e5",
+                    "on-primary-fixed-variant": "#4723be",
+                    "on-secondary-container": "#636467",
+                    "tertiary-fixed-dim": "#c3c7cb",
+                    "tertiary": "#404548",
+                    "surface": "#f8f9ff",
+                    "tertiary-container": "#585c60",
+                    "outline": "#797586",
+                    "on-surface-variant": "#484554",
+                    "on-tertiary-container": "#d1d4d8",
+                    "inverse-on-surface": "#eaf1ff",
+                    "on-tertiary-fixed-variant": "#43474b",
+                    "on-secondary": "#ffffff",
+                    "on-error-container": "#93000a",
+                    "primary-container": "#5d3fd3",
+                    "on-primary-fixed": "#1c0062",
+                    "surface-container": "#e5eeff",
+                    "on-tertiary-fixed": "#181c1f",
+                    "on-tertiary": "#ffffff",
+                    "primary-fixed-dim": "#cabeff",
+                    "tertiary-fixed": "#e0e3e7",
+                    "surface-dim": "#cbdbf5",
+                    "background": "#f8f9ff",
+                    "outline-variant": "#c9c4d7",
+                    "inverse-primary": "#cabeff",
+                    "on-primary-container": "#d8ceff",
+                    "surface-tint": "#6042d6",
+                    "error-container": "#ffdad6",
+                    "secondary": "#5d5e61",
+                    "inverse-surface": "#213145",
+                    "on-secondary-fixed": "#1a1c1e",
+                    "on-background": "#0b1c30"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "spacing": {
+                    "sm": "8px",
+                    "md": "16px",
+                    "base": "4px",
+                    "container-max": "1440px",
+                    "sidebar-width": "260px",
+                    "lg": "24px",
+                    "xs": "4px",
+                    "xl": "32px",
+                    "gutter": "24px"
+            },
+            "fontFamily": {
+                    "label-md": ["JetBrains Mono"],
+                    "headline-lg-mobile": ["Hanken Grotesk"],
+                    "display-lg": ["Hanken Grotesk"],
+                    "label-sm": ["Inter"],
+                    "headline-md": ["Hanken Grotesk"],
+                    "title-lg": ["Inter"],
+                    "headline-lg": ["Hanken Grotesk"],
+                    "body-md": ["Inter"],
+                    "body-lg": ["Inter"]
+            },
+            "fontSize": {
+                    "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                    "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "label-sm": ["11px", {"lineHeight": "16px", "fontWeight": "600"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "title-lg": ["18px", {"lineHeight": "24px", "fontWeight": "600"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "600"}],
+                    "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; background-color: #F4F7FB; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .glass-card { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(12px); border: 1px solid rgba(226, 232, 240, 0.5); }
+        .sidebar-active-pill { position: absolute; left: 0; width: 3px; height: 100%; background-color: #5D3FD3; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #E2E8F0; border-radius: 10px; }
+    </style>
+</head>
+<body class="text-on-surface">
+<!-- SideNavBar -->
+<aside class="fixed h-full w-sidebar-width left-0 top-0 bg-inverse-surface dark:bg-inverse-surface border-r border-outline-variant z-50 flex flex-col overflow-y-auto">
+<div class="p-lg flex items-center gap-3">
+
+<div>
+<h1 class="font-headline-md text-headline-md font-bold text-on-primary leading-none">SocialSpree Pro</h1>
+<p class="text-[10px] text-primary-fixed uppercase tracking-widest mt-1">Enterprise Management</p>
+</div>
+</div>
+<div class="px-md mt-md">
+<button class="w-full py-3 bg-primary-container text-on-primary rounded-lg font-title-lg flex items-center justify-center gap-2 cursor-pointer active:scale-95 transition-transform">
+<span class="material-symbols-outlined">add</span>
+<span class="">New Post</span>
+</button>
+</div>
+<nav class="mt-xl flex-1"><!-- Dashboard -->
+<div class="flex items-center gap-3 px-4 py-3 text-secondary-fixed-dim hover:text-on-primary hover:bg-white/5 transition-colors duration-200 cursor-pointer active:scale-95">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="font-body-md text-body-md">Dashboard</span>
+</div>
+<!-- Composer -->
+<div class="flex items-center gap-3 px-4 py-3 text-secondary-fixed-dim hover:text-on-primary hover:bg-white/5 transition-colors duration-200 cursor-pointer active:scale-95">
+<span class="material-symbols-outlined" data-icon="edit_square">edit_square</span>
+<span class="font-body-md text-body-md">Composer</span>
+</div>
+<!-- Scheduled -->
+<div class="flex items-center gap-3 px-4 py-3 text-secondary-fixed-dim hover:text-on-primary hover:bg-white/5 transition-colors duration-200 cursor-pointer active:scale-95">
+<span class="material-symbols-outlined" data-icon="calendar_month">calendar_month</span>
+<span class="font-body-md text-body-md">Scheduled</span>
+</div>
+<!-- Analytics -->
+<div class="flex items-center gap-3 px-4 py-3 text-secondary-fixed-dim hover:text-on-primary hover:bg-white/5 transition-colors duration-200 cursor-pointer active:scale-95">
+<span class="material-symbols-outlined" data-icon="analytics">analytics</span>
+<span class="font-body-md text-body-md">Analytics</span>
+</div>
+<!-- Reviews (ACTIVE) -->
+<div class="flex items-center gap-3 px-4 py-3 text-on-primary bg-white/5 border-l-[3px] border-primary-container cursor-pointer active:scale-95">
+<span class="material-symbols-outlined" data-icon="star" style="font-variation-settings: &quot;FILL&quot; 1;">star</span>
+<span class="font-body-md text-body-md">Reviews</span>
+</div>
+<!-- Social Accounts -->
+<div class="flex items-center gap-3 px-4 py-3 text-secondary-fixed-dim hover:text-on-primary hover:bg-white/5 transition-colors duration-200 cursor-pointer active:scale-95">
+<span class="material-symbols-outlined" data-icon="hub">hub</span>
+<span class="font-body-md text-body-md">Social Accounts</span>
+</div>
+<!-- Activity Logs -->
+<div class="flex items-center gap-3 px-4 py-3 text-secondary-fixed-dim hover:text-on-primary hover:bg-white/5 transition-colors duration-200 cursor-pointer active:scale-95">
+<span class="material-symbols-outlined" data-icon="history">history</span>
+<span class="font-body-md text-body-md">Activity Logs</span>
+</div></nav>
+<div class="mt-auto border-t border-white/10 pt-md pb-xl">
+<div class="flex items-center gap-3 px-4 py-3 text-secondary-fixed-dim hover:text-on-primary hover:bg-white/5 transition-colors duration-200 cursor-pointer">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="font-body-md text-body-md">Settings</span>
+</div>
+<div class="flex items-center gap-3 px-4 py-3 text-secondary-fixed-dim hover:text-on-primary hover:bg-white/5 transition-colors duration-200 cursor-pointer">
+<span class="material-symbols-outlined" data-icon="help">help</span>
+<span class="font-body-md text-body-md">Support</span>
+</div>
+</div>
+</aside>
+<!-- TopAppBar -->
+<header class="fixed top-0 right-0 w-[calc(100%-260px)] h-16 bg-surface-bright dark:bg-surface-dim shadow-sm z-40 px-gutter flex justify-between items-center">
+<div class="flex items-center gap-4 flex-1">
+<div class="relative w-full max-w-md">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline">search</span>
+<input class="w-full pl-10 pr-4 py-2 bg-surface-container-low border-none rounded-full text-body-md focus:ring-2 focus:ring-primary-container" placeholder="Search reviews, names, or comments..." type="text">
+</div>
+</div>
+<div class="flex items-center gap-6">
+<button class="flex items-center gap-2 px-4 py-2 border border-primary text-primary rounded-lg font-label-sm hover:bg-primary-fixed transition-colors active:opacity-80">
+<span class="material-symbols-outlined text-sm">swap_horiz</span>
+                Switch Workspace
+            </button>
+<div class="flex items-center gap-4 text-on-surface-variant">
+<span class="material-symbols-outlined cursor-pointer hover:text-primary">notifications</span>
+<div class="w-8 h-8 rounded-full overflow-hidden border border-outline-variant cursor-pointer active:opacity-80">
+<img class="w-full h-full object-cover" data-alt="A professional headshot of a corporate marketing director for SocialSpree Pro, looking confident and smiling. The portrait is captured with shallow depth of field against a clean, minimalist office background with soft daylight and primary-fixed color accents." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDajoq6oqvlp8RmkiRto23RuQI0SiKVIOWdBqaO0m2ao2pMnlHN50Y5QjLQ-LNoKuBVd-CAeh5db7qM83t37dWUwMPu7paUu_JyheaY_AnQR5hz-W3sSCh0k6VprP-mSHlEePhN2XHEzEfAkWlJqz726jFlCpl59uIj_1Z-8QoENZBDKIUWz1AoMWQ3PcCfAFdO5Kv0JF_GhGXgxWQQIwuT1m629Rgl23mziJynTWIipDu_0JhcCiPJgg">
+</div>
+</div>
+</div>
+</header>
+<!-- Main Content -->
+<main class="ml-sidebar-width pt-16 min-h-screen">
+<div class="p-gutter max-w-container-max mx-auto">
+<!-- Page Header -->
+<div class="flex justify-between items-end mb-xl">
+<div>
+<nav class="flex text-label-sm text-outline mb-2">
+<span class="">Management</span>
+<span class="mx-2">/</span>
+<span class="text-on-surface">Reviews</span>
+</nav>
+<h2 class="font-headline-lg text-headline-lg text-on-surface tracking-tight">Google Reviews Management</h2>
+</div>
+<div class="flex gap-3">
+<div class="flex items-center gap-2 px-4 py-2 glass-card rounded-lg border border-outline-variant">
+<span class="w-2 h-2 rounded-full bg-green-500"></span>
+<span class="text-body-md font-medium">GBP API Connected</span>
+</div>
+</div>
+</div>
+<!-- Dashboard Stats Bento Grid -->
+<div class="grid grid-cols-12 gap-lg mb-xl">
+<div class="col-span-12 md:col-span-4 glass-card p-lg rounded-xl shadow-sm border-l-4 border-primary">
+<p class="text-label-sm text-outline uppercase tracking-wider mb-2">Review Summary</p>
+<div class="flex items-center gap-3">
+<span class="text-headline-lg font-bold">4.8</span>
+<div class="flex flex-col">
+<div class="flex text-amber-400">
+<span class="material-symbols-outlined" style="font-variation-settings: &quot;FILL&quot; 1;">star</span>
+<span class="material-symbols-outlined" style="font-variation-settings: &quot;FILL&quot; 1;">star</span>
+<span class="material-symbols-outlined" style="font-variation-settings: &quot;FILL&quot; 1;">star</span>
+<span class="material-symbols-outlined" style="font-variation-settings: &quot;FILL&quot; 1;">star</span>
+<span class="material-symbols-outlined" style="font-variation-settings: &quot;FILL&quot; 0.5;">star_half</span>
+</div>
+<span class="text-body-md text-outline">From 1,240 reviews</span>
+</div>
+</div>
+</div>
+<div class="col-span-12 md:col-span-4 glass-card p-lg rounded-xl shadow-sm">
+<p class="text-label-sm text-outline uppercase tracking-wider mb-2">Quarantined (1-3★)</p>
+<div class="flex items-center justify-between">
+<span class="text-headline-lg font-bold text-error">12</span>
+<span class="text-label-md bg-error-container text-on-error-container px-2 py-1 rounded">Needs Action</span>
+</div>
+</div>
+<div class="col-span-12 md:col-span-4 glass-card p-lg rounded-xl shadow-sm">
+<p class="text-label-sm text-outline uppercase tracking-wider mb-2">Pending Redirect (4-5★)</p>
+<div class="flex items-center justify-between">
+<span class="text-headline-lg font-bold text-primary">28</span>
+<span class="text-label-md bg-primary-fixed text-on-primary-fixed-variant px-2 py-1 rounded">Ready</span>
+</div>
+</div>
+</div>
+<!-- Filtering & Content Section -->
+<div class="glass-card rounded-xl shadow-sm overflow-hidden border border-outline-variant">
+<!-- Filters Tabs -->
+<div class="px-lg pt-lg flex items-center justify-between border-b border-outline-variant">
+<div class="flex gap-8">
+<button class="pb-4 text-primary font-bold border-b-2 border-primary text-body-md transition-colors">
+                            All Reviews (40)
+                        </button>
+<button class="pb-4 text-on-surface-variant font-medium hover:text-primary text-body-md transition-colors">
+                            High Rating (Redirected)
+                        </button>
+<button class="pb-4 text-on-surface-variant font-medium hover:text-primary text-body-md transition-colors">
+                            Low Rating (Internal / Quarantined)
+                        </button>
+</div>
+<div class="flex gap-2 pb-4">
+<button class="p-2 hover:bg-surface-container rounded transition-colors text-outline">
+<span class="material-symbols-outlined">filter_list</span>
+</button>
+<button class="p-2 hover:bg-surface-container rounded transition-colors text-outline">
+<span class="material-symbols-outlined">download</span>
+</button>
+</div>
+</div>
+<!-- Review Feed -->
+<div class="divide-y divide-outline-variant">
+<!-- Review Card: High Rating (Positive/Redirect Needed) -->
+<div class="p-lg hover:bg-surface-container-lowest transition-colors flex gap-lg">
+<div class="flex-shrink-0">
+<div class="w-12 h-12 rounded-full overflow-hidden bg-primary-fixed flex items-center justify-center font-bold text-primary-container">
+                                JD
+                            </div>
+</div>
+<div class="flex-1">
+<div class="flex justify-between items-start">
+<div>
+<h4 class="font-title-lg text-on-surface">Jameson Doherty</h4>
+<div class="flex text-amber-400 mt-1">
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: &quot;FILL&quot; 1;">star</span>
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: &quot;FILL&quot; 1;">star</span>
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: &quot;FILL&quot; 1;">star</span>
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: &quot;FILL&quot; 1;">star</span>
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: &quot;FILL&quot; 1;">star</span>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<span class="text-label-sm text-outline">2 hours ago</span>
+<span class="bg-primary-fixed text-on-primary-fixed-variant px-3 py-1 rounded-full text-label-sm">High Rating</span>
+</div>
+</div>
+<p class="mt-3 text-body-lg text-on-surface-variant leading-relaxed">
+                                Absolutely loved the experience! The staff was incredibly helpful and the atmosphere was exactly what I was looking for. Will definitely be coming back and recommending to friends.
+                            </p>
+<!-- Action Bar -->
+<div class="mt-xl flex items-center justify-between">
+<div class="flex gap-4">
+<button class="flex items-center gap-2 text-label-sm text-outline hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-lg">reply</span> Reply
+                                    </button>
+<button class="flex items-center gap-2 text-label-sm text-outline hover:text-error transition-colors">
+<span class="material-symbols-outlined text-lg">delete</span> Delete
+                                    </button>
+<button class="flex items-center gap-2 text-label-sm text-outline hover:text-on-surface transition-colors">
+<span class="material-symbols-outlined text-lg">flag</span> Flag
+                                    </button>
+</div>
+<button class="flex items-center gap-2 px-4 py-2 bg-primary-container text-on-primary rounded-lg font-label-sm hover:brightness-110 active:scale-95 transition-all shadow-sm">
+<span class="material-symbols-outlined text-sm">rocket_launch</span>
+                                    Approve &amp; Redirect to GBP
+                                </button>
+</div>
+</div>
+</div>
+<!-- Review Card: Low Rating (Quarantined) -->
+<div class="p-lg hover:bg-surface-container-lowest transition-colors flex gap-lg bg-error-container/5">
+<div class="flex-shrink-0">
+<div class="w-12 h-12 rounded-full overflow-hidden bg-outline-variant flex items-center justify-center font-bold text-on-surface-variant">
+                                ML
+                            </div>
+</div>
+<div class="flex-1">
+<div class="flex justify-between items-start">
+<div>
+<h4 class="font-title-lg text-on-surface">Maria Lopez</h4>
+<div class="flex text-amber-400 mt-1">
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: &quot;FILL&quot; 1;">star</span>
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: &quot;FILL&quot; 1;">star</span>
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: &quot;FILL&quot; 0;">star</span>
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: &quot;FILL&quot; 0;">star</span>
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: &quot;FILL&quot; 0;">star</span>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<span class="text-label-sm text-outline">5 hours ago</span>
+<span class="bg-error-container text-on-error-container px-3 py-1 rounded-full text-label-sm flex items-center gap-1">
+<span class="material-symbols-outlined text-xs">lock</span> Internal Only
+                                    </span>
+</div>
+</div>
+<p class="mt-3 text-body-lg text-on-surface-variant leading-relaxed italic">
+                                "The shipping took way longer than expected. I tried calling support but was on hold for 20 minutes. Product is okay but service needs work."
+                            </p>
+<!-- Internal Resolution Note -->
+<div class="mt-4 p-md bg-white border border-outline-variant rounded-lg">
+<p class="text-label-sm text-primary uppercase font-bold mb-1">Internal Resolution Path</p>
+<p class="text-body-md text-on-surface-variant">Review is held in quarantine to prevent negative SEO. Support ticket #8921 opened to contact Maria directly.</p>
+</div>
+<!-- Action Bar -->
+<div class="mt-lg flex items-center justify-between">
+<div class="flex gap-4">
+<button class="flex items-center gap-2 text-label-sm text-outline hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-lg">chat_bubble</span> Reach Out (Direct)
+                                    </button>
+<button class="flex items-center gap-2 text-label-sm text-outline hover:text-on-surface transition-colors">
+<span class="material-symbols-outlined text-lg">visibility</span> View Case
+                                    </button>
+</div>
+<div class="flex gap-2">
+<button class="px-4 py-2 text-outline font-label-sm hover:bg-surface-container rounded-lg transition-colors">
+                                        Ignore
+                                    </button>
+<button class="px-4 py-2 border border-error text-error rounded-lg font-label-sm hover:bg-error-container/20 transition-colors">
+                                        Delete Forever
+                                    </button>
+</div>
+</div>
+</div>
+</div>
+<!-- Review Card: High Rating (Already Redirected) -->
+<div class="p-lg hover:bg-surface-container-lowest transition-colors flex gap-lg opacity-80">
+<div class="flex-shrink-0">
+<div class="w-12 h-12 rounded-full overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="A portrait of a happy customer in a bright outdoor setting, with a natural and authentic look. Soft sunlight illuminates the face, creating a warm, approachable atmosphere that reflects high customer satisfaction. Minimalist and professional quality." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAszOLdzDSh0vKuv_hDioRO2jq9HTNpIcc4M3aQPOsU7Kp8X0HIwOsxLCm_hu-Wej7ktGQeqqUqYnJAa_0c0yYP_fN0uE_mlQOxHCjQaufo_vnZnJSmsDzjykkgirVVsNsuY6TAoCpUCXhr3RgYid0RO_i0wR55a9o2-bZXTQs_ycb3-WCtETz_nfpj_nzAZvH2jQ_6BpDgL4C776m3gM_7Mvt3eW1B9-p1JPY8ZQ9M4q7LpeQ1K3fbYw">
+</div>
+</div>
+<div class="flex-1">
+<div class="flex justify-between items-start">
+<div>
+<h4 class="font-title-lg text-on-surface">Robert Sterling</h4>
+<div class="flex text-amber-400 mt-1">
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: &quot;FILL&quot; 1;">star</span>
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: &quot;FILL&quot; 1;">star</span>
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: &quot;FILL&quot; 1;">star</span>
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: &quot;FILL&quot; 1;">star</span>
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: &quot;FILL&quot; 1;">star</span>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<span class="text-label-sm text-outline">Yesterday</span>
+<span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-label-sm flex items-center gap-1">
+<span class="material-symbols-outlined text-xs">check_circle</span> Live on GBP
+                                    </span>
+</div>
+</div>
+<p class="mt-3 text-body-lg text-on-surface-variant leading-relaxed">
+                                Five stars for SocialSpree! It has completely transformed how our team manages reviews and outgoing content. Highly recommend to any enterprise scale company.
+                            </p>
+<div class="mt-xl flex items-center gap-4">
+<button class="flex items-center gap-2 text-label-sm text-primary font-bold">
+<span class="material-symbols-outlined text-lg">open_in_new</span> View on Google
+                                </button>
+<button class="flex items-center gap-2 text-label-sm text-outline">
+<span class="material-symbols-outlined text-lg">history</span> View Audit Log
+                                </button>
+</div>
+</div>
+</div>
+</div>
+<!-- Footer Pagination -->
+<div class="p-lg bg-surface-container-lowest flex items-center justify-between border-t border-outline-variant">
+<p class="text-body-md text-outline">Showing 1-10 of 1,240 reviews</p>
+<div class="flex gap-2">
+<button class="w-10 h-10 flex items-center justify-center rounded-lg border border-outline-variant hover:bg-surface-container transition-colors disabled:opacity-30" disabled="">
+<span class="material-symbols-outlined">chevron_left</span>
+</button>
+<button class="w-10 h-10 flex items-center justify-center rounded-lg bg-primary-container text-on-primary font-bold">1</button>
+<button class="w-10 h-10 flex items-center justify-center rounded-lg border border-outline-variant hover:bg-surface-container transition-colors">2</button>
+<button class="w-10 h-10 flex items-center justify-center rounded-lg border border-outline-variant hover:bg-surface-container transition-colors">3</button>
+<span class="px-2 self-center">...</span>
+<button class="w-10 h-10 flex items-center justify-center rounded-lg border border-outline-variant hover:bg-surface-container transition-colors">124</button>
+<button class="w-10 h-10 flex items-center justify-center rounded-lg border border-outline-variant hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Float Info Panel (Micro-interaction) -->
+<div class="fixed bottom-lg right-lg w-80 glass-card p-lg rounded-xl shadow-2xl border border-primary-container/20 transition-all duration-300" id="info-panel">
+<div class="flex items-center gap-3 mb-3">
+<span class="material-symbols-outlined text-primary">info</span>
+<h5 class="font-title-lg">Review Gating active</h5>
+</div>
+<p class="text-body-md text-on-surface-variant">Reviews rated 3-stars or below are automatically held for internal review to protect your public reputation.</p>
+<button class="mt-md text-label-sm font-bold text-primary uppercase tracking-wider" onclick="document.getElementById('info-panel').classList.add('opacity-0', 'translate-y-2')">Dismiss</button>
+</div>
+</main>
+<script>
+        // Simple entrance animation for the info panel
+        window.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                const panel = document.getElementById('info-panel');
+                panel.classList.remove('opacity-0', 'translate-y-2', 'pointer-events-none');
+            }, 1500);
+        });
+
+        // Toggle Active Tabs
+        const tabs = document.querySelectorAll('.pb-4.font-medium, .pb-4.font-bold');
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                tabs.forEach(t => {
+                    t.classList.remove('text-primary', 'font-bold', 'border-b-2', 'border-primary');
+                    t.classList.add('text-on-surface-variant', 'font-medium');
+                });
+                tab.classList.remove('text-on-surface-variant', 'font-medium');
+                tab.classList.add('text-primary', 'font-bold', 'border-b-2', 'border-primary');
+            });
+        });
+    </script>
+
+
+</body></html>

@@ -1,0 +1,609 @@
+<!DOCTYPE html><html class="light" lang="en" style=""><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title class="">SocialSpree Pro | Activity Logs &amp; Status Tracker</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&amp;family=Hanken+Grotesk:wght@400;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .status-pulse {
+            animation: pulse-animation 2s infinite;
+        }
+        @keyframes pulse-animation {
+            0% { box-shadow: 0 0 0 0px rgba(93, 63, 211, 0.4); }
+            100% { box-shadow: 0 0 0 8px rgba(93, 63, 211, 0); }
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+            height: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+        }
+        .drawer-transition {
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+    </style>
+<script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        "colors": {
+                "tertiary-fixed-dim": "#c3c7cb",
+                "secondary": "#5d5e61",
+                "on-primary": "#ffffff",
+                "error-container": "#ffdad6",
+                "on-surface": "#0b1c30",
+                "on-primary-container": "#d8ceff",
+                "surface-container-highest": "#d3e4fe",
+                "primary": "#5D3FD3",
+                "secondary-fixed-dim": "#c6c6c9",
+                "on-secondary-fixed-variant": "#454749",
+                "on-tertiary-fixed-variant": "#43474b",
+                "outline": "#797586",
+                "on-tertiary-fixed": "#181c1f",
+                "error": "#ba1a1a",
+                "surface-container-low": "#eff4ff",
+                "surface-tint": "#6042d6",
+                "on-surface-variant": "#484554",
+                "outline-variant": "#c9c4d7",
+                "on-error-container": "#93000a",
+                "secondary-container": "#e2e2e5",
+                "surface-variant": "#d3e4fe",
+                "on-error": "#ffffff",
+                "primary-fixed-dim": "#cabeff",
+                "on-primary-fixed": "#1c0062",
+                "on-background": "#0b1c30",
+                "surface": "#f8f9ff",
+                "tertiary": "#404548",
+                "background": "#f8f9ff",
+                "on-secondary-fixed": "#1a1c1e",
+                "surface-container-lowest": "#ffffff",
+                "on-primary-fixed-variant": "#4723be",
+                "on-tertiary": "#ffffff",
+                "primary-fixed": "#e6deff",
+                "on-tertiary-container": "#d1d4d8",
+                "surface-container-high": "#dce9ff",
+                "primary-container": "#5d3fd3",
+                "secondary-fixed": "#e2e2e5",
+                "inverse-surface": "#213145",
+                "surface-container": "#e5eeff",
+                "surface-dim": "#cbdbf5",
+                "inverse-on-surface": "#eaf1ff",
+                "on-secondary": "#ffffff",
+                "surface-bright": "#f8f9ff",
+                "tertiary-fixed": "#e0e3e7",
+                "inverse-primary": "#cabeff",
+                "on-secondary-container": "#636467",
+                "tertiary-container": "#585c60"
+        },
+        "borderRadius": {
+                "DEFAULT": "0.125rem",
+                "lg": "0.25rem",
+                "xl": "0.5rem",
+                "full": "0.75rem"
+        },
+        "spacing": {
+                "md": "16px",
+                "gutter": "24px",
+                "lg": "24px",
+                "sidebar-width": "260px",
+                "sm": "8px",
+                "base": "4px",
+                "xl": "32px",
+                "xs": "4px",
+                "container-max": "1440px"
+        },
+        "fontFamily": {
+                "body-lg": [
+                        "Inter"
+                ],
+                "headline-lg-mobile": [
+                        "Hanken Grotesk"
+                ],
+                "headline-md": [
+                        "Hanken Grotesk"
+                ],
+                "display-lg": [
+                        "Hanken Grotesk"
+                ],
+                "title-lg": [
+                        "Inter"
+                ],
+                "headline-lg": [
+                        "Hanken Grotesk"
+                ],
+                "label-sm": [
+                        "Inter"
+                ],
+                "label-md": [
+                        "JetBrains Mono"
+                ],
+                "body-md": [
+                        "Inter"
+                ]
+        },
+        "fontSize": {
+                "body-lg": [
+                        "16px",
+                        {
+                                "lineHeight": "24px",
+                                "fontWeight": "400"
+                        }
+                ],
+                "headline-lg-mobile": [
+                        "24px",
+                        {
+                                "lineHeight": "32px",
+                                "fontWeight": "600"
+                        }
+                ],
+                "headline-md": [
+                        "24px",
+                        {
+                                "lineHeight": "32px",
+                                "fontWeight": "600"
+                        }
+                ],
+                "display-lg": [
+                        "48px",
+                        {
+                                "lineHeight": "56px",
+                                "letterSpacing": "-0.02em",
+                                "fontWeight": "700"
+                        }
+                ],
+                "title-lg": [
+                        "18px",
+                        {
+                                "lineHeight": "24px",
+                                "fontWeight": "600"
+                        }
+                ],
+                "headline-lg": [
+                        "32px",
+                        {
+                                "lineHeight": "40px",
+                                "fontWeight": "600"
+                        }
+                ],
+                "label-sm": [
+                        "11px",
+                        {
+                                "lineHeight": "16px",
+                                "fontWeight": "600"
+                        }
+                ],
+                "label-md": [
+                        "12px",
+                        {
+                                "lineHeight": "16px",
+                                "letterSpacing": "0.05em",
+                                "fontWeight": "500"
+                        }
+                ],
+                "body-md": [
+                        "14px",
+                        {
+                                "lineHeight": "20px",
+                                "fontWeight": "400"
+                        }
+                ]
+        }
+    },
+  },
+}
+</script>
+</head>
+<body class="bg-background text-on-background font-body-md min-h-screen overflow-x-hidden">
+<!-- Sidebar Navigation Shell -->
+<aside class="fixed left-0 top-0 h-full w-sidebar-width border-r shadow-sm z-50 flex flex-col py-md hidden md:flex bg-black border-slate-700" id="side-nav">
+<div class="px-gutter mb-12">
+<h1 class="font-headline-md text-headline-md font-bold text-white">SocialSpree Pro</h1>
+<p class="font-body-md text-slate-400">Enterprise Tier</p>
+</div>
+<nav class="flex-1 px-4 space-y-1">
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800 transition-colors active:scale-95 duration-150" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="">Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800 transition-colors active:scale-95 duration-150" href="#">
+<span class="material-symbols-outlined">edit_square</span>
+<span class="">Composer</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800 transition-colors active:scale-95 duration-150" href="#">
+<span class="material-symbols-outlined">calendar_month</span>
+<span class="">Scheduled</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800 transition-colors active:scale-95 duration-150" href="#">
+<span class="material-symbols-outlined">analytics</span>
+<span class="">Analytics</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800 transition-colors active:scale-95 duration-150" href="#">
+<span class="material-symbols-outlined">share</span>
+<span class="">Social Accounts</span>
+</a>
+<!-- Active Tab -->
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-white bg-primary font-bold active:scale-95 duration-150" href="#">
+<span class="material-symbols-outlined">history</span>
+<span class="">Activity Logs</span>
+</a>
+</nav>
+<div class="px-4 py-6">
+<button class="w-full bg-primary text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 hover:opacity-90 transition-opacity">
+<span class="material-symbols-outlined">add</span>
+                Create Post
+            </button>
+</div>
+<div class="px-4 mt-auto border-t border-slate-700 pt-6 space-y-1">
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-400 hover:bg-slate-800 transition-colors" href="#">
+<span class="material-symbols-outlined">help</span>
+<span class="">Help Center</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-400 hover:bg-slate-800 transition-colors" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="">Settings</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="md:ml-sidebar-width min-h-screen">
+<!-- Top Navigation Bar -->
+<header class="flex justify-between items-center h-16 px-gutter w-full sticky top-0 z-40 bg-surface/80 backdrop-blur-xl border-b border-outline-variant shadow-sm">
+<div class="flex items-center gap-6">
+<h2 class="font-headline-md text-headline-md font-black text-on-surface">Activity Logs</h2>
+<div class="relative hidden sm:block">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
+<input class="bg-surface-container-low border-none rounded-full pl-10 pr-4 py-2 w-72 focus:ring-2 focus:ring-primary text-body-md outline-none" placeholder="Search logs, post IDs, or errors..." type="text">
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="w-10 h-10 flex items-center justify-center rounded-full text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="w-10 h-10 flex items-center justify-center rounded-full text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">help_outline</span>
+</button>
+<div class="w-10 h-10 rounded-full bg-surface-container-highest overflow-hidden border border-outline-variant">
+<img class="w-full h-full object-cover" data-alt="A professional headshot of a senior marketing director in a high-tech office environment, soft cinematic lighting, minimalist aesthetic, blurred digital dashboards in the background, blue and neutral gray color tones." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAx60GQVs_319gI_YQtaSCj4fgKTXj97NgoEZjdCExU0LiEXDgd3KCCLzRRL-E73-3LfKIs2GTZkTdG5JCvX4VGnk-lemhCH0nvXVKkPpf_hgCXzKzYvpZWKLMUtRJ1QSBuDwkX4M-zz4CdXZZ6wX4t2jr0lbsWwHyQnCEPYeIQTIlfTxWIN0tNfAz7q2Jooo3M4wRQ3LKpEcQlOGUFZ43lmmECA89zGbLJEz9Zt37-0VagN3B8hpJbRwsgqkE2wIQnvKxXvJcLmusg">
+</div>
+</div>
+</header>
+<!-- Main Dashboard Canvas -->
+<section class="p-gutter max-w-[1600px] mx-auto">
+<!-- Filters & Controls Bar -->
+<div class="flex flex-wrap items-center justify-between gap-4 mb-gutter">
+<div class="flex items-center gap-2">
+<button class="px-4 py-2 bg-surface-container-low border border-outline-variant rounded-lg flex items-center gap-2 hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined text-body-md">filter_list</span>
+<span class="font-label-md text-label-md">Status: All</span>
+</button>
+<button class="px-4 py-2 bg-surface-container-low border border-outline-variant rounded-lg flex items-center gap-2 hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined text-body-md">calendar_today</span>
+<span class="font-label-md text-label-md">Last 7 Days</span>
+</button>
+<button class="px-4 py-2 bg-surface-container-low border border-outline-variant rounded-lg flex items-center gap-2 hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined text-body-md">layers</span>
+<span class="font-label-md text-label-md">All Platforms</span>
+</button>
+</div>
+<div class="flex items-center gap-2">
+<button class="p-2 text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">download</span>
+</button>
+<button class="p-2 text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">refresh</span>
+</button>
+</div>
+</div>
+<!-- Bento-style Data Table Container -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl shadow-sm overflow-hidden">
+<div class="overflow-x-auto custom-scrollbar">
+<table class="w-full text-left border-collapse min-w-[900px]">
+<thead>
+<tr class="bg-surface-container-low/50">
+<th class="px-6 py-4 font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Post Preview</th>
+<th class="px-6 py-4 font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Platforms</th>
+<th class="px-6 py-4 font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Status</th>
+<th class="px-6 py-4 font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Event Time</th>
+<th class="px-6 py-4 font-label-md text-label-md text-on-surface-variant uppercase tracking-wider text-right">Actions</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant">
+<!-- Table Row 1 -->
+<tr class="hover:bg-surface-container-low/30 transition-colors group">
+<td class="px-6 py-4">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded bg-surface-container overflow-hidden shrink-0">
+<img class="w-full h-full object-cover" data-alt="A vibrant social media post graphic featuring neon geometric patterns and sleek product photography, centered composition, high-end professional digital art style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDyncCBBQg1iKrKov-Ec9RMswIDgCmDlmW-rwbzDaXLnSmJbrAImB1qZSoJh8sc4QjxIAoZ9DY_4H8vvsY06JIwd1X9Wd37lYO0JNTbptVCDJCjifTalYss2ciNt82niqfBZVR4LXrarASTtuKvlP4KOuhFrSCwp_YU2m4w_uPe_oASBJaQ41clllVyMako-7dH_OtVobgWVBhVIXbRRGA9juTdco6PkoHHkelgupO89Ba0IduMaGP1wUxwkXAa7P2AB38zYXzyh7lZ">
+</div>
+<div class="max-w-xs">
+<p class="font-body-md text-on-surface truncate">Excited to announce our new Q3 roadmap...</p>
+<span class="font-label-md text-on-surface-variant opacity-60">ID: SS-94021</span>
+</div>
+</div>
+</td>
+<td class="px-6 py-4">
+<div class="flex -space-x-2">
+<div class="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center border-2 border-surface-container-lowest text-white text-[10px] font-bold">IN</div>
+<div class="w-8 h-8 rounded-full bg-sky-400 flex items-center justify-center border-2 border-surface-container-lowest text-white text-[10px] font-bold">TW</div>
+<div class="w-8 h-8 rounded-full bg-blue-700 flex items-center justify-center border-2 border-surface-container-lowest text-white text-[10px] font-bold">FB</div>
+</div>
+</td>
+<td class="px-6 py-4">
+<div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-green-100 text-green-700 font-label-md">
+<div class="w-2 h-2 rounded-full bg-green-500"></div>
+                                        Published
+                                    </div>
+</td>
+<td class="px-6 py-4"><p class="text-sm text-on-surface">Oct 24, 2023</p><p class="text-sm text-on-surface-variant opacity-60">09:15 AM EST</p></td>
+<td class="px-6 py-4 text-right">
+<button class="p-2 text-on-surface-variant hover:text-primary transition-colors" onclick="toggleInspector()">
+<span class="material-symbols-outlined">terminal</span>
+</button>
+<button class="p-2 text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</td>
+</tr>
+<!-- Table Row 2 (Failed) -->
+<tr class="hover:bg-surface-container-low/30 transition-colors group">
+<td class="px-6 py-4">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded bg-surface-container overflow-hidden shrink-0 flex items-center justify-center">
+<span class="material-symbols-outlined text-on-surface-variant">article</span>
+</div>
+<div class="max-w-xs">
+<p class="font-body-md text-on-surface truncate">The definitive guide to SaaS scaling...</p>
+<span class="font-label-md text-on-surface-variant opacity-60">ID: SS-93822</span>
+</div>
+</div>
+</td>
+<td class="px-6 py-4">
+<div class="flex">
+<div class="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center border-2 border-surface-container-lowest text-white text-[10px] font-bold">IN</div>
+</div>
+</td>
+<td class="px-6 py-4">
+<div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-100 text-red-700 font-label-md">
+<div class="w-2 h-2 rounded-full bg-red-500"></div>
+                                        Failed
+                                    </div>
+</td>
+<td class="px-6 py-4"><p class="text-sm text-on-surface">Oct 23, 2023</p><p class="text-sm text-on-surface-variant opacity-60">04:45 PM EST</p></td>
+<td class="px-6 py-4 text-right">
+<button class="px-3 py-1.5 bg-primary text-white rounded-lg font-label-md hover:opacity-90 transition-all flex inline-flex items-center gap-1">
+<span class="material-symbols-outlined text-sm">replay</span>
+                                        Retry
+                                    </button>
+<button class="p-2 text-on-surface-variant hover:text-primary transition-colors ml-2" onclick="toggleInspector()">
+<span class="material-symbols-outlined">terminal</span>
+</button>
+</td>
+</tr>
+<!-- Table Row 3 (Processing/Pulse) -->
+<tr class="hover:bg-surface-container-low/30 transition-colors group">
+<td class="px-6 py-4">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded bg-surface-container overflow-hidden shrink-0">
+<img class="w-full h-full object-cover" data-alt="A sleek minimalist workspace photo with a laptop, a coffee mug, and soft natural lighting coming from a window, bright high-key photography style with a professional clean aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAZwiWzWdgqPKLHG9g_27ejb77D1vwx653dnTlw2BI65WPgK8R4MYFq-KEbzTLH9EIHALOoV73W5PqtfrhOTuPfU_kB8mfCrjzM13cbB1ZRNZFlMcSuWKJvluoycVOLYEhetxUTMo0-URZsf5SkDwk7wqEqNBgROoO32D02J0C7g0mlx7n1O2mkVXyS8wupRgkb7cHplT4-V_yHdPaIzYi-A4kFFJgvf5WHNsrbUHkZZiMnM67HZntuhUa1cKaUUnL00294zaFJ4a7f">
+</div>
+<div class="max-w-xs">
+<p class="font-body-md text-on-surface truncate">Checking in from our HQ in Dublin!</p>
+<span class="font-label-md text-on-surface-variant opacity-60">ID: SS-93810</span>
+</div>
+</div>
+</td>
+<td class="px-6 py-4">
+<div class="flex -space-x-2">
+<div class="w-8 h-8 rounded-full bg-black flex items-center justify-center border-2 border-surface-container-lowest text-white text-[10px] font-bold">TT</div>
+<div class="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center border-2 border-surface-container-lowest text-white text-[10px] font-bold">IN</div>
+</div>
+</td>
+<td class="px-6 py-4">
+<div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-100 text-blue-700 font-label-md">
+<div class="w-2 h-2 rounded-full bg-primary status-pulse"></div>
+                                        Uploading...
+                                    </div>
+</td>
+<td class="px-6 py-4"><p class="text-sm text-on-surface">Oct 23, 2023</p><p class="text-sm text-on-surface-variant opacity-60">Just now</p></td>
+<td class="px-6 py-4 text-right">
+<button class="p-2 text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">cancel</span>
+</button>
+</td>
+</tr>
+<!-- Table Row 4 (Scheduled) -->
+<tr class="hover:bg-surface-container-low/30 transition-colors group">
+<td class="px-6 py-4">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded bg-surface-container overflow-hidden shrink-0 flex items-center justify-center">
+<span class="material-symbols-outlined text-on-surface-variant">schedule</span>
+</div>
+<div class="max-w-xs">
+<p class="font-body-md text-on-surface truncate">Weekly Roundup: Trends in AI Social Media</p>
+<span class="font-label-md text-on-surface-variant opacity-60">ID: SS-93805</span>
+</div>
+</div>
+</td>
+<td class="px-6 py-4">
+<div class="flex">
+<div class="w-8 h-8 rounded-full bg-blue-800 flex items-center justify-center border-2 border-surface-container-lowest text-white text-[10px] font-bold">LI</div>
+</div>
+</td>
+<td class="px-6 py-4">
+<div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-surface-container text-on-surface-variant font-label-md">
+<div class="w-2 h-2 rounded-full bg-secondary"></div>
+                                        Scheduled
+                                    </div>
+</td>
+<td class="px-6 py-4"><p class="text-sm text-on-surface">Oct 25, 2023</p><p class="text-sm text-on-surface-variant opacity-60">10:00 AM EST</p></td>
+<td class="px-6 py-4 text-right">
+<button class="p-2 text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">edit</span>
+</button>
+<button class="p-2 text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">delete</span>
+</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Pagination -->
+<div class="px-6 py-4 border-t border-outline-variant flex items-center justify-between bg-surface-container-low/20">
+<p class="font-body-md text-on-surface-variant">Showing 1-4 of 128 entries</p>
+<div class="flex gap-1">
+<button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-container-high transition-colors text-on-surface-variant">
+<span class="material-symbols-outlined">chevron_left</span>
+</button>
+<button class="w-8 h-8 flex items-center justify-center rounded-lg bg-primary text-white font-label-md">1</button>
+<button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-container-high transition-colors text-on-surface-variant font-label-md">2</button>
+<button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-container-high transition-colors text-on-surface-variant font-label-md">3</button>
+<button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-container-high transition-colors text-on-surface-variant">
+<span class="material-symbols-outlined">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Log Inspector Drawer -->
+<div class="fixed inset-0 bg-black/40 backdrop-blur-sm z-[60] hidden opacity-0 transition-opacity duration-300" id="inspector-overlay" onclick="toggleInspector()"></div>
+<div class="fixed right-0 top-0 h-full w-full max-w-lg bg-surface shadow-2xl z-[70] translate-x-full drawer-transition flex flex-col" id="inspector-drawer">
+<div class="px-6 py-4 border-b border-outline-variant flex items-center justify-between">
+<div>
+<h3 class="font-headline-md text-title-lg text-on-surface">Log Inspector</h3>
+<p class="font-label-md text-on-surface-variant">Entry ID: SS-93822</p>
+</div>
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container-high transition-colors" onclick="toggleInspector()">
+<span class="material-symbols-outlined">close</span>
+</button>
+</div>
+<div class="flex-1 overflow-y-auto p-6 space-y-6">
+<!-- Summary Card -->
+<div class="bg-red-50 border border-red-100 rounded-xl p-4">
+<div class="flex items-start gap-3">
+<span class="material-symbols-outlined text-red-500">error</span>
+<div>
+<h4 class="font-label-md text-red-700 uppercase font-bold">API Error Code: 429</h4>
+<p class="font-body-md text-red-600 mt-1">Too many requests. The platform has rate-limited this account temporarily.</p>
+</div>
+</div>
+</div>
+<!-- JSON Data Viewer -->
+<div class="space-y-2">
+<div class="flex items-center justify-between">
+<span class="font-label-md text-on-surface-variant uppercase tracking-wider">RAW JSON PAYLOAD</span>
+<button class="text-primary font-label-md flex items-center gap-1 hover:underline">
+<span class="material-symbols-outlined text-sm">content_copy</span>
+                        Copy
+                    </button>
+</div>
+<div class="bg-inverse-surface rounded-xl p-4 font-label-md text-surface overflow-x-auto leading-relaxed shadow-inner">
+<pre class="whitespace-pre">{
+  "request_id": "req_8829103x",
+  "timestamp": "2023-10-23T16:45:12Z",
+  "endpoint": "/v1/media/upload",
+  "payload": {
+    "media_type": "video",
+    "content_url": "https://assets.sc.pro/vid_991",
+    "caption": "The definitive guide...",
+    "meta": {
+      "dimensions": [1080, 1920],
+      "duration": 45.2
+    }
+  },
+  "response": {
+    "status": "error",
+    "code": 429,
+    "message": "Rate limit exceeded. Retry after 360s.",
+    "trace_id": "trc_881-22-9a"
+  }
+}
+</pre>
+</div>
+</div>
+<!-- Event Timeline -->
+<div class="space-y-4">
+<span class="font-label-md text-on-surface-variant uppercase tracking-widest">Execution Timeline</span>
+<div class="relative border-l-2 border-outline-variant ml-3 pl-6 space-y-6">
+<div class="relative">
+<div class="absolute -left-[31px] top-0 w-4 h-4 rounded-full bg-green-500 border-4 border-surface"></div>
+<p class="font-body-md font-bold text-on-surface">Queue Received</p>
+<p class="font-label-md text-on-surface-variant">16:45:01 — Successfully validated</p>
+</div>
+<div class="relative">
+<div class="absolute -left-[31px] top-0 w-4 h-4 rounded-full bg-green-500 border-4 border-surface"></div>
+<p class="font-body-md font-bold text-on-surface">Media Processing</p>
+<p class="font-label-md text-on-surface-variant">16:45:08 — Transcoding complete</p>
+</div>
+<div class="relative">
+<div class="absolute -left-[31px] top-0 w-4 h-4 rounded-full bg-red-500 border-4 border-surface"></div>
+<p class="font-body-md font-bold text-on-surface">Provider Dispatch</p>
+<p class="font-label-md text-red-600 font-medium">16:45:12 — Instagram API Rejected (429)</p>
+</div>
+</div>
+</div>
+</div>
+<div class="p-6 border-t border-outline-variant bg-surface-container-low/50">
+<button class="w-full bg-primary text-white py-3 rounded-xl font-bold hover:opacity-90 transition-opacity flex items-center justify-center gap-2">
+<span class="material-symbols-outlined">replay</span>
+                Initiate New Retry Attempt
+            </button>
+</div>
+</div>
+<!-- Mobile Navigation Shell -->
+<nav class="md:hidden fixed bottom-0 left-0 right-0 bg-surface/90 backdrop-blur-lg border-t border-outline-variant px-6 py-3 flex justify-between items-center z-50">
+<button class="flex flex-col items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined">dashboard</span>
+</button>
+<button class="flex flex-col items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined">edit_square</span>
+</button>
+<button class="flex flex-col items-center gap-1 text-primary">
+<span class="material-symbols-outlined" style="font-variation-settings: &quot;FILL&quot; 1;">history</span>
+</button>
+<button class="flex flex-col items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined">settings</span>
+</button>
+</nav>
+<script>
+        function toggleInspector() {
+            const drawer = document.getElementById('inspector-drawer');
+            const overlay = document.getElementById('inspector-overlay');
+            
+            if (drawer.classList.contains('translate-x-full')) {
+                drawer.classList.remove('translate-x-full');
+                overlay.classList.remove('hidden');
+                setTimeout(() => overlay.classList.add('opacity-100'), 10);
+            } else {
+                drawer.classList.add('translate-x-full');
+                overlay.classList.remove('opacity-100');
+                setTimeout(() => overlay.classList.add('hidden'), 300);
+            }
+        }
+
+        // Handle Escape key to close drawer
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                const drawer = document.getElementById('inspector-drawer');
+                if (!drawer.classList.contains('translate-x-full')) {
+                    toggleInspector();
+                }
+            }
+        });
+    </script>
+
+
+
+
+</body></html>
