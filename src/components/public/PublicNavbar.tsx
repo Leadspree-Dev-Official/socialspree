@@ -54,7 +54,7 @@ export const PublicNavbar: React.FC<PublicNavbarProps> = ({
               <div className="flex items-center gap-2 mt-0.5">
                 <p className="text-[11px] text-slate-500 font-medium">Multi-Channel SaaS Engine</p>
                 <span className="text-[9px] font-bold bg-amber-100 text-amber-800 px-1.5 py-0.2 rounded-md border border-amber-200 uppercase tracking-wider font-mono">
-                  BETA v1.1.5
+                  BETA v1.1.6
                 </span>
               </div>
             </div>
