@@ -120,6 +120,15 @@ export function App() {
     }
   };
 
+  const [isPasswordRecovery, setIsPasswordRecovery] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const hash = window.location.hash;
+      const search = window.location.search;
+      return hash.includes('type=recovery') || new URLSearchParams(search).get('type') === 'recovery' || hash.includes('access_token=');
+    }
+    return false;
+  });
+
   useEffect(() => {
     const hash = typeof window !== 'undefined' ? window.location.hash : '';
     const search = typeof window !== 'undefined' ? window.location.search : '';
@@ -127,6 +136,7 @@ export function App() {
     const hasHashError = hash.includes('error=') || search.includes('error=');
 
     if (recoveryLink || hasHashError) {
+      setIsPasswordRecovery(true);
       setViewMode('auth');
     }
 
@@ -138,15 +148,9 @@ export function App() {
     const { data } = auth.onAuthStateChange((event, nextSession) => {
       setSession(nextSession);
       if (event === 'PASSWORD_RECOVERY') {
+        setIsPasswordRecovery(true);
         setViewMode('auth');
         return;
-      }
-      if (event === 'SIGNED_IN' && viewMode === 'auth') {
-        // Only load dashboard if not in recovery mode
-        const hash = typeof window !== 'undefined' ? window.location.hash : '';
-        if (!hash.includes('type=recovery') && !hash.includes('access_token')) {
-          void loadAuthenticatedWorkspace();
-        }
       }
       if (!nextSession && viewMode === 'app') {
         setProfile(null);
@@ -196,6 +200,10 @@ export function App() {
   };
 
   const handleLaunchApp = async () => {
+    if (isPasswordRecovery) {
+      setViewMode('auth');
+      return;
+    }
     setCloudLoading(true);
     const activeSession = await auth.getSession();
     setSession(activeSession);
@@ -595,7 +603,7 @@ export function App() {
         ) : (
           <div>
             {cloudError && <div className="fixed top-4 left-1/2 z-50 -translate-x-1/2 rounded-xl bg-red-50 px-4 py-3 text-sm font-semibold text-red-700 shadow">{cloudError}</div>}
-            <AuthGate onAuthenticated={loadAuthenticatedWorkspace} onCancel={() => { setCloudError(''); setViewMode('public'); }} />
+            <AuthGate onAuthenticated={async () => { setIsPasswordRecovery(false); await loadAuthenticatedWorkspace(); }} onCancel={() => { setCloudError(''); setIsPasswordRecovery(false); setViewMode('public'); }} />
           </div>
         )
       ) : viewMode === 'public' ? (
