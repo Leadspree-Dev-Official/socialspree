@@ -49,8 +49,22 @@ import { tenants as cloudTenants, socialConnections as cloudAccounts, posts as c
 import type { Session } from '@supabase/supabase-js';
 
 export function App() {
+  const getInitialTabFromPath = (): { tab: TabType; view: 'public' | 'auth' | 'app' } => {
+    if (typeof window === 'undefined') return { tab: 'dashboard', view: 'public' };
+    const path = window.location.pathname.replace(/^\/+|\/+$/g, '');
+    if (!path) return { tab: 'dashboard', view: 'public' };
+    if (path === 'login' || path === 'auth' || path === 'sign-in') return { tab: 'dashboard', view: 'auth' };
+    const validTabs: TabType[] = ['dashboard', 'composer', 'calendar', 'agents', 'media', 'autoresponder', 'connections', 'logs', 'reviews', 'analytics', 'admin', 'settings', 'help'];
+    if (validTabs.includes(path as TabType)) {
+      return { tab: path as TabType, view: 'app' };
+    }
+    return { tab: 'dashboard', view: 'public' };
+  };
+
+  const initialRoute = getInitialTabFromPath();
+
   // Public vs App View Mode Router State
-  const [viewMode, setViewMode] = useState<'public' | 'auth' | 'app'>('public');
+  const [viewMode, setViewMode] = useState<'public' | 'auth' | 'app'>(initialRoute.view);
   const [publicSubView, setPublicSubView] = useState<PublicSubView>('landing');
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -66,15 +80,31 @@ export function App() {
   const [checkoutCurrencySymbol, setCheckoutCurrencySymbol] = useState<string>('$');
 
   const [tenants, setTenants] = useState<Tenant[]>(() => getStoredTenants());
-  // Keep the default workspace non-privileged. Super-admin access must be
-  // granted by authenticated server state, never by initial client state.
   const [currentTenant, setCurrentTenant] = useState<Tenant>(() => {
     const list = getStoredTenants();
     return list[0] || INITIAL_TENANTS[0];
   });
   const [isSuperAdminMode, setIsSuperAdminMode] = useState<boolean>(false);
-  const [activeTab, setActiveTab] = useState<TabType>('dashboard');
+  const [activeTab, setActiveTab] = useState<TabType>(initialRoute.tab);
   const [adminSubTab, setAdminSubTab] = useState<SuperAdminSubTab>('dashboard');
+
+  // Keep browser URL pathname synced with view mode and active tab
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const hash = window.location.hash;
+    if (hash.includes('access_token') || hash.includes('type=recovery') || hash.includes('error=')) {
+      return; // Preserve hash during auth recovery flows
+    }
+    let targetPath = '/';
+    if (viewMode === 'auth') {
+      targetPath = '/login';
+    } else if (viewMode === 'app') {
+      targetPath = `/${activeTab}`;
+    }
+    if (window.location.pathname !== targetPath) {
+      window.history.pushState({}, '', targetPath);
+    }
+  }, [viewMode, activeTab]);
 
   const [accounts, setAccounts] = useState<SocialAccount[]>(() => getStoredAccounts());
   const [posts, setPosts] = useState<Post[]>(() => getStoredPosts());
@@ -110,7 +140,6 @@ export function App() {
       setReviews(cloud.reviews);
       setCloudReady(true);
       setIsSuperAdminMode(nextProfile.isSuperAdmin);
-      setActiveTab('dashboard');
       setViewMode('app');
     } catch (error) {
       setCloudError(error instanceof Error ? error.message : 'Unable to load the cloud workspace.');
