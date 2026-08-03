@@ -1,7 +1,7 @@
 import React from 'react';
 import { Tenant } from '../../types';
 import { SUPER_ADMIN_EMAIL } from '../../lib/store';
-import { Search, Bell, ShieldCheck, Building2, Globe, LogOut } from 'lucide-react';
+import { Search, Bell, ShieldCheck, Building2, Globe, LogOut, User } from 'lucide-react';
 
 interface HeaderProps {
   tenants: Tenant[];
@@ -31,8 +31,8 @@ export const Header: React.FC<HeaderProps> = ({
   return (
     <header className="sticky top-0 z-40 bg-[#F8FAFF]/90 backdrop-blur-xl border-b border-slate-200/80 flex justify-between items-center h-16 px-6 w-full">
       {/* Title & Search Bar */}
-      <div className="flex items-center gap-6 flex-1">
-        <h2 className="font-['Inter'] text-xl font-black text-[#0B1C30] whitespace-nowrap">
+      <div className="flex items-center gap-6 flex-1 min-w-0">
+        <h2 className="font-['Inter'] text-xl font-black text-[#0B1C30] whitespace-nowrap shrink-0">
           {pageTitle}
         </h2>
 
@@ -48,12 +48,12 @@ export const Header: React.FC<HeaderProps> = ({
       </div>
 
       {/* Right Controls */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 shrink-0">
         {/* Back to Marketing Site button */}
         {onReturnToPublic && (
           <button
             onClick={onReturnToPublic}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-purple-50 rounded-xl border border-slate-200 hover:border-purple-300 text-xs font-bold text-slate-700 hover:text-[#5D3FD3] transition-all"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-purple-50 rounded-xl border border-slate-200 hover:border-purple-300 text-xs font-bold text-slate-700 hover:text-[#5D3FD3] transition-all whitespace-nowrap"
             title="Return to Public Marketing Site"
           >
             <Globe className="w-3.5 h-3.5 text-[#5D3FD3]" />
@@ -62,7 +62,7 @@ export const Header: React.FC<HeaderProps> = ({
         )}
 
         {/* Strict Workspace Badge */}
-        <div className="flex items-center gap-2.5 px-3 py-1.5 bg-white rounded-xl border border-slate-200 text-xs font-semibold text-slate-900 shadow-2xs">
+        <div className="flex items-center gap-2.5 px-3 py-1.5 bg-white rounded-xl border border-slate-200 text-xs font-semibold text-slate-900 shadow-2xs whitespace-nowrap">
           <Building2 className="w-4 h-4 text-[#5D3FD3]" />
           <span className="font-bold max-w-[160px] truncate">{currentTenant.name}</span>
           <span className={`text-[10px] px-1.5 py-0.2 rounded font-mono font-bold uppercase ${
@@ -75,7 +75,7 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Super Admin Mode Toggle Button */}
         <button
           onClick={onToggleSuperAdmin}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all border ${
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all border whitespace-nowrap ${
             isSuperAdminMode
               ? 'bg-amber-400 text-slate-950 border-amber-500 shadow-xs'
               : 'bg-slate-900 text-amber-300 border-slate-700 hover:bg-slate-800'
@@ -96,20 +96,15 @@ export const Header: React.FC<HeaderProps> = ({
 
         <div className="h-6 w-px bg-slate-200 mx-1 hidden sm:block"></div>
 
-        {/* Profile Avatar & Log Out */}
-        <div className="flex items-center gap-2.5">
-          <img
-            src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80"
-            alt="Avatar"
-            className="w-9 h-9 rounded-full border border-slate-200 object-cover shadow-xs"
-          />
-          <div className="hidden sm:block text-left text-xs">
-            <div className="font-bold text-slate-900 leading-none">
-              {displayName}
-            </div>
-            <div className="text-[10px] text-slate-500 font-mono mt-0.5">
-              {activeEmail}
-            </div>
+        {/* Generic Male User Profile Avatar & Single-Line Email Display */}
+        <div className="flex items-center gap-2">
+          <div className="w-9 h-9 rounded-full bg-slate-200 text-slate-700 border border-slate-300 flex items-center justify-center font-bold text-sm shadow-xs shrink-0" title={displayName}>
+            <User className="w-5 h-5 text-slate-600" />
+          </div>
+          <div className="hidden sm:flex items-center gap-1.5 text-xs whitespace-nowrap">
+            <span className="font-bold text-slate-900">{displayName}</span>
+            <span className="text-slate-400">&bull;</span>
+            <span className="text-[11px] text-slate-500 font-mono">{activeEmail}</span>
           </div>
 
           {onSignOut && (
