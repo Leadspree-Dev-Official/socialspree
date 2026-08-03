@@ -16,7 +16,7 @@ export function AuthGate({ onAuthenticated, onCancel }: AuthGateProps) {
       if (hash.includes('error_code=otp_expired') || search.includes('error_code=otp_expired')) {
         return 'forgot';
       }
-      if (hash.includes('type=recovery') || new URLSearchParams(search).get('type') === 'recovery' || hash.includes('access_token')) {
+      if (hash.includes('type=recovery') || search.includes('type=recovery') || hash.includes('access_token')) {
         return 'reset';
       }
     }
@@ -33,8 +33,11 @@ export function AuthGate({ onAuthenticated, onCancel }: AuthGateProps) {
 
     // Check existing session on mount
     void auth.getSession().then((session) => {
-      if (session && (window.location.hash.includes('access_token') || window.location.hash.includes('type=recovery'))) {
-        setMode('reset');
+      if (session) {
+        const hash = window.location.hash;
+        if (hash.includes('access_token') || hash.includes('type=recovery') || window.location.search.includes('type=recovery')) {
+          setMode('reset');
+        }
       }
     });
 
