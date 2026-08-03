@@ -96,15 +96,14 @@ export const Header: React.FC<HeaderProps> = ({
 
         <div className="h-6 w-px bg-slate-200 mx-1 hidden sm:block"></div>
 
-        {/* Generic Male User Profile Avatar & Single-Line Email Display */}
-        <div className="flex items-center gap-2">
+        {/* Generic Male User Profile Avatar & Two-Line Email Display */}
+        <div className="flex items-center gap-2.5">
           <div className="w-9 h-9 rounded-full bg-slate-200 text-slate-700 border border-slate-300 flex items-center justify-center font-bold text-sm shadow-xs shrink-0" title={displayName}>
             <User className="w-5 h-5 text-slate-600" />
           </div>
-          <div className="hidden sm:flex items-center gap-1.5 text-xs whitespace-nowrap">
+          <div className="hidden sm:flex flex-col text-xs leading-tight">
             <span className="font-bold text-slate-900">{displayName}</span>
-            <span className="text-slate-400">&bull;</span>
-            <span className="text-[11px] text-slate-500 font-mono">{activeEmail}</span>
+            <span className="text-[11px] text-slate-500 font-mono mt-0.5">{activeEmail}</span>
           </div>
 
           {onSignOut && (

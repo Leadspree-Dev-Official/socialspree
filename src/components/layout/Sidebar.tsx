@@ -79,9 +79,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 PRO
               </span>
             </h1>
-            <div className="flex items-center gap-2 mt-0.5">
-              <p className="text-[11px] text-slate-400">Multi-Channel SaaS Engine</p>
-              <span className="text-[9px] bg-amber-500/20 text-amber-300 px-1.5 py-0.2 rounded font-mono font-bold border border-amber-500/30">
+            <p className="text-[11px] text-slate-400 mt-0.5 whitespace-nowrap">Multi-Channel SaaS Engine</p>
+            <div className="mt-1">
+              <span className="text-[9px] bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded font-mono font-bold border border-amber-500/30 inline-block">
                 BETA v1.1.6
               </span>
             </div>
