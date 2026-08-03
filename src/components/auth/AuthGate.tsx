@@ -25,11 +25,19 @@ export function AuthGate({ onAuthenticated, onCancel }: AuthGateProps) {
 
   useEffect(() => {
     // Listen for PASSWORD_RECOVERY auth event when Supabase processes recovery token hash
-    const { data } = auth.onAuthStateChange((event) => {
-      if (event === 'PASSWORD_RECOVERY') {
+    const { data } = auth.onAuthStateChange((event, session) => {
+      if (event === 'PASSWORD_RECOVERY' || (session && (window.location.hash.includes('access_token') || window.location.hash.includes('type=recovery')))) {
         setMode('reset');
       }
     });
+
+    // Check existing session on mount
+    void auth.getSession().then((session) => {
+      if (session && (window.location.hash.includes('access_token') || window.location.hash.includes('type=recovery'))) {
+        setMode('reset');
+      }
+    });
+
     return () => data.subscription.unsubscribe();
   }, []);
 
