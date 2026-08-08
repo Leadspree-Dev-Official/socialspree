@@ -2,6 +2,19 @@
 -- Supabase Third-Party Auth validates the Clerk JWT before these helpers/RLS
 -- policies run; authorization is stored in profiles, never inferred in React.
 
+-- Drop all existing RLS policies on public and storage tables FIRST so column type changes are unblocked.
+DO $$
+DECLARE policy_row RECORD;
+BEGIN
+  FOR policy_row IN
+    SELECT schemaname, tablename, policyname
+    FROM pg_policies
+    WHERE schemaname IN ('public', 'storage')
+  LOOP
+    EXECUTE format('DROP POLICY IF EXISTS %I ON %I.%I', policy_row.policyname, policy_row.schemaname, policy_row.tablename);
+  END LOOP;
+END $$;
+
 ALTER TABLE public.profiles
   ADD COLUMN IF NOT EXISTS avatar_url TEXT,
   ADD COLUMN IF NOT EXISTS job_title TEXT,
@@ -158,20 +171,7 @@ $$;
 REVOKE ALL ON FUNCTION public.create_oauth_state(TEXT, UUID, TEXT, TEXT, TEXT, TIMESTAMPTZ, TEXT) FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.create_oauth_state(TEXT, UUID, TEXT, TEXT, TEXT, TIMESTAMPTZ, TEXT) TO service_role;
 
--- The preceding transitional migration removed policies globally. Rebuild the
--- complete Clerk-subject policy set so every browser-visible table is covered.
-DO $$
-DECLARE policy_row RECORD;
-BEGIN
-  FOR policy_row IN
-    SELECT schemaname, tablename, policyname
-    FROM pg_policies
-    WHERE schemaname IN ('public', 'storage')
-  LOOP
-    EXECUTE format('DROP POLICY IF EXISTS %I ON %I.%I', policy_row.policyname, policy_row.schemaname, policy_row.tablename);
-  END LOOP;
-END $$;
-
+-- Rebuild the complete Clerk-subject policy set so every browser-visible table is covered.
 CREATE POLICY "Tenants read own" ON public.tenants FOR SELECT TO authenticated
 USING (id = private.current_tenant_id() OR private.is_super_admin());
 CREATE POLICY "Tenants admin manage" ON public.tenants FOR ALL TO authenticated
