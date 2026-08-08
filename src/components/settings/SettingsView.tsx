@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useClerk } from '@clerk/react';
 import { Tenant, CloudinaryConfig, CloudinaryAccountItem } from '../../types';
 import { auth, type Profile } from '../../lib/api';
 import { 
@@ -48,6 +49,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   onUpdateTenantProfile,
   initialTab = 'user'
 }) => {
+  const clerk = useClerk();
   const [activeTab, setActiveTab] = useState<'user' | 'storage' | 'api' | 'social_keys' | 'org' | 'chatgpt'>(initialTab);
 
   // Cloudinary Local State (Multiple Accounts with 3 Fields: Cloud Name, Upload Preset, Bucket Name)
@@ -81,13 +83,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     postFailureAlerts: true,
     securityAlerts: true,
   });
-
-  // Password Change State
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [passwordSuccess, setPasswordSuccess] = useState<string | null>(null);
-  const [passwordError, setPasswordError] = useState<string | null>(null);
-  const [passwordLoading, setPasswordLoading] = useState(false);
 
   // Profile Save State
   const [profileSaving, setProfileSaving] = useState(false);
@@ -290,37 +285,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     }
     setNotification('Profile Photo Removed.');
     setTimeout(() => setNotification(null), 3000);
-  };
-
-  const handleChangePassword = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setPasswordError(null);
-    setPasswordSuccess(null);
-
-    if (newPassword.length < 6) {
-      setPasswordError('Password must be at least 6 characters long.');
-      return;
-    }
-    if (newPassword !== confirmPassword) {
-      setPasswordError('New Password and Confirm Password do not match.');
-      return;
-    }
-
-    setPasswordLoading(true);
-    try {
-      const { error } = await auth.updatePassword(newPassword);
-      if (error) {
-        setPasswordError(error.message || 'Unable to update password.');
-      } else {
-        setPasswordSuccess('Account Password Changed Successfully!');
-        setNewPassword('');
-        setConfirmPassword('');
-      }
-    } catch (err) {
-      setPasswordError(err instanceof Error ? err.message : 'An error occurred while updating your password.');
-    } finally {
-      setPasswordLoading(false);
-    }
   };
 
   return (
@@ -632,69 +596,29 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 </div>
               </form>
 
-              {/* Password Change Section */}
-              <form onSubmit={handleChangePassword} className="space-y-4">
+              {/* Clerk-owned account security */}
+              <div className="space-y-4">
                 <div>
                   <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
                     <Lock className="w-5 h-5 text-amber-600" />
-                    <span>Security & Change Password</span>
+                    <span>Account Security</span>
                   </h3>
                   <p className="text-xs text-slate-500 mt-1">
-                    Update your account login password. Must be at least 6 characters.
+                    Passwords, passkeys, connected accounts, MFA, and active sessions are managed securely by Clerk.
                   </p>
-                </div>
-
-                {passwordSuccess && (
-                  <div className="p-3.5 bg-emerald-50 border border-emerald-300 rounded-xl text-xs text-emerald-900 flex items-center gap-2 font-semibold">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <span>{passwordSuccess}</span>
-                  </div>
-                )}
-
-                {passwordError && (
-                  <div className="p-3.5 bg-red-50 border border-red-300 rounded-xl text-xs text-red-900 flex items-center gap-2 font-semibold">
-                    <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
-                    <span>{passwordError}</span>
-                  </div>
-                )}
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-                  <div>
-                    <label className="block font-semibold text-slate-700 mb-1">New Password</label>
-                    <input
-                      type="password"
-                      required
-                      value={newPassword}
-                      onChange={(e) => setNewPassword(e.target.value)}
-                      placeholder="••••••••••••"
-                      className="w-full p-2.5 border rounded-lg font-mono text-xs focus:ring-2 focus:ring-amber-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block font-semibold text-slate-700 mb-1">Confirm New Password</label>
-                    <input
-                      type="password"
-                      required
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      placeholder="••••••••••••"
-                      className="w-full p-2.5 border rounded-lg font-mono text-xs focus:ring-2 focus:ring-amber-500"
-                    />
-                  </div>
                 </div>
 
                 <div className="flex justify-end pt-2">
                   <button
-                    type="submit"
-                    disabled={passwordLoading}
+                    type="button"
+                    onClick={() => clerk.openUserProfile()}
                     className="px-6 py-2.5 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl text-xs transition-colors shadow-md flex items-center gap-2 disabled:opacity-50"
                   >
                     <Lock className="w-4 h-4" />
-                    <span>{passwordLoading ? 'Updating Password...' : 'Update Password'}</span>
+                    <span>Manage security in Clerk</span>
                   </button>
                 </div>
-              </form>
+              </div>
             </div>
           )}
           {activeTab === 'storage' && (

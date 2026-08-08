@@ -10,6 +10,9 @@ export async function actor(req: Request) {
   const db = admin();
   const { data: { user }, error } = await db.auth.getUser(token);
   if (error || !user) throw new Error('Unauthorized');
+  // Supabase Third-Party Auth maps Clerk's JWT subject to the user identity.
+  // Keep the lookup keyed to the verified token subject, never an email or
+  // browser-supplied profile ID.
   const { data: profile } = await db.from('profiles').select('id,tenant_id,is_super_admin,role').eq('id', user.id).single();
   if (!profile) throw new Error('Profile not provisioned');
   return { db, user, profile };

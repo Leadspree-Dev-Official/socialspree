@@ -1,14 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { useUser, useClerk } from '@clerk/react';
+import { useUser, useClerk, useSession } from '@clerk/react';
 import { Tenant, SocialAccount, Post, PostLog, GoogleReview, CloudinaryConfig, ApiAllocationSlot, AiCreditLog, SubscriptionPlan, CurrencyCode, MediaAsset, AgencyBrand } from './types';
 import { 
   INITIAL_TENANTS, 
-  INITIAL_ACCOUNTS, 
-  INITIAL_POSTS, 
   INITIAL_POST_LOGS, 
   INITIAL_REVIEWS, 
   SUPER_ADMIN_EMAIL,
-  GLOBAL_DEFAULT_CLOUDINARY,
   GLOBAL_SYSTEM_SETTINGS,
   getStoredTenants,
   getStoredAccounts,
@@ -51,13 +48,21 @@ import { AboutContactView } from './components/public/AboutContactView';
 import { PublicFooter } from './components/public/PublicFooter';
 import { CheckoutModal } from './components/payment/CheckoutModal';
 import { AuthGate } from './components/auth/AuthGate';
-import { hydrateFromCloud, type Profile } from './lib/api';
+import { clearAuthenticatedCache, hydrateFromCloud, type Profile } from './lib/api';
+import { auth } from './lib/api';
+import { setClerkTokenProvider, supabase } from './lib/supabase';
 import { tenants as cloudTenants, socialConnections as cloudAccounts, posts as cloudPosts, postLogs as cloudLogs, aiCreditLogs as cloudAiLogs, mediaAssets as cloudMedia } from './lib/api';
 
 
 export function App() {
   const { user, isLoaded: isClerkLoaded, isSignedIn } = useUser();
+  const { session } = useSession();
   const { signOut: clerkSignOut } = useClerk();
+
+  useEffect(() => {
+    setClerkTokenProvider(() => session?.getToken() ?? Promise.resolve(null));
+    return () => setClerkTokenProvider(null);
+  }, [session]);
 
   const getInitialTabFromPath = (): { tab: TabType; view: 'public' | 'auth' | 'app' } => {
     if (typeof window === 'undefined') return { tab: 'dashboard', view: 'public' };
@@ -153,47 +158,33 @@ export function App() {
         setViewMode('auth');
         return;
       }
-      const primaryEmail = user.primaryEmailAddress?.emailAddress || SUPER_ADMIN_EMAIL;
-      const isSuperAdmin = primaryEmail.toLowerCase() === 'leadspree24x7@gmail.com' || primaryEmail.toLowerCase() === SUPER_ADMIN_EMAIL.toLowerCase();
+      const primaryEmail = user.primaryEmailAddress?.emailAddress;
+      if (!primaryEmail) throw new Error('Your Clerk account has no verified primary email.');
 
-      // Clerk unsafeMetadata or publicMetadata can store custom user role, defaulting to business_user for standard users
-      const metaRole = (user.unsafeMetadata?.role || user.publicMetadata?.role) as any;
-      const assignedRole = isSuperAdmin ? 'super_admin' : (metaRole || 'business_user');
+      const { error: provisionError } = await supabase.rpc('ensure_clerk_profile', {
+        p_email: primaryEmail,
+        p_full_name: user.fullName || user.firstName || 'User',
+        p_avatar_url: user.imageUrl || null,
+      });
+      if (provisionError) throw new Error(`Unable to provision your workspace profile: ${provisionError.message}`);
 
-      const userProfile: Profile = {
-        id: user.id,
-        email: primaryEmail,
-        fullName: user.fullName || user.firstName || 'User',
-        avatarUrl: user.imageUrl,
-        isSuperAdmin: isSuperAdmin,
-        role: assignedRole,
-        createdAt: user.createdAt ? new Date(user.createdAt).toISOString() : new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      };
+      const userProfile = await auth.getProfile();
+      if (!userProfile) throw new Error('Your workspace profile is not available yet. Please try again.');
+      const isSuperAdmin = userProfile.isSuperAdmin;
 
-      const fallbackCloudData = {
-        tenants: INITIAL_TENANTS,
-        plans: getStoredPlans(),
-        accounts: INITIAL_ACCOUNTS,
-        posts: INITIAL_POSTS,
-        logs: INITIAL_POST_LOGS,
-        aiLogs: getStoredAiLogs(),
-        media: getStoredMediaAssets(),
-        reviews: INITIAL_REVIEWS
-      };
-
-      const cloudPromise = hydrateFromCloud();
-      const timeoutPromise = new Promise(resolve => setTimeout(() => resolve(fallbackCloudData), 2000));
-      const cloud: any = await Promise.race([cloudPromise, timeoutPromise]);
+      const cloud = await hydrateFromCloud();
+      if (!cloud.tenants.length) {
+        throw new Error('Your profile is authenticated but has no SocialSpree tenant assigned.');
+      }
 
       setProfile(userProfile);
-      setTenants(cloud.tenants && cloud.tenants.length ? cloud.tenants : INITIAL_TENANTS);
-      setCurrentTenant(cloud.tenants && cloud.tenants[0] ? cloud.tenants[0] : INITIAL_TENANTS[0]);
-      setAccounts(cloud.accounts || INITIAL_ACCOUNTS);
-      setPosts(cloud.posts || INITIAL_POSTS);
-      setLogs(cloud.logs || INITIAL_POST_LOGS);
-      setAiLogs(cloud.aiLogs || getStoredAiLogs());
-      setMediaAssets(cloud.media || getStoredMediaAssets());
+      setTenants(cloud.tenants);
+      setCurrentTenant(cloud.tenants[0]);
+      setAccounts(cloud.accounts);
+      setPosts(cloud.posts);
+      setLogs(cloud.logs);
+      setAiLogs(cloud.aiLogs);
+      setMediaAssets(cloud.media);
       setCloudReady(true);
       setIsSuperAdminMode(isSuperAdmin);
       if (isSuperAdmin && ['composer', 'calendar', 'connections', 'autoresponder', 'media'].includes(activeTab)) {
@@ -202,7 +193,7 @@ export function App() {
       setViewMode('app');
     } catch (error) {
       setCloudError(error instanceof Error ? error.message : 'Unable to load workspace.');
-      setViewMode('app'); // Fallback to workspace display
+      setViewMode('auth');
     } finally {
       setCloudLoading(false);
     }
@@ -211,7 +202,7 @@ export function App() {
   useEffect(() => {
     if (!isClerkLoaded) return;
 
-    if (isSignedIn && user) {
+    if (isSignedIn && user && session) {
       void loadAuthenticatedWorkspace();
     } else {
       setCloudLoading(false);
@@ -219,7 +210,7 @@ export function App() {
         setViewMode('auth');
       }
     }
-  }, [isClerkLoaded, isSignedIn, user, profile]);
+  }, [isClerkLoaded, isSignedIn, user, session]);
 
   // Sync state to storage
   useEffect(() => { if (cloudReady && isSignedIn) void cloudTenants.saveAll(tenants).catch((e: any) => setCloudError(e.message)); }, [tenants, cloudReady, isSignedIn]);
@@ -273,7 +264,10 @@ export function App() {
 
   const handleSignOut = async () => {
     await clerkSignOut();
+    setClerkTokenProvider(null);
+    clearAuthenticatedCache();
     setProfile(null);
+    setCloudReady(false);
     setIsSuperAdminMode(false);
     setViewMode('auth');
   };
@@ -334,7 +328,7 @@ export function App() {
 
   const handleSelectTab = (tab: TabType) => {
     if (tab === 'admin') {
-      const isAuthorized = isSuperAdminMode || profile?.email?.toLowerCase() === 'leadspree24x7@gmail.com' || profile?.role === 'super_admin';
+      const isAuthorized = profile?.isSuperAdmin === true;
       if (!isAuthorized) {
         setActiveTab('dashboard');
         return;
@@ -470,7 +464,6 @@ export function App() {
         let newSlotDetails = [...currentSlots];
 
         if (newSlotDetails.length < newSlotsCount) {
-          const timestamp = Date.now();
           for (let i = newSlotDetails.length; i < newSlotsCount; i++) {
             newSlotDetails.push({
               id: crypto.randomUUID(),
@@ -558,7 +551,6 @@ export function App() {
         const currentSlots = t.apiSlotDetails || [];
         let newSlotDetails = [...currentSlots];
         if (newSlotDetails.length < slotsCount) {
-          const timestamp = Date.now();
           for (let i = newSlotDetails.length; i < slotsCount; i++) {
             newSlotDetails.push({
               id: crypto.randomUUID(),
@@ -656,67 +648,6 @@ export function App() {
     setLogs([retryLog, ...logs]);
   };
 
-  const handleDemoLogin = (role: 'super_admin' | 'agency' | 'influencer' | 'business') => {
-    let email = 'business@socialspree.io';
-    let isSuperAdmin = false;
-    let tenantTier = 'pro';
-    let assignedRole: any = 'business_user';
-
-    if (role === 'super_admin') {
-      email = 'leadspree24x7@gmail.com';
-      isSuperAdmin = true;
-      assignedRole = 'super_admin';
-    } else if (role === 'agency') {
-      email = 'agency@socialspree.io';
-      tenantTier = 'agency';
-      assignedRole = 'agency';
-      GLOBAL_SYSTEM_SETTINGS.agencyModeEnabled = true;
-      GLOBAL_SYSTEM_SETTINGS.influencerModeEnabled = false;
-      GLOBAL_SYSTEM_SETTINGS.businessModeEnabled = false;
-      GLOBAL_SYSTEM_SETTINGS.websiteEnabled = false;
-    } else if (role === 'influencer') {
-      email = 'creator@socialspree.io';
-      tenantTier = 'pro';
-      assignedRole = 'influencer';
-      GLOBAL_SYSTEM_SETTINGS.influencerModeEnabled = true;
-      GLOBAL_SYSTEM_SETTINGS.agencyModeEnabled = false;
-      GLOBAL_SYSTEM_SETTINGS.businessModeEnabled = false;
-      GLOBAL_SYSTEM_SETTINGS.websiteEnabled = false;
-    } else {
-      email = 'business@socialspree.io';
-      tenantTier = 'starter';
-      assignedRole = 'business_user';
-      GLOBAL_SYSTEM_SETTINGS.businessModeEnabled = true;
-      GLOBAL_SYSTEM_SETTINGS.agencyModeEnabled = false;
-      GLOBAL_SYSTEM_SETTINGS.influencerModeEnabled = false;
-    }
-
-    const demoProfile: Profile = {
-      id: `demo-${role}-${Date.now()}`,
-      email: email,
-      fullName: role === 'super_admin' ? 'LeadSpree Super Admin' : `${role.toUpperCase()} Demo User`,
-      avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-      isSuperAdmin: isSuperAdmin,
-      role: assignedRole,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-
-    setProfile(demoProfile);
-    setIsSuperAdminMode(isSuperAdmin);
-    setCurrentTenant(prev => ({ ...prev, tierPlan: tenantTier, ownerEmail: email }));
-    if (isSuperAdmin) {
-      setActiveTab('admin');
-    } else if (role === 'agency') {
-      setActiveTab('agency_brands');
-    } else if (role === 'influencer') {
-      setActiveTab('grid_planner');
-    } else {
-      setActiveTab('dashboard');
-    }
-    setViewMode('app');
-  };
-
   return (
     <div className="min-h-screen bg-[#F8FAFF] font-['Inter'] text-[#0B1C30]">
       {viewMode === 'auth' ? (
@@ -726,8 +657,6 @@ export function App() {
           <div>
             {cloudError && <div className="fixed top-4 left-1/2 z-50 -translate-x-1/2 rounded-xl bg-red-50 px-4 py-3 text-sm font-semibold text-red-700 shadow">{cloudError}</div>}
             <AuthGate
-              onAuthenticated={async () => { await loadAuthenticatedWorkspace(); }}
-              onDemoLogin={handleDemoLogin}
               onCancel={() => { setCloudError(''); setViewMode('public'); }}
             />
           </div>
@@ -893,7 +822,7 @@ export function App() {
                   mediaAssets={mediaAssets.filter(asset => asset.tenantId === currentTenant.id)}
                   onAddMediaAsset={handleAddMediaAsset}
                   onDeleteMediaAsset={handleDeleteMediaAsset}
-                  onUseInComposer={(urls) => {
+                  onUseInComposer={(_urls) => {
                     setActiveTab('composer');
                   }}
                   onReferInAgent={(urls) => {
@@ -990,7 +919,7 @@ export function App() {
           </div>
         </div>
       ) : (
-        <AuthGate onAuthenticated={loadAuthenticatedWorkspace} onCancel={() => { setCloudError(''); setViewMode('public'); }} />
+        <AuthGate onCancel={() => { setCloudError(''); setViewMode('public'); }} />
       )}
 
       {/* Dual Payment Modal */}

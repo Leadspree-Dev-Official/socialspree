@@ -9,7 +9,6 @@
 // Naming: DB columns are snake_case (snake_case -> camelCase mapped here).
 // ==============================================================================
 import { supabase } from './supabase';
-import type { Session } from '@supabase/supabase-js';
 import type {
   Tenant, SocialAccount, Post, PostLog, GoogleReview, MediaAsset,
   AiCreditLog, SubscriptionPlan, ApiAllocationSlot, CloudinaryConfig,
@@ -69,48 +68,33 @@ function cacheSet<T>(key: string, value: T): void {
   try { window.localStorage.setItem(key, JSON.stringify(value)); } catch { /* quota etc. */ }
 }
 
+export function clearAuthenticatedCache(): void {
+  if (!isBrowser) return;
+  for (const key of Object.values(CACHE_KEYS)) window.localStorage.removeItem(key);
+}
+
 // ---- Auth helpers ------------------------------------------------------------
 export const auth = {
-  signIn: (email: string, password: string) =>
-    supabase.auth.signInWithPassword({ email, password }),
-  signUp: (email: string, password: string) =>
-    supabase.auth.signUp({ email, password }),
-  resetPassword: (email: string, redirectTo?: string) => {
-    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://socialspree.leadspree.in';
-    return supabase.auth.resetPasswordForEmail(email, { redirectTo: redirectTo || `${origin}/` });
-  },
-  updatePassword: (password: string) => supabase.auth.updateUser({ password }),
-  signOut: () => supabase.auth.signOut(),
-  getSession: async () => (await supabase.auth.getSession()).data.session ?? null,
-  onAuthStateChange: (cb: (event: string, session: Session | null) => void) =>
-    supabase.auth.onAuthStateChange((_event, session) => cb(_event, session)),
-
   async getProfile(): Promise<Profile | null> {
-    const uid = (await this.getSession())?.user.id;
-    if (!uid) {
-      return cacheGet<Profile>(CACHE_KEYS.USER_PROFILE);
-    }
+    const { data: uid, error: uidError } = await supabase.rpc('current_clerk_user_id');
+    if (uidError || !uid) return null;
     const { data, error } = await supabase
       .from('profiles')
       .select('id,email,full_name,avatar_url,job_title,phone_number,timezone,notifications,tenant_id,is_super_admin,role,created_at,updated_at')
       .eq('id', uid)
       .maybeSingle();
-    if (error || !data) {
-      const cached = cacheGet<Profile>(CACHE_KEYS.USER_PROFILE);
-      if (cached) return cached;
-      return null;
-    }
+    if (error || !data) return null;
     const p = mapProfile(data);
     cacheSet(CACHE_KEYS.USER_PROFILE, p);
     return p;
   },
 
   async updateProfile(updates: Partial<Profile>): Promise<Profile> {
-    const uid = (await this.getSession())?.user.id;
     const current = await this.getProfile();
+    if (!current) throw new Error('No authenticated Clerk profile is available.');
     const updated: Profile = {
-      id: uid || current?.id || 'demo-user-id',
-      email: current?.email || 'user@example.com',
+      id: current.id,
+      email: current.email,
       fullName: updates.fullName !== undefined ? updates.fullName : (current?.fullName || ''),
       avatarUrl: updates.avatarUrl !== undefined ? updates.avatarUrl : (current?.avatarUrl || ''),
       jobTitle: updates.jobTitle !== undefined ? updates.jobTitle : (current?.jobTitle || ''),
@@ -130,7 +114,7 @@ export const auth = {
 
     cacheSet(CACHE_KEYS.USER_PROFILE, updated);
 
-    if (uid) {
+    if (current?.id) {
       const dbRow: any = {
         updated_at: new Date().toISOString(),
       };
@@ -141,7 +125,8 @@ export const auth = {
       if (updates.timezone !== undefined) dbRow.timezone = updates.timezone;
       if (updates.notifications !== undefined) dbRow.notifications = updates.notifications;
 
-      await supabase.from('profiles').update(dbRow).eq('id', uid);
+      const { error } = await supabase.from('profiles').update(dbRow).eq('id', current.id);
+      if (error) throw error;
     }
     return updated;
   },
@@ -154,7 +139,6 @@ export const auth = {
 
 // ---- DB row mappers (snake_case -> camelCase) ---------------------------------
 function mapProfile(r: any): Profile {
-  const isSuperAdminEmail = r.email?.toLowerCase() === 'leadspree24x7@gmail.com';
   return {
     id: r.id,
     email: r.email,
@@ -169,8 +153,8 @@ function mapProfile(r: any): Profile {
       securityAlerts: true,
     },
     tenantId: r.tenant_id,
-    isSuperAdmin: r.is_super_admin === true || isSuperAdminEmail,
-    role: isSuperAdminEmail ? 'super_admin' : r.role,
+    isSuperAdmin: r.is_super_admin === true,
+    role: r.role,
     createdAt: r.created_at,
     updatedAt: r.updated_at,
   };
@@ -649,21 +633,21 @@ export async function hydrateFromCloud(): Promise<{
   posts: Post[]; logs: PostLog[]; aiLogs: AiCreditLog[]; media: MediaAsset[];
   reviews: GoogleReview[];
 }> {
-  const [tenantResult, planResult, accountResult, postResult, logResult, aiResult, mediaResult, reviewResult] = await Promise.allSettled([
+  const [tenantRows, planRows, accountRows, postRows, logRows, aiRows, mediaRows, reviewRows] = await Promise.all([
     tenants.list(), plans.list(), socialConnections.list(), posts.list(),
     postLogs.list(), aiCreditLogs.list(), mediaAssets.list(),
     googleReviews.list(),
   ]);
   // cache reads already write the localStorage cache during list(); return cloud data.
   return {
-    tenants: tenantResult.status === 'fulfilled' ? tenantResult.value : [],
-    plans: planResult.status === 'fulfilled' ? planResult.value : [],
-    accounts: accountResult.status === 'fulfilled' ? accountResult.value : [],
-    posts: postResult.status === 'fulfilled' ? postResult.value : [],
-    logs: logResult.status === 'fulfilled' ? logResult.value : [],
-    aiLogs: aiResult.status === 'fulfilled' ? aiResult.value : [],
-    media: mediaResult.status === 'fulfilled' ? mediaResult.value : [],
-    reviews: reviewResult.status === 'fulfilled' ? reviewResult.value : [],
+    tenants: tenantRows,
+    plans: planRows,
+    accounts: accountRows,
+    posts: postRows,
+    logs: logRows,
+    aiLogs: aiRows,
+    media: mediaRows,
+    reviews: reviewRows,
   };
 }
 

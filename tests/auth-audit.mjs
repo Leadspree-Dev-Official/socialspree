@@ -1,59 +1,43 @@
-console.log('--- STARTING COMPREHENSIVE AUTH & RECOVERY AUDIT ---');
+import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 
-// Test 1: Password Validation Rules Matrix
-console.log('Test 1: Testing Password Strength & Validation Matrix...');
-const passwordMatrix = [
-  { pass: 'short', num: false, spec: false, match: true, expectedValid: false },
-  { pass: 'longenough', num: false, spec: false, match: true, expectedValid: false },
-  { pass: 'longenough123', num: true, spec: false, match: true, expectedValid: false },
-  { pass: 'StrongPass123!', num: true, spec: true, match: true, expectedValid: true },
-  { pass: 'StrongPass123!', num: true, spec: true, match: false, expectedValid: false },
-];
+const read = (path) => readFile(new URL(`../${path}`, import.meta.url), 'utf8');
 
-passwordMatrix.forEach((item, idx) => {
-  const hasMinLength = item.pass.length >= 8;
-  const hasNumber = /\d/.exec(item.pass) !== null;
-  const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.exec(item.pass) !== null;
-  const passwordsMatch = item.match;
-  const isValid = hasMinLength && hasNumber && hasSpecial && passwordsMatch;
-  if (isValid !== item.expectedValid) {
-    throw new Error(`Password validation failed for item ${idx}: expected ${item.expectedValid}, got ${isValid}`);
-  }
-});
-console.log('✅ Test 1 Passed: Password validation matrix fully verified.');
+const [supabaseClient, app, authGate, api, main, vite, headers, vercel, config, migration] = await Promise.all([
+  read('src/lib/supabase.ts'),
+  read('src/App.tsx'),
+  read('src/components/auth/AuthGate.tsx'),
+  read('src/lib/api.ts'),
+  read('src/main.tsx'),
+  read('vite.config.ts'),
+  read('public/_headers'),
+  read('vercel.json'),
+  read('supabase/config.toml'),
+  read('supabase/migrations/20260808161512_clerk_profiles_bootstrap.sql'),
+]);
 
-// Test 2: URL Hash & Recovery Detection Patterns
-console.log('Test 2: Verifying URL Hash and Recovery Token Detection logic...');
-const recoveryPatterns = [
-  { url: 'https://socialspree.leadspree.in/#type=recovery', expected: true },
-  { url: 'https://socialspree.leadspree.in/?type=recovery', expected: true },
-  { url: 'https://socialspree.leadspree.in/#access_token=testtoken123&type=recovery', expected: true },
-  { url: 'https://socialspree.leadspree.in/#error=access_denied&error_code=otp_expired', expectedHashError: true },
-  { url: 'https://socialspree.leadspree.in/', expected: false }
-];
+assert.match(supabaseClient, /accessToken:\s*async/);
+assert.match(app, /session\?\.getToken\(\)/);
+assert.match(app, /ensure_clerk_profile/);
+assert.doesNotMatch(app, /handleDemoLogin|unsafeMetadata|leadspree24x7@gmail\.com/);
 
-recoveryPatterns.forEach((p, idx) => {
-  const hash = p.url.includes('#') ? p.url.split('#')[1] : '';
-  const search = p.url.includes('?') ? p.url.split('?')[1].split('#')[0] : '';
-  const isRecovery = hash.includes('type=recovery') || search.includes('type=recovery') || hash.includes('access_token');
-  const isError = hash.includes('error=') || search.includes('error=');
+assert.match(authGate, /SignInButton/);
+assert.match(authGate, /SignUpButton/);
+assert.doesNotMatch(authGate, /useSignIn|onDemoLogin|passwordInput/);
 
-  if (p.expected !== undefined && isRecovery !== p.expected) {
-    throw new Error(`Recovery detection failed for pattern ${idx}`);
-  }
-  if (p.expectedHashError !== undefined && isError !== p.expectedHashError) {
-    throw new Error(`Error detection failed for pattern ${idx}`);
-  }
-});
-console.log('✅ Test 2 Passed: URL Hash & Recovery token detection verified.');
+assert.doesNotMatch(api, /supabase\.auth\.|isSuperAdminEmail/);
+assert.doesNotMatch(main, /pk_test_/);
+assert.match(main, /Missing VITE_CLERK_PUBLISHABLE_KEY/);
 
-// Test 3: Verify Supabase Reset Endpoint URL format
-console.log('Test 3: Verifying reset password redirect URL builder...');
-const origin = 'https://socialspree.leadspree.in';
-const redirectUrl = `${origin}/`;
-if (redirectUrl !== 'https://socialspree.leadspree.in/') {
-  throw new Error('Redirect URL format incorrect');
+for (const csp of [vite, headers, vercel]) {
+  assert.match(csp, /clerk\.accounts\.dev/);
+  assert.match(csp, /challenges\.cloudflare\.com/);
 }
-console.log('✅ Test 3 Passed: Reset password redirect URL builder verified.');
 
-console.log('--- ALL AUTH AUDIT TESTS PASSED SUCCESSFULLY! ---');
+assert.match(config, /\[auth\.third_party\.clerk\][\s\S]*enabled = true/);
+assert.match(config, /domain = "flexible-ladybird-31\.clerk\.accounts\.dev"/);
+assert.match(migration, /auth\.jwt\(\) ->> 'sub'/);
+assert.match(migration, /REVOKE INSERT, DELETE, UPDATE ON public\.profiles/);
+assert.doesNotMatch(migration, /WHERE email = \(auth\.jwt/);
+
+console.log('Clerk auth architecture checks passed.');

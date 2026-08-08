@@ -1,7 +1,7 @@
 -- ==============================================================================
 -- SOCIALSPREE MULTI-TENANT SOCIAL MANAGER SAAS - SUPABASE DATABASE SCHEMA
 -- Target Supabase Project: https://qglhbesenigpspgkgbac.supabase.co
--- Super Admin Root Email: leadspree24x7@gmail.com
+-- Identity provider: Clerk via Supabase Third-Party Auth
 -- PRIVACY POLICY: Super Admin manages tenant accounts but CANNOT view tenant content/posts/logs
 -- ==============================================================================
 
@@ -12,9 +12,8 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE TABLE IF NOT EXISTS public.tenants (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name TEXT NOT NULL,
-    owner_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+    owner_id TEXT,
     owner_email TEXT NOT NULL,
-    api_key TEXT DEFAULT 'key_allocated_live_99481a',
     tier_plan TEXT NOT NULL DEFAULT 'free' CHECK (tier_plan IN ('free', 'pro', 'agency')),
     allocated_api_slots INT NOT NULL DEFAULT 2,
     max_social_accounts INT NOT NULL DEFAULT 4,
@@ -22,9 +21,9 @@ CREATE TABLE IF NOT EXISTS public.tenants (
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
--- 3. Profiles (User Profiles linked to Auth & Tenant, support for Clerk & Supabase)
+-- 3. Profiles (Clerk subject IDs, e.g. user_2xxx)
 CREATE TABLE IF NOT EXISTS public.profiles (
-    id TEXT PRIMARY KEY, -- Supports Clerk user IDs (e.g. user_2xxx) or UUIDs
+    id TEXT PRIMARY KEY,
     email TEXT UNIQUE NOT NULL,
     full_name TEXT,
     avatar_url TEXT,
@@ -34,16 +33,10 @@ CREATE TABLE IF NOT EXISTS public.profiles (
     notifications JSONB DEFAULT '{"emailDigest": true, "postFailureAlerts": true, "securityAlerts": true}'::jsonb,
     tenant_id UUID REFERENCES public.tenants(id) ON DELETE SET NULL,
     is_super_admin BOOLEAN NOT NULL DEFAULT false,
-    role TEXT NOT NULL DEFAULT 'admin' CHECK (role IN ('super_admin', 'admin', 'member')),
+    role TEXT NOT NULL DEFAULT 'member' CHECK (role IN ('super_admin', 'agency', 'influencer', 'business_user', 'admin', 'member')),
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
-
--- Seed/Ensure Default Super Admin Profile
-INSERT INTO public.profiles (id, email, full_name, is_super_admin, role)
-VALUES ('clerk_super_admin_seed', 'leadspree24x7@gmail.com', 'LeadSpree Super Admin', true, 'super_admin')
-ON CONFLICT (email) DO UPDATE SET is_super_admin = true, role = 'super_admin';
-
 
 -- 4. Social Connections (Connected Accounts per Tenant)
 CREATE TABLE IF NOT EXISTS public.social_connections (
@@ -114,18 +107,13 @@ ALTER TABLE public.plans ENABLE ROW LEVEL SECURITY;
 
 CREATE SCHEMA IF NOT EXISTS private;
 
--- Helper Function: Check Super Admin role via Clerk user ID or email claims in JWT
+-- Helper Function: privileges come only from the DB row for the signed Clerk subject.
 CREATE OR REPLACE FUNCTION private.is_super_admin()
 RETURNS BOOLEAN AS $$
 BEGIN
-    RETURN (
-        (auth.jwt() ->> 'email' = 'leadspree24x7@gmail.com')
-        OR
-        EXISTS (
-            SELECT 1 FROM public.profiles 
-            WHERE (id = auth.jwt() ->> 'sub' OR email = auth.jwt() ->> 'email')
-              AND is_super_admin = true
-        )
+    RETURN EXISTS (
+        SELECT 1 FROM public.profiles
+        WHERE id = (auth.jwt() ->> 'sub') AND is_super_admin = true
     );
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER STABLE SET search_path = '';
@@ -139,7 +127,7 @@ GRANT EXECUTE ON FUNCTION private.is_super_admin() TO authenticated;
 CREATE POLICY "Tenants: Members view own tenant metadata"
     ON public.tenants FOR SELECT
     USING (
-        id IN (SELECT tenant_id FROM public.profiles WHERE id = auth.uid())
+        id IN (SELECT tenant_id FROM public.profiles WHERE id = (auth.jwt() ->> 'sub'))
         OR private.is_super_admin()
     );
 
@@ -152,14 +140,14 @@ CREATE POLICY "Tenants: Super Admin account management"
 CREATE POLICY "Profiles: Members view own profile"
     ON public.profiles FOR SELECT
     TO authenticated
-    USING (id = (SELECT auth.uid()) OR private.is_super_admin());
+    USING (id = (auth.jwt() ->> 'sub') OR private.is_super_admin());
 
 CREATE POLICY "Profiles: Members update own non-privileged profile row"
     ON public.profiles FOR UPDATE
     TO authenticated
-    USING (id = (SELECT auth.uid()))
+    USING (id = (auth.jwt() ->> 'sub'))
     WITH CHECK (
-        id = (SELECT auth.uid())
+        id = (auth.jwt() ->> 'sub')
         AND is_super_admin = false
         AND role <> 'super_admin'
     );
@@ -168,25 +156,25 @@ CREATE POLICY "Profiles: Members update own non-privileged profile row"
 CREATE POLICY "SocialConnections: Strict tenant member isolation"
     ON public.social_connections FOR ALL
     USING (
-        tenant_id IN (SELECT tenant_id FROM public.profiles WHERE id = auth.uid())
+        tenant_id IN (SELECT tenant_id FROM public.profiles WHERE id = (auth.jwt() ->> 'sub'))
     )
-    WITH CHECK (tenant_id IN (SELECT tenant_id FROM public.profiles WHERE id = auth.uid()));
+    WITH CHECK (tenant_id IN (SELECT tenant_id FROM public.profiles WHERE id = (auth.jwt() ->> 'sub')));
 
 -- 3. RLS Policy: Posts (STRICT PRIVACY: Members ONLY, Super Admin blocked)
 CREATE POLICY "Posts: Strict tenant member content isolation"
     ON public.posts FOR ALL
     USING (
-        tenant_id IN (SELECT tenant_id FROM public.profiles WHERE id = auth.uid())
+        tenant_id IN (SELECT tenant_id FROM public.profiles WHERE id = (auth.jwt() ->> 'sub'))
     )
-    WITH CHECK (tenant_id IN (SELECT tenant_id FROM public.profiles WHERE id = auth.uid()));
+    WITH CHECK (tenant_id IN (SELECT tenant_id FROM public.profiles WHERE id = (auth.jwt() ->> 'sub')));
 
 -- 4. RLS Policy: Post Logs (STRICT PRIVACY: Members ONLY, Super Admin blocked)
 CREATE POLICY "PostLogs: Strict tenant member audit log isolation"
     ON public.post_logs FOR ALL
     USING (
-        tenant_id IN (SELECT tenant_id FROM public.profiles WHERE id = auth.uid())
+        tenant_id IN (SELECT tenant_id FROM public.profiles WHERE id = (auth.jwt() ->> 'sub'))
     )
-    WITH CHECK (tenant_id IN (SELECT tenant_id FROM public.profiles WHERE id = auth.uid()));
+    WITH CHECK (tenant_id IN (SELECT tenant_id FROM public.profiles WHERE id = (auth.jwt() ->> 'sub')));
 
 -- 5. RLS Policy: Plans (Everyone can read, Super Admin can create/update)
 CREATE POLICY "Plans: Public read access"
