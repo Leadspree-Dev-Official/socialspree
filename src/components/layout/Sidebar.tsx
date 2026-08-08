@@ -1,4 +1,3 @@
-import React from 'react';
 import { 
   LayoutDashboard, 
   Edit, 
@@ -13,12 +12,16 @@ import {
   ShieldCheck, 
   Settings, 
   HelpCircle,
-  Globe
+  Globe,
+  Building2,
+  Instagram
 } from 'lucide-react';
 import { SuperAdminSubTab } from '../admin/SuperAdminPortal';
 
 export type TabType = 
   | 'dashboard' 
+  | 'agency_brands'
+  | 'grid_planner'
   | 'composer' 
   | 'calendar'
   | 'agents'
@@ -36,6 +39,8 @@ interface SidebarProps {
   activeTab: TabType;
   setActiveTab: (tab: TabType) => void;
   isSuperAdmin: boolean;
+  isAgencyMode?: boolean;
+  isInfluencerMode?: boolean;
   activeAdminSubTab?: SuperAdminSubTab;
   onSelectAdminSubTab?: (subTab: SuperAdminSubTab) => void;
   onReturnToPublic?: () => void;
@@ -45,10 +50,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
   activeTab,
   setActiveTab,
   isSuperAdmin,
+  isAgencyMode,
+  isInfluencerMode,
   onReturnToPublic,
 }) => {
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    ...(isAgencyMode ? [{ id: 'agency_brands', label: 'Client Brands', icon: Building2, isNew: true }] : []),
+    ...(isInfluencerMode ? [{ id: 'grid_planner', label: 'Feed Grid Planner', icon: Instagram, isNew: true }] : []),
     { id: 'composer', label: 'Composer', icon: Edit },
     { id: 'calendar', label: 'Calendar Grid', icon: CalendarIcon },
     { id: 'agents', label: 'AI Agents', icon: Bot, isNew: true },
@@ -92,37 +101,49 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {/* Navigation Links */}
       <div className="flex-1 px-4 py-6 overflow-y-auto space-y-6">
         
-        {/* Main App Navigation */}
-        <div className="space-y-1">
-          <div className="px-3 text-[10px] font-mono font-bold uppercase tracking-wider text-slate-500 mb-2">
-            Main Management
+        {/* Main App Navigation (Hidden for Super Admin) */}
+        {!isSuperAdmin ? (
+          <div className="space-y-1">
+            <div className="px-3 text-[10px] font-mono font-bold uppercase tracking-wider text-slate-500 mb-2">
+              Main Management
+            </div>
+            {navItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = activeTab === item.id;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => handleNavClick(item.id as TabType)}
+                  className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                    isActive
+                      ? 'bg-[#5D3FD3] text-white shadow-md shadow-purple-900/30'
+                      : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <Icon className={`w-4 h-4 ${isActive ? 'text-white' : item.id === 'agents' ? 'text-amber-400' : 'text-slate-400'}`} />
+                    <span>{item.label}</span>
+                  </div>
+                  {item.id === 'agents' && (
+                    <span className="text-[9px] font-mono font-black bg-amber-400 text-slate-950 px-1.5 py-0.5 rounded-full uppercase">
+                      AI
+                    </span>
+                  )}
+                </button>
+              );
+            })}
           </div>
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = activeTab === item.id;
-            return (
-              <button
-                key={item.id}
-                onClick={() => handleNavClick(item.id as TabType)}
-                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${
-                  isActive
-                    ? 'bg-[#5D3FD3] text-white shadow-md shadow-purple-900/30'
-                    : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <Icon className={`w-4 h-4 ${isActive ? 'text-white' : item.id === 'agents' ? 'text-amber-400' : 'text-slate-400'}`} />
-                  <span>{item.label}</span>
-                </div>
-                {item.id === 'agents' && (
-                  <span className="text-[9px] font-mono font-black bg-amber-400 text-slate-950 px-1.5 py-0.5 rounded-full uppercase">
-                    AI
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </div>
+        ) : (
+          <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl space-y-2 text-xs">
+            <div className="font-bold text-amber-300 flex items-center gap-1.5 text-[11px] font-mono uppercase">
+              <ShieldCheck className="w-4 h-4 text-amber-400" />
+              <span>Super Admin Mode</span>
+            </div>
+            <p className="text-[11px] text-slate-300 leading-relaxed">
+              Main Management & Content Posting is disabled in Super Admin view. To create posts or manage social channels, please switch to a registered Agency or Business account.
+            </p>
+          </div>
+        )}
 
         {/* Super Admin Section (Always Available Nav Button) */}
         <div className="space-y-1 pt-2 border-t border-slate-800">

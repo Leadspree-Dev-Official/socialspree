@@ -9,7 +9,8 @@ import {
   SubscriptionPlan,
   SystemSettings,
   AiCreditLog,
-  MediaAsset
+  MediaAsset,
+  AgencyBrand
 } from '../types';
 
 export const SUPER_ADMIN_EMAIL = ((import.meta as any).env || {}).VITE_SUPPORT_EMAIL || 'leadspree24x7@gmail.com';
@@ -22,7 +23,11 @@ export const GLOBAL_SYSTEM_SETTINGS: SystemSettings = {
   platformName: 'SocialSpree Pro SaaS Engine',
   supportEmail: SUPER_ADMIN_EMAIL,
   aiApiKey: '',
-  defaultAiCredits: 1000
+  defaultAiCredits: 1000,
+  websiteEnabled: true,
+  agencyModeEnabled: false,
+  influencerModeEnabled: false,
+  businessModeEnabled: true
 };
 
 // Global Subscription Plans (Multi-Currency Regional Plans with AI Credits)
@@ -35,12 +40,17 @@ export const INITIAL_PLANS: SubscriptionPlan[] = [
     currencySymbol: '$',
     allocatedApiSlots: 1, // 1 API key = 2 social channels
     maxSocialAccounts: 2,
+    maxZernioTriggersPerDay: 50,
+    maxZernioTriggersPerMonth: 1000,
+    maxStorageMb: 2000, // 2 GB
+    chatGptConnectorAllowed: false,
     aiCredits: 500,
     features: [
       '1 Zernio API Key Slot (2 Social Channels)',
+      '50 Zernio Triggers / day (1,000 / mo)',
+      '2 GB Supabase/Cloudinary Storage',
       '500 AI Content & Hashtag Credits/mo',
       'Instant & Scheduled Posting',
-      'Cloudflare & Cloudinary CDN Integration',
       'Basic Activity Audit Logs'
     ]
   },
@@ -52,13 +62,19 @@ export const INITIAL_PLANS: SubscriptionPlan[] = [
     currencySymbol: '₹',
     allocatedApiSlots: 3, // 3 API keys = 6 social channels firing in parallel
     maxSocialAccounts: 6,
+    maxZernioTriggersPerDay: 200,
+    maxZernioTriggersPerMonth: 5000,
+    maxStorageMb: 10000, // 10 GB
+    chatGptConnectorAllowed: true,
     aiCredits: 2500,
     isPopular: true,
     features: [
       '3 Zernio API Key Slots (6 Social Channels)',
+      '200 Zernio Triggers / day (5,000 / mo)',
+      '10 GB Media Vault Storage',
       '2,500 AI Content & Hashtag Credits/mo',
+      'ChatGPT Scheduling Connector API',
       'Parallel Key Firing Engine',
-      'Cloud Native Execution & Webhooks',
       'Google Review Auto-AI Responder',
       'Priority Super Admin Support'
     ]
@@ -71,10 +87,17 @@ export const INITIAL_PLANS: SubscriptionPlan[] = [
     currencySymbol: '£',
     allocatedApiSlots: 10, // 10 API keys = 20 social channels
     maxSocialAccounts: 20,
+    maxZernioTriggersPerDay: 1000,
+    maxZernioTriggersPerMonth: 25000,
+    maxStorageMb: 50000, // 50 GB
+    chatGptConnectorAllowed: true,
     aiCredits: 10000,
     features: [
       '10 Zernio API Key Slots (20 Social Channels)',
+      '1,000 Zernio Triggers / day (25,000 / mo)',
+      '50 GB Media Vault Storage',
       '10,000 AI Content & Hashtag Credits/mo',
+      'ChatGPT Scheduling Connector API',
       'Unlimited Parallel Dispatch Engine',
       'Custom Storage Buckets & CDN',
       'Dedicated Account Manager & SLA'
@@ -311,5 +334,52 @@ export const saveStoredMediaAssets = (media: MediaAsset[]) => {
     localStorage.setItem(STORAGE_KEYS.MEDIA, JSON.stringify(media));
   } catch (err) {
     console.error('Failed to persist media assets:', err);
+  }
+};
+
+export const INITIAL_BRANDS: AgencyBrand[] = [
+  {
+    id: 'brand-starbucks',
+    agencyTenantId: '00000000-0000-0000-0000-000000000001',
+    brandName: 'Starbucks Coffee Co.',
+    logoUrl: 'https://images.unsplash.com/photo-1541167760496-1628856ab772?w=150&auto=format&fit=crop&q=80',
+    industry: 'Food & Beverage',
+    connectedAccountIds: [],
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: 'brand-nike',
+    agencyTenantId: '00000000-0000-0000-0000-000000000001',
+    brandName: 'Nike Athletics Global',
+    logoUrl: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=150&auto=format&fit=crop&q=80',
+    industry: 'Apparel & Sports',
+    connectedAccountIds: [],
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: 'brand-techCorp',
+    agencyTenantId: '00000000-0000-0000-0000-000000000001',
+    brandName: 'Apex Cloud Systems',
+    logoUrl: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=150&auto=format&fit=crop&q=80',
+    industry: 'Technology & SaaS',
+    connectedAccountIds: [],
+    createdAt: new Date().toISOString()
+  }
+];
+
+export const getStoredBrands = (): AgencyBrand[] => {
+  try {
+    const raw = localStorage.getItem('socialspree_brands_v1');
+    return raw ? JSON.parse(raw) : INITIAL_BRANDS;
+  } catch {
+    return INITIAL_BRANDS;
+  }
+};
+
+export const saveStoredBrands = (brands: AgencyBrand[]) => {
+  try {
+    localStorage.setItem('socialspree_brands_v1', JSON.stringify(brands));
+  } catch (err) {
+    console.error('Failed to persist agency brands:', err);
   }
 };

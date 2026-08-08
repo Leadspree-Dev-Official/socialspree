@@ -1,8 +1,9 @@
 import React from 'react';
 import { UserButton } from '@clerk/react';
-import { Tenant } from '../../types';
+import { Tenant, AgencyBrand } from '../../types';
 import { SUPER_ADMIN_EMAIL } from '../../lib/store';
 import { Search, Bell, ShieldCheck, Building2, Globe, LogOut, User } from 'lucide-react';
+import { BrandSelectorTopbar } from '../agency/BrandSelectorTopbar';
 
 
 interface HeaderProps {
@@ -17,6 +18,11 @@ interface HeaderProps {
   userEmail?: string;
   userProfile?: { fullName?: string | null; avatarUrl?: string | null } | null;
   onOpenUserProfile?: () => void;
+  isAgencyMode?: boolean;
+  brands?: AgencyBrand[];
+  activeBrand?: AgencyBrand | null;
+  onSelectBrand?: (brand: AgencyBrand | null) => void;
+  onOpenBrandManager?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -30,7 +36,12 @@ export const Header: React.FC<HeaderProps> = ({
   onSignOut,
   userEmail,
   userProfile,
-  onOpenUserProfile
+  onOpenUserProfile,
+  isAgencyMode,
+  brands,
+  activeBrand,
+  onSelectBrand,
+  onOpenBrandManager
 }) => {
   const activeEmail = userEmail || (isSuperAdminMode ? SUPER_ADMIN_EMAIL : currentTenant.ownerEmail);
   const displayName = isSuperAdminMode 
@@ -81,6 +92,16 @@ export const Header: React.FC<HeaderProps> = ({
             {currentTenant.tierPlan}
           </span>
         </div>
+
+        {/* Agency Brand Selector Pill */}
+        {isAgencyMode && brands && onSelectBrand && onOpenBrandManager && (
+          <BrandSelectorTopbar
+            brands={brands}
+            activeBrand={activeBrand || null}
+            onSelectBrand={onSelectBrand}
+            onOpenBrandManager={onOpenBrandManager}
+          />
+        )}
 
         {/* Super Admin Mode Toggle Button */}
         <button

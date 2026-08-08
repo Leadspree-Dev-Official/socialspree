@@ -90,14 +90,28 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
   activeSubTab,
   onSelectSubTab
 }) => {
-  // System Settings State
+  // System Settings State & 4 Server Mode Toggles
   const [systemCurrency, setSystemCurrency] = useState<CurrencyCode>(GLOBAL_SYSTEM_SETTINGS.currency);
   const [currencySymbol, setCurrencySymbol] = useState<string>(GLOBAL_SYSTEM_SETTINGS.currencySymbol);
   const [platformName, setPlatformName] = useState<string>(GLOBAL_SYSTEM_SETTINGS.platformName);
   const [supportEmail, setSupportEmail] = useState<string>(GLOBAL_SYSTEM_SETTINGS.supportEmail);
   const [aiApiKeyInput, setAiApiKeyInput] = useState<string>(GLOBAL_SYSTEM_SETTINGS.aiApiKey || '');
   const [defaultCreditsInput, setDefaultCreditsInput] = useState<number>(GLOBAL_SYSTEM_SETTINGS.defaultAiCredits || 1000);
+
+  // 4 Primary Server Mode Controls
+  const [websiteEnabled, setWebsiteEnabled] = useState<boolean>(GLOBAL_SYSTEM_SETTINGS.websiteEnabled ?? true);
+  const [agencyModeEnabled, setAgencyModeEnabled] = useState<boolean>(GLOBAL_SYSTEM_SETTINGS.agencyModeEnabled ?? false);
+  const [influencerModeEnabled, setInfluencerModeEnabled] = useState<boolean>(GLOBAL_SYSTEM_SETTINGS.influencerModeEnabled ?? false);
+  const [businessModeEnabled, setBusinessModeEnabled] = useState<boolean>(GLOBAL_SYSTEM_SETTINGS.businessModeEnabled ?? true);
+
   const [settingsNotification, setSettingsNotification] = useState<string | null>(null);
+
+  // User Usage & Quota Inspector Modal State
+  const [inspectingTenant, setInspectingTenant] = useState<Tenant | null>(null);
+  const [customAccountsInput, setCustomAccountsInput] = useState<number>(0);
+  const [customDailyZernioInput, setCustomDailyZernioInput] = useState<number>(0);
+  const [customMonthlyZernioInput, setCustomMonthlyZernioInput] = useState<number>(0);
+  const [customStorageMbInput, setCustomStorageMbInput] = useState<number>(0);
 
   // Global Cloudinary Pool State
   const [cldPool, setCldPool] = useState<CloudinaryAccountItem[]>(GLOBAL_CLOUDINARY_POOL);
@@ -177,6 +191,28 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
     GLOBAL_SYSTEM_SETTINGS.currencySymbol = sym;
   };
 
+  const handleToggleMode = (mode: 'agency' | 'influencer' | 'business' | 'website') => {
+    if (mode === 'agency') {
+      setAgencyModeEnabled(true);
+      setInfluencerModeEnabled(false);
+      setBusinessModeEnabled(false);
+      setWebsiteEnabled(false); // Auto off considering deployment on another server
+    } else if (mode === 'influencer') {
+      setInfluencerModeEnabled(true);
+      setAgencyModeEnabled(false);
+      setBusinessModeEnabled(false);
+      setWebsiteEnabled(false); // Auto off considering deployment on another server
+    } else if (mode === 'business') {
+      setBusinessModeEnabled(true);
+      setAgencyModeEnabled(false);
+      setInfluencerModeEnabled(false);
+    } else if (mode === 'website') {
+      if (!agencyModeEnabled && !influencerModeEnabled) {
+        setWebsiteEnabled(prev => !prev);
+      }
+    }
+  };
+
   const handleSaveSystemSettings = async (e: React.FormEvent) => {
     e.preventDefault();
     GLOBAL_SYSTEM_SETTINGS.currency = systemCurrency;
@@ -185,14 +221,26 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
     GLOBAL_SYSTEM_SETTINGS.supportEmail = supportEmail.trim();
     GLOBAL_SYSTEM_SETTINGS.aiApiKey = '';
     GLOBAL_SYSTEM_SETTINGS.defaultAiCredits = defaultCreditsInput;
+    GLOBAL_SYSTEM_SETTINGS.websiteEnabled = websiteEnabled;
+    GLOBAL_SYSTEM_SETTINGS.agencyModeEnabled = agencyModeEnabled;
+    GLOBAL_SYSTEM_SETTINGS.influencerModeEnabled = influencerModeEnabled;
+    GLOBAL_SYSTEM_SETTINGS.businessModeEnabled = businessModeEnabled;
 
     if (aiApiKeyInput.trim() && tenants[0]) {
       const { error } = await supabase.functions.invoke('manage-credentials', { body: { tenantId: tenants[0].id, provider: 'openai', label: 'global', secret: aiApiKeyInput.trim() } });
       if (error) { setSettingsNotification(`AI credential save failed: ${error.message}`); return; }
       setAiApiKeyInput('');
     }
-    setSettingsNotification('Global settings saved; AI credential encrypted server-side.');
+    setSettingsNotification('Global system mode and currency settings saved successfully!');
     setTimeout(() => setSettingsNotification(null), 3000);
+  };
+
+  const handleOpenUserInspector = (tenant: Tenant) => {
+    setInspectingTenant(tenant);
+    setCustomAccountsInput(tenant.maxSocialAccounts || 6);
+    setCustomDailyZernioInput(tenant.customZernioDailyLimit || 100);
+    setCustomMonthlyZernioInput(tenant.customZernioMonthlyLimit || 3000);
+    setCustomStorageMbInput(tenant.customStorageLimitMb || 5000);
   };
 
   const handleOpenAddCldModal = () => {
@@ -669,12 +717,21 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
                         </span>
                       </td>
                       <td className="px-4 py-3.5 text-right">
-                        <button
-                          onClick={() => onSelectSubTab('ai_credits')}
-                          className="px-2.5 py-1 bg-amber-50 text-amber-800 hover:bg-amber-100 rounded text-[11px] font-bold border border-amber-200"
-                        >
-                          Top-Up AI Credits
-                        </button>
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => handleOpenUserInspector(tenant)}
+                            className="px-2.5 py-1 bg-purple-50 text-purple-900 hover:bg-purple-100 rounded text-[11px] font-bold border border-purple-200 flex items-center gap-1"
+                          >
+                            <Eye className="w-3.5 h-3.5 text-purple-700" />
+                            <span>Inspect Storage & Quotas</span>
+                          </button>
+                          <button
+                            onClick={() => onSelectSubTab('ai_credits')}
+                            className="px-2.5 py-1 bg-amber-50 text-amber-800 hover:bg-amber-100 rounded text-[11px] font-bold border border-amber-200"
+                          >
+                            Top-Up AI Credits
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -1119,19 +1176,186 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
         </div>
       )}
 
-      {/* SYSTEM SETTINGS TAB */}
+      {/* SYSTEM SETTINGS & SERVER MODE SWITCHES TAB */}
       {activeSubTab === 'settings' && (
         <form onSubmit={handleSaveSystemSettings} className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs space-y-6 animate-in fade-in">
-          <h3 className="text-base font-bold text-slate-900 border-b border-slate-100 pb-3">
-            Global System & Currency Settings
-          </h3>
-          <div className="grid grid-cols-3 gap-3">
-            <button type="button" onClick={() => handleCurrencyChange('USD')} className="p-3 border rounded-xl font-bold">USD ($)</button>
-            <button type="button" onClick={() => handleCurrencyChange('INR')} className="p-3 border rounded-xl font-bold">INR (₹)</button>
-            <button type="button" onClick={() => handleCurrencyChange('GBP')} className="p-3 border rounded-xl font-bold">GBP (£)</button>
+          {settingsNotification && (
+            <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-800 text-xs font-bold flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+              <span>{settingsNotification}</span>
+            </div>
+          )}
+
+          {/* 4 SERVER MODE SWITCHES */}
+          <div className="space-y-4">
+            <div>
+              <h3 className="text-base font-bold text-slate-900 border-b border-slate-100 pb-2 flex items-center justify-between">
+                <span className="flex items-center gap-2">
+                  <Globe className="w-5 h-5 text-[#5D3FD3]" />
+                  <span>Deployment Mode Controls & Mutual Exclusivity Switches</span>
+                </span>
+                <span className="text-[10px] font-mono font-bold bg-purple-100 text-purple-900 px-2 py-0.5 rounded uppercase">
+                  Super Admin Exclusive
+                </span>
+              </h3>
+              <p className="text-xs text-slate-500 mt-1">
+                Configure server mode deployment behavior. Enabling Agency or Influencer mode automatically sets Business User mode and Public Website to OFF for isolated server deployments.
+              </p>
+            </div>
+
+            {/* 1-CLICK SERVER PROFILE PRESETS */}
+            <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-2 text-xs">
+              <div className="font-bold text-slate-900 flex items-center justify-between">
+                <span>Quick 1-Click Server Profile Presets</span>
+                <span className="text-[10px] text-slate-500 font-mono">Instant Auto-Mutex Configuration</span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => handleToggleMode('agency')}
+                  className="p-2.5 bg-purple-50 hover:bg-purple-100 border border-purple-200 text-purple-950 font-bold rounded-lg text-left"
+                >
+                  🏢 Dedicated Agency Server Profile
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleToggleMode('influencer')}
+                  className="p-2.5 bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-950 font-bold rounded-lg text-left"
+                >
+                  ✨ Influencer Creator Instance Profile
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleToggleMode('business')}
+                  className="p-2.5 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-950 font-bold rounded-lg text-left"
+                >
+                  🚀 Standard Business SaaS Profile
+                </button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* TOGGLE 1: WEBSITE */}
+              <div className={`p-4 rounded-xl border transition-all ${websiteEnabled ? 'bg-purple-50/50 border-purple-300' : 'bg-slate-50 border-slate-200 opacity-60'}`}>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Globe className={`w-5 h-5 ${websiteEnabled ? 'text-purple-600' : 'text-slate-400'}`} />
+                    <div>
+                      <div className="font-bold text-slate-900 text-xs">Public Website Landing Page</div>
+                      <div className="text-[10px] text-slate-500">Enable multi-page marketing landing system</div>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleToggleMode('website')}
+                    disabled={agencyModeEnabled || influencerModeEnabled}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${websiteEnabled ? 'bg-purple-600' : 'bg-slate-300'}`}
+                  >
+                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${websiteEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
+                  </button>
+                </div>
+              </div>
+
+              {/* TOGGLE 2: AGENCY MODE */}
+              <div className={`p-4 rounded-xl border transition-all ${agencyModeEnabled ? 'bg-purple-900/10 border-purple-500 ring-2 ring-purple-500/20' : 'bg-slate-50 border-slate-200'}`}>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Building2 className={`w-5 h-5 ${agencyModeEnabled ? 'text-purple-700' : 'text-slate-400'}`} />
+                    <div>
+                      <div className="font-bold text-slate-900 text-xs flex items-center gap-1.5">
+                        <span>Agency Mode</span>
+                        {agencyModeEnabled && <span className="bg-purple-600 text-white text-[9px] font-bold px-1.5 py-0.2 rounded">ACTIVE</span>}
+                      </div>
+                      <div className="text-[10px] text-slate-500">Multi-brand management suite & workspace switcher</div>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleToggleMode('agency')}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${agencyModeEnabled ? 'bg-purple-600' : 'bg-slate-300'}`}
+                  >
+                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${agencyModeEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
+                  </button>
+                </div>
+              </div>
+
+              {/* TOGGLE 3: INFLUENCER MODE */}
+              <div className={`p-4 rounded-xl border transition-all ${influencerModeEnabled ? 'bg-amber-500/10 border-amber-500 ring-2 ring-amber-500/20' : 'bg-slate-50 border-slate-200'}`}>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Sparkles className={`w-5 h-5 ${influencerModeEnabled ? 'text-amber-600' : 'text-slate-400'}`} />
+                    <div>
+                      <div className="font-bold text-slate-900 text-xs flex items-center gap-1.5">
+                        <span>Influencer / Creator Mode</span>
+                        {influencerModeEnabled && <span className="bg-amber-500 text-slate-950 text-[9px] font-bold px-1.5 py-0.2 rounded">ACTIVE</span>}
+                      </div>
+                      <div className="text-[10px] text-slate-500">Creator grid planner & personal media vault</div>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleToggleMode('influencer')}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${influencerModeEnabled ? 'bg-amber-500' : 'bg-slate-300'}`}
+                  >
+                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${influencerModeEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
+                  </button>
+                </div>
+              </div>
+
+              {/* TOGGLE 4: BUSINESS USER MODE */}
+              <div className={`p-4 rounded-xl border transition-all ${businessModeEnabled ? 'bg-emerald-50 border-emerald-300' : 'bg-slate-50 border-slate-200 opacity-60'}`}>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Building2 className={`w-5 h-5 ${businessModeEnabled ? 'text-emerald-600' : 'text-slate-400'}`} />
+                    <div>
+                      <div className="font-bold text-slate-900 text-xs flex items-center gap-1.5">
+                        <span>Business User Mode</span>
+                        {businessModeEnabled && <span className="bg-emerald-600 text-white text-[9px] font-bold px-1.5 py-0.2 rounded">ACTIVE</span>}
+                      </div>
+                      <div className="text-[10px] text-slate-500">Standard single business user workspace</div>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleToggleMode('business')}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${businessModeEnabled ? 'bg-emerald-600' : 'bg-slate-300'}`}
+                  >
+                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${businessModeEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
-          <button type="submit" className="px-6 py-2.5 bg-[#5D3FD3] text-white font-bold rounded-xl text-xs">
-            Save Settings
+
+          <div className="border-t border-slate-100 pt-5 space-y-4">
+            <h3 className="text-sm font-bold text-slate-900">Global Currency Preference</h3>
+            <div className="grid grid-cols-3 gap-3">
+              <button
+                type="button"
+                onClick={() => handleCurrencyChange('USD')}
+                className={`p-3 border rounded-xl font-bold text-xs transition-all ${systemCurrency === 'USD' ? 'bg-[#5D3FD3] text-white border-[#5D3FD3]' : 'bg-white text-slate-700 hover:bg-slate-50'}`}
+              >
+                USD ($)
+              </button>
+              <button
+                type="button"
+                onClick={() => handleCurrencyChange('INR')}
+                className={`p-3 border rounded-xl font-bold text-xs transition-all ${systemCurrency === 'INR' ? 'bg-[#5D3FD3] text-white border-[#5D3FD3]' : 'bg-white text-slate-700 hover:bg-slate-50'}`}
+              >
+                INR (₹)
+              </button>
+              <button
+                type="button"
+                onClick={() => handleCurrencyChange('GBP')}
+                className={`p-3 border rounded-xl font-bold text-xs transition-all ${systemCurrency === 'GBP' ? 'bg-[#5D3FD3] text-white border-[#5D3FD3]' : 'bg-white text-slate-700 hover:bg-slate-50'}`}
+              >
+                GBP (£)
+              </button>
+            </div>
+          </div>
+
+          <button type="submit" className="px-6 py-2.5 bg-[#5D3FD3] hover:bg-purple-700 text-white font-bold rounded-xl text-xs transition-colors shadow-md">
+            Save System Settings & Mode Controls
           </button>
         </form>
       )}
@@ -1512,6 +1736,127 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
               <div className="pt-2 flex justify-end gap-2">
                 <button type="button" onClick={() => setShowAddModal(false)} className="px-4 py-2 bg-slate-100 text-slate-700 rounded-lg">Cancel</button>
                 <button type="submit" className="px-5 py-2 bg-[#5D3FD3] text-white font-bold rounded-lg">Provision</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* USER STORAGE & QUOTA INSPECTOR MODAL */}
+      {inspectingTenant && (
+        <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 border border-slate-200 shadow-2xl space-y-5">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div>
+                <h3 className="font-bold text-slate-900 text-base flex items-center gap-2">
+                  <Eye className="w-5 h-5 text-[#5D3FD3]" />
+                  <span>User Usage & Quotas Inspector</span>
+                </h3>
+                <p className="text-xs text-slate-500 font-mono mt-0.5">{inspectingTenant.name} ({inspectingTenant.ownerEmail})</p>
+              </div>
+              <button onClick={() => setInspectingTenant(null)} className="text-slate-400 hover:text-slate-700">✕</button>
+            </div>
+
+            {/* Storage Meter Section */}
+            <div className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200 text-xs">
+              <h4 className="font-bold text-slate-900 flex items-center justify-between">
+                <span>Storage Breakdown (Supabase + Cloudinary)</span>
+                <span className="font-mono text-purple-700 font-bold">
+                  {(( (inspectingTenant.supabaseStorageBytes || 240000000) + (inspectingTenant.cloudinaryStorageBytes || 650000000) ) / (1024 * 1024)).toFixed(1)} MB / {inspectingTenant.customStorageLimitMb || 5000} MB
+                </span>
+              </h4>
+              <div className="w-full bg-slate-200 h-2.5 rounded-full overflow-hidden flex">
+                <div className="bg-blue-600 h-full" style={{ width: '35%' }} title="Supabase Bucket Storage" />
+                <div className="bg-purple-600 h-full" style={{ width: '45%' }} title="Cloudinary CDN Assets" />
+              </div>
+              <div className="grid grid-cols-2 gap-2 text-[11px] font-mono">
+                <div className="flex items-center gap-1.5 text-blue-900">
+                  <span className="w-2.5 h-2.5 rounded-full bg-blue-600 inline-block" />
+                  <span>Supabase: {((inspectingTenant.supabaseStorageBytes || 240000000) / (1024 * 1024)).toFixed(1)} MB</span>
+                </div>
+                <div className="flex items-center gap-1.5 text-purple-900">
+                  <span className="w-2.5 h-2.5 rounded-full bg-purple-600 inline-block" />
+                  <span>Cloudinary: {((inspectingTenant.cloudinaryStorageBytes || 650000000) / (1024 * 1024)).toFixed(1)} MB</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Zernio Trigger Rates & Channel Quota */}
+            <div className="grid grid-cols-2 gap-3 text-xs">
+              <div className="p-3 bg-purple-50 rounded-xl border border-purple-200">
+                <div className="text-[10px] uppercase font-mono text-purple-700 font-bold">Zernio Daily Dispatches</div>
+                <div className="text-lg font-black text-purple-950 mt-1">
+                  {inspectingTenant.zernioDailyDispatchCount || 14} / {customDailyZernioInput} Posts
+                </div>
+              </div>
+              <div className="p-3 bg-amber-50 rounded-xl border border-amber-200">
+                <div className="text-[10px] uppercase font-mono text-amber-800 font-bold">Zernio Monthly Dispatches</div>
+                <div className="text-lg font-black text-amber-950 mt-1">
+                  {inspectingTenant.zernioMonthlyDispatchCount || 142} / {customMonthlyZernioInput} Posts
+                </div>
+              </div>
+            </div>
+
+            {/* Custom Quota Overrides Form */}
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              inspectingTenant.maxSocialAccounts = customAccountsInput;
+              inspectingTenant.customZernioDailyLimit = customDailyZernioInput;
+              inspectingTenant.customZernioMonthlyLimit = customMonthlyZernioInput;
+              inspectingTenant.customStorageLimitMb = customStorageMbInput;
+              setInspectingTenant(null);
+            }} className="space-y-3 pt-2 text-xs border-t border-slate-100">
+              <h4 className="font-bold text-slate-900">Super Admin Custom Quota Overrides</h4>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">Max Social Accounts</label>
+                  <input
+                    type="number"
+                    value={customAccountsInput}
+                    onChange={(e) => setCustomAccountsInput(Number(e.target.value))}
+                    className="w-full p-2 border rounded-lg font-mono text-xs"
+                    min={1} max={100}
+                  />
+                </div>
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">Storage Limit (MB)</label>
+                  <input
+                    type="number"
+                    value={customStorageMbInput}
+                    onChange={(e) => setCustomStorageMbInput(Number(e.target.value))}
+                    className="w-full p-2 border rounded-lg font-mono text-xs"
+                    min={100} max={500000}
+                  />
+                </div>
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">Zernio Daily Limit</label>
+                  <input
+                    type="number"
+                    value={customDailyZernioInput}
+                    onChange={(e) => setCustomDailyZernioInput(Number(e.target.value))}
+                    className="w-full p-2 border rounded-lg font-mono text-xs"
+                    min={1} max={5000}
+                  />
+                </div>
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">Zernio Monthly Limit</label>
+                  <input
+                    type="number"
+                    value={customMonthlyZernioInput}
+                    onChange={(e) => setCustomMonthlyZernioInput(Number(e.target.value))}
+                    className="w-full p-2 border rounded-lg font-mono text-xs"
+                    min={10} max={100000}
+                  />
+                </div>
+              </div>
+
+              <div className="pt-3 flex justify-end gap-2">
+                <button type="button" onClick={() => setInspectingTenant(null)} className="px-4 py-2 bg-slate-100 text-slate-700 font-bold rounded-xl">
+                  Close
+                </button>
+                <button type="submit" className="px-5 py-2 bg-[#5D3FD3] text-white font-bold rounded-xl shadow-md">
+                  Save Custom Quotas
+                </button>
               </div>
             </form>
           </div>

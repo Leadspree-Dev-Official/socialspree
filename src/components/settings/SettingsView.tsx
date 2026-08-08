@@ -26,8 +26,10 @@ import {
   Lock,
   Bell,
   Globe,
-  AlertCircle
+  AlertCircle,
+  Bot
 } from 'lucide-react';
+import { ChatGPTConnectorSettings } from './ChatGPTConnectorSettings';
 
 interface SettingsViewProps {
   tenant: Tenant;
@@ -35,7 +37,7 @@ interface SettingsViewProps {
   onUpdateUserProfile?: (updated: Profile) => void;
   onUpdateTenantCloudinary: (tenantId: string, config: CloudinaryConfig) => void;
   onUpdateTenantProfile: (tenantId: string, name: string, ownerEmail: string) => void;
-  initialTab?: 'user' | 'storage' | 'api' | 'social_keys' | 'org';
+  initialTab?: 'user' | 'storage' | 'api' | 'social_keys' | 'org' | 'chatgpt';
 }
 
 export const SettingsView: React.FC<SettingsViewProps> = ({
@@ -46,7 +48,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   onUpdateTenantProfile,
   initialTab = 'user'
 }) => {
-  const [activeTab, setActiveTab] = useState<'user' | 'storage' | 'api' | 'social_keys' | 'org'>(initialTab);
+  const [activeTab, setActiveTab] = useState<'user' | 'storage' | 'api' | 'social_keys' | 'org' | 'chatgpt'>(initialTab);
 
   // Cloudinary Local State (Multiple Accounts with 3 Fields: Cloud Name, Upload Preset, Bucket Name)
   const cldConfig = tenant.cloudinaryConfig || GLOBAL_DEFAULT_CLOUDINARY;
@@ -414,11 +416,30 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             <Building2 className="w-4 h-4" />
             <span>Organization Profile</span>
           </button>
+
+          <button
+            onClick={() => setActiveTab('chatgpt')}
+            className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-xs font-bold transition-all text-left ${
+              activeTab === 'chatgpt'
+                ? 'bg-emerald-600 text-white shadow-md'
+                : 'bg-emerald-50 text-emerald-900 hover:bg-emerald-100 border border-emerald-200'
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <Bot className="w-4 h-4 text-emerald-600" />
+              <span>ChatGPT Action Connector</span>
+            </div>
+            <span className="bg-emerald-200 text-emerald-950 text-[9px] font-mono font-bold px-1.5 py-0.5 rounded">NEW</span>
+          </button>
         </div>
 
         {/* Right Content Panel */}
         <div className="lg:col-span-9 bg-white border border-slate-200 rounded-2xl p-6 shadow-xs space-y-6">
           
+          {activeTab === 'chatgpt' && (
+            <ChatGPTConnectorSettings tenant={tenant} />
+          )}
+
           {/* TAB 0: USER PROFILE, PHOTO & PASSWORD */}
           {activeTab === 'user' && (
             <div className="space-y-8">

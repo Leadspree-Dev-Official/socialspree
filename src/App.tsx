@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useUser, useClerk } from '@clerk/react';
-import { Tenant, SocialAccount, Post, PostLog, GoogleReview, CloudinaryConfig, ApiAllocationSlot, AiCreditLog, SubscriptionPlan, CurrencyCode, MediaAsset } from './types';
+import { Tenant, SocialAccount, Post, PostLog, GoogleReview, CloudinaryConfig, ApiAllocationSlot, AiCreditLog, SubscriptionPlan, CurrencyCode, MediaAsset, AgencyBrand } from './types';
 import { 
   INITIAL_TENANTS, 
   INITIAL_ACCOUNTS, 
@@ -9,20 +9,26 @@ import {
   INITIAL_REVIEWS, 
   SUPER_ADMIN_EMAIL,
   GLOBAL_DEFAULT_CLOUDINARY,
+  GLOBAL_SYSTEM_SETTINGS,
   getStoredTenants,
   getStoredAccounts,
   getStoredPosts,
   getStoredPlans,
   getStoredAiLogs,
   getStoredMediaAssets,
+  getStoredBrands,
+  saveStoredBrands
 } from './lib/store';
 
 import { Sidebar, TabType } from './components/layout/Sidebar';
 import { MobileNav } from './components/layout/MobileNav';
 import { Header } from './components/layout/Header';
 import { SuperAdminBanner } from './components/layout/SuperAdminBanner';
+import { SystemModeBanner } from './components/layout/SystemModeBanner';
 
 import { DashboardOverview } from './components/dashboard/DashboardOverview';
+import { AgencyBrandManager } from './components/agency/AgencyBrandManager';
+import { InstagramGridPlanner } from './components/influencer/InstagramGridPlanner';
 import { PostComposer } from './components/composer/PostComposer';
 import { CalendarView } from './components/calendar/CalendarView';
 import { AgentsView } from './components/agents/AgentsView';
@@ -112,6 +118,31 @@ export function App() {
   const [aiLogs, setAiLogs] = useState<AiCreditLog[]>(() => getStoredAiLogs());
   const [mediaAssets, setMediaAssets] = useState<MediaAsset[]>(() => getStoredMediaAssets());
   const [agentPrefilledMedia, setAgentPrefilledMedia] = useState<string[]>([]);
+  
+  // Agency Multi-Brand State
+  const [brands, setBrands] = useState<AgencyBrand[]>(() => getStoredBrands());
+  const [activeBrand, setActiveBrand] = useState<AgencyBrand | null>(null);
+
+  useEffect(() => {
+    saveStoredBrands(brands);
+  }, [brands]);
+
+  const handleAddBrand = (newBrand: Omit<AgencyBrand, 'id' | 'createdAt'>) => {
+    const created: AgencyBrand = {
+      ...newBrand,
+      id: `brand-${Date.now()}`,
+      createdAt: new Date().toISOString()
+    };
+    setBrands(prev => [created, ...prev]);
+    setActiveBrand(created);
+  };
+
+  const handleDeleteBrand = (brandId: string) => {
+    setBrands(prev => prev.filter(b => b.id !== brandId));
+    if (activeBrand?.id === brandId) {
+      setActiveBrand(null);
+    }
+  };
 
   const loadAuthenticatedWorkspace = async () => {
     setCloudLoading(true);
@@ -150,9 +181,11 @@ export function App() {
       setLogs(cloud.logs);
       setAiLogs(cloud.aiLogs);
       setMediaAssets(cloud.media);
-      setReviews(cloud.reviews);
       setCloudReady(true);
       setIsSuperAdminMode(isSuperAdmin);
+      if (isSuperAdmin && ['composer', 'calendar', 'connections', 'autoresponder', 'media'].includes(activeTab)) {
+        setActiveTab('admin');
+      }
       setViewMode('app');
     } catch (error) {
       setCloudError(error instanceof Error ? error.message : 'Unable to load workspace.');
@@ -253,6 +286,8 @@ export function App() {
   const getPageTitle = (tab: TabType): string => {
     switch (tab) {
       case 'dashboard': return 'Dashboard Overview';
+      case 'agency_brands': return 'Agency Multi-Brand Management Suite';
+      case 'grid_planner': return 'Instagram & TikTok Feed Grid Planner';
       case 'composer': return 'Post Composer';
       case 'calendar': return 'Interactive Calendar Scheduling Grid';
       case 'agents': return 'AI Autonomous Booking Agents';
@@ -604,6 +639,67 @@ export function App() {
     setLogs([retryLog, ...logs]);
   };
 
+  const handleDemoLogin = (role: 'super_admin' | 'agency' | 'influencer' | 'business') => {
+    let email = 'business@socialspree.io';
+    let isSuperAdmin = false;
+    let tenantTier = 'pro';
+    let assignedRole: any = 'business_user';
+
+    if (role === 'super_admin') {
+      email = 'leadspree24x7@gmail.com';
+      isSuperAdmin = true;
+      assignedRole = 'super_admin';
+    } else if (role === 'agency') {
+      email = 'agency@socialspree.io';
+      tenantTier = 'agency';
+      assignedRole = 'agency';
+      GLOBAL_SYSTEM_SETTINGS.agencyModeEnabled = true;
+      GLOBAL_SYSTEM_SETTINGS.influencerModeEnabled = false;
+      GLOBAL_SYSTEM_SETTINGS.businessModeEnabled = false;
+      GLOBAL_SYSTEM_SETTINGS.websiteEnabled = false;
+    } else if (role === 'influencer') {
+      email = 'creator@socialspree.io';
+      tenantTier = 'pro';
+      assignedRole = 'influencer';
+      GLOBAL_SYSTEM_SETTINGS.influencerModeEnabled = true;
+      GLOBAL_SYSTEM_SETTINGS.agencyModeEnabled = false;
+      GLOBAL_SYSTEM_SETTINGS.businessModeEnabled = false;
+      GLOBAL_SYSTEM_SETTINGS.websiteEnabled = false;
+    } else {
+      email = 'business@socialspree.io';
+      tenantTier = 'starter';
+      assignedRole = 'business_user';
+      GLOBAL_SYSTEM_SETTINGS.businessModeEnabled = true;
+      GLOBAL_SYSTEM_SETTINGS.agencyModeEnabled = false;
+      GLOBAL_SYSTEM_SETTINGS.influencerModeEnabled = false;
+    }
+
+    const demoProfile: Profile = {
+      id: `demo-${role}-${Date.now()}`,
+      email: email,
+      fullName: role === 'super_admin' ? 'LeadSpree Super Admin' : `${role.toUpperCase()} Demo User`,
+      avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+      isSuperAdmin: isSuperAdmin,
+      role: assignedRole,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+
+    setProfile(demoProfile);
+    setIsSuperAdminMode(isSuperAdmin);
+    setCurrentTenant(prev => ({ ...prev, tierPlan: tenantTier, ownerEmail: email }));
+    if (isSuperAdmin) {
+      setActiveTab('admin');
+    } else if (role === 'agency') {
+      setActiveTab('agency_brands');
+    } else if (role === 'influencer') {
+      setActiveTab('grid_planner');
+    } else {
+      setActiveTab('dashboard');
+    }
+    setViewMode('app');
+  };
+
   return (
     <div className="min-h-screen bg-[#F8FAFF] font-['Inter'] text-[#0B1C30]">
       {viewMode === 'auth' ? (
@@ -612,7 +708,11 @@ export function App() {
         ) : (
           <div>
             {cloudError && <div className="fixed top-4 left-1/2 z-50 -translate-x-1/2 rounded-xl bg-red-50 px-4 py-3 text-sm font-semibold text-red-700 shadow">{cloudError}</div>}
-            <AuthGate onAuthenticated={async () => { await loadAuthenticatedWorkspace(); }} onCancel={() => { setCloudError(''); setViewMode('public'); }} />
+            <AuthGate
+              onAuthenticated={async () => { await loadAuthenticatedWorkspace(); }}
+              onDemoLogin={handleDemoLogin}
+              onCancel={() => { setCloudError(''); setViewMode('public'); }}
+            />
           </div>
         )
       ) : viewMode === 'public' ? (
@@ -661,6 +761,8 @@ export function App() {
             activeTab={activeTab}
             setActiveTab={handleSelectTab}
             isSuperAdmin={isSuperAdminMode}
+            isAgencyMode={GLOBAL_SYSTEM_SETTINGS.agencyModeEnabled || currentTenant.tierPlan === 'agency'}
+            isInfluencerMode={GLOBAL_SYSTEM_SETTINGS.influencerModeEnabled || currentTenant.tierPlan === 'pro'}
             activeAdminSubTab={adminSubTab}
             onSelectAdminSubTab={setAdminSubTab}
             onReturnToPublic={() => setViewMode('public')}
@@ -672,6 +774,7 @@ export function App() {
               onToggleSuperAdmin={handleToggleSuperAdmin}
               userEmail={profile?.email || SUPER_ADMIN_EMAIL}
             />
+            <SystemModeBanner />
             <Header
               tenants={tenants}
               currentTenant={currentTenant}
@@ -684,6 +787,11 @@ export function App() {
               userEmail={profile?.email || SUPER_ADMIN_EMAIL}
               userProfile={profile}
               onOpenUserProfile={() => setActiveTab('settings')}
+              isAgencyMode={GLOBAL_SYSTEM_SETTINGS.agencyModeEnabled || currentTenant.tierPlan === 'agency'}
+              brands={brands}
+              activeBrand={activeBrand}
+              onSelectBrand={setActiveBrand}
+              onOpenBrandManager={() => setActiveTab('agency_brands')}
             />
 
 
@@ -697,6 +805,27 @@ export function App() {
                   reviews={reviews}
                   onNavigate={setActiveTab}
                   isSuperAdmin={isSuperAdminMode}
+                />
+              )}
+
+              {activeTab === 'agency_brands' && (
+                <AgencyBrandManager
+                  brands={brands}
+                  activeBrand={activeBrand}
+                  onSelectBrand={setActiveBrand}
+                  onAddBrand={handleAddBrand}
+                  onDeleteBrand={handleDeleteBrand}
+                  accounts={accounts}
+                  posts={posts}
+                  mediaAssets={mediaAssets}
+                />
+              )}
+
+              {activeTab === 'grid_planner' && (
+                <InstagramGridPlanner
+                  mediaAssets={mediaAssets}
+                  posts={posts}
+                  onScheduleFromGrid={() => setActiveTab('composer')}
                 />
               )}
 

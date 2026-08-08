@@ -67,6 +67,25 @@ export interface AiCreditLog {
   timestamp: string;
 }
 
+export interface AgencyBrand {
+  id: string;
+  agencyTenantId: string;
+  brandName: string;
+  logoUrl?: string;
+  industry?: string;
+  connectedAccountIds: string[];
+  createdAt: string;
+}
+
+export interface ChatGPTKeyConfig {
+  id: string;
+  tenantId: string;
+  keyLabel: string;
+  apiKey: string;
+  createdAt: string;
+  lastUsedAt?: string;
+}
+
 export interface SubscriptionPlan {
   id: string;
   name: string;
@@ -75,6 +94,10 @@ export interface SubscriptionPlan {
   currencySymbol: string; // '$', '₹', '£'
   allocatedApiSlots: number; // Number of 2-channel API slots (e.g. 1 slot = 2 accounts, 3 slots = 6 accounts)
   maxSocialAccounts: number; // allocatedApiSlots * 2
+  maxZernioTriggersPerDay?: number;
+  maxZernioTriggersPerMonth?: number;
+  maxStorageMb?: number;
+  chatGptConnectorAllowed?: boolean;
   aiCredits: number; // AI Credits included in plan per month
   features: string[];
   isPopular?: boolean;
@@ -87,6 +110,10 @@ export interface SystemSettings {
   supportEmail: string;
   aiApiKey?: string;
   defaultAiCredits?: number;
+  websiteEnabled?: boolean;
+  agencyModeEnabled?: boolean;
+  influencerModeEnabled?: boolean;
+  businessModeEnabled?: boolean;
 }
 
 export interface Tenant {
@@ -98,6 +125,13 @@ export interface Tenant {
   planId?: string;
   allocatedApiSlots: number; // Number of 2-channel API keys allocated by Super Admin
   maxSocialAccounts: number; // allocatedApiSlots * 2
+  customZernioDailyLimit?: number;
+  customZernioMonthlyLimit?: number;
+  customStorageLimitMb?: number;
+  zernioDailyDispatchCount?: number;
+  zernioMonthlyDispatchCount?: number;
+  supabaseStorageBytes?: number;
+  cloudinaryStorageBytes?: number;
   aiCredits: number; // Remaining AI Credits (Default 1000)
   apiSlotDetails?: ApiAllocationSlot[];
   cloudinaryConfig: CloudinaryConfig;

@@ -241,6 +241,17 @@ export const PostComposer: React.FC<PostComposerProps> = ({
       return;
     }
 
+    const dailyLimit = tenant.customZernioDailyLimit || 100;
+    const currentDispatches = tenant.zernioDailyDispatchCount || 0;
+    if (currentDispatches >= dailyLimit) {
+      setNotification({
+        type: 'error',
+        title: 'Daily Zernio Dispatch Quota Exceeded',
+        message: `Your account has reached the daily limit of ${currentDispatches} / ${dailyLimit} Zernio triggers today. Please upgrade your plan or contact Super Admin to increase your limit.`
+      });
+      return;
+    }
+
     setIsSubmitting(true);
     setNotification(null);
 

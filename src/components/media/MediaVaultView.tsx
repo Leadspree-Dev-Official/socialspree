@@ -245,6 +245,11 @@ export const MediaVaultView: React.FC<MediaVaultViewProps> = ({
     setTimeout(() => setNotification(null), 3000);
   };
 
+  const totalStorageBytes = (tenant.supabaseStorageBytes || 240000000) + (tenant.cloudinaryStorageBytes || 650000000);
+  const storageLimitMb = tenant.customStorageLimitMb || 5000;
+  const storageUsedMb = parseFloat((totalStorageBytes / (1024 * 1024)).toFixed(1));
+  const storagePercentage = Math.min(100, Math.round((storageUsedMb / storageLimitMb) * 100));
+
   return (
     <div className="max-w-7xl mx-auto space-y-6 font-['Inter'] pb-24 md:pb-12">
       
@@ -257,11 +262,11 @@ export const MediaVaultView: React.FC<MediaVaultViewProps> = ({
               <span>Unified Media Vault</span>
             </h2>
             <span className="bg-purple-100 text-purple-900 text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full border border-purple-200 uppercase">
-              Multi-Asset Cloudinary Vault
+              Multi-Asset Cloudinary & Supabase Vault
             </span>
           </div>
           <p className="text-xs text-slate-500 mt-1">
-            Upload multiple images & videos in bulk, select multiple assets, and refer them to AI Agents for automated scheduling.
+            Upload multiple images & videos in bulk, monitor cloud storage quotas, and refer assets to AI Agents for scheduling.
           </p>
         </div>
 
@@ -272,6 +277,27 @@ export const MediaVaultView: React.FC<MediaVaultViewProps> = ({
           <Upload className="w-4 h-4" />
           <span>+ Upload Multiple Media</span>
         </button>
+      </div>
+
+      {/* Storage Quota Usage Meter Bar */}
+      <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs space-y-2 text-xs">
+        <div className="flex items-center justify-between font-bold text-slate-900">
+          <span className="flex items-center gap-2">
+            <HardDrive className="w-4 h-4 text-purple-600" />
+            <span>Media Vault Storage Quota (Supabase Bucket & Cloudinary CDN)</span>
+          </span>
+          <span className="font-mono text-purple-700 font-bold">
+            {storageUsedMb} MB / {storageLimitMb} MB ({storagePercentage}% Used)
+          </span>
+        </div>
+        <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
+          <div
+            className={`h-full transition-all ${
+              storagePercentage > 85 ? 'bg-red-500' : storagePercentage > 60 ? 'bg-amber-500' : 'bg-purple-600'
+            }`}
+            style={{ width: `${storagePercentage}%` }}
+          />
+        </div>
       </div>
 
       {notification && (
