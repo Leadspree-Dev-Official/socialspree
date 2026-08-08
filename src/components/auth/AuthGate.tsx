@@ -110,9 +110,7 @@ export function AuthGate({ onCancel, onDemoLogin }: AuthGateProps) {
         <div className="w-full flex justify-center">
           {mode === 'sign-in' ? (
             <SignIn 
-              path="/sign-in"
-              routing="path"
-              signUpUrl="/sign-up"
+              routing="hash"
               appearance={{
                 elements: {
                   rootBox: "w-full shadow-2xl shadow-violet-100 rounded-3xl overflow-hidden",
@@ -124,9 +122,7 @@ export function AuthGate({ onCancel, onDemoLogin }: AuthGateProps) {
             />
           ) : (
             <SignUp 
-              path="/sign-up"
-              routing="path"
-              signInUrl="/sign-in"
+              routing="hash"
               appearance={{
                 elements: {
                   rootBox: "w-full shadow-2xl shadow-violet-100 rounded-3xl overflow-hidden",
