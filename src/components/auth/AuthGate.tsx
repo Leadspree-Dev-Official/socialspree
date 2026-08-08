@@ -40,9 +40,21 @@ export function AuthGate({ onCancel, onDemoLogin }: AuthGateProps) {
     }
   };
 
+  const [authError, setAuthError] = useState<string | null>(null);
+
   const handleManualEmailLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!emailInput.trim()) return;
+    setAuthError(null);
+
+    if (!emailInput.trim()) {
+      setAuthError('Please enter a valid email address.');
+      return;
+    }
+
+    if (!passwordInput || passwordInput.length < 6) {
+      setAuthError('Invalid password. Password must be at least 6 characters long.');
+      return;
+    }
 
     if (onDemoLogin) {
       const lower = emailInput.toLowerCase();
@@ -204,6 +216,12 @@ export function AuthGate({ onCancel, onDemoLogin }: AuthGateProps) {
             <Mail className="w-4 h-4 text-purple-600" />
             <span className="font-bold text-slate-900 text-xs">Email & Password Workspace Access</span>
           </div>
+
+          {authError && (
+            <div className="p-3 bg-red-50 border border-red-200 text-red-700 font-bold rounded-xl text-xs flex items-center gap-2 animate-in fade-in">
+              <span>⚠️ {authError}</span>
+            </div>
+          )}
 
           <div>
             <label className="block font-semibold text-slate-700 mb-1">Email Address</label>
