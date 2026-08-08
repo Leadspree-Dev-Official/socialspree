@@ -49,8 +49,7 @@ import { AboutContactView } from './components/public/AboutContactView';
 import { PublicFooter } from './components/public/PublicFooter';
 import { CheckoutModal } from './components/payment/CheckoutModal';
 import { AuthGate } from './components/auth/AuthGate';
-import { RoleOnboardingModal } from './components/auth/RoleOnboardingModal';
-import { clearAuthenticatedCache, hydrateFromCloud, mapProfile, type Profile, type UserRole } from './lib/api';
+import { clearAuthenticatedCache, hydrateFromCloud, mapProfile, type Profile } from './lib/api';
 import { auth } from './lib/api';
 import { setClerkTokenProvider, supabase } from './lib/supabase';
 import { tenants as cloudTenants, socialConnections as cloudAccounts, posts as cloudPosts, postLogs as cloudLogs, aiCreditLogs as cloudAiLogs, mediaAssets as cloudMedia } from './lib/api';
@@ -254,20 +253,6 @@ export function App() {
       setViewMode('app');
     } finally {
       setCloudLoading(false);
-    }
-  };
-
-  const handleSelectUserRole = async (selectedRole: UserRole) => {
-    try {
-      const updated = await auth.updateProfile({ role: selectedRole });
-      setProfile(updated);
-      if (selectedRole === 'super_admin') {
-        setActiveTab('admin');
-      } else {
-        setActiveTab('dashboard');
-      }
-    } catch {
-      setProfile(prev => prev ? { ...prev, role: selectedRole } : null);
     }
   };
 
@@ -775,9 +760,6 @@ export function App() {
       ) : viewMode === 'app' ? (
         /* SaaS Dashboard Application View Mode */
         <div className="min-h-screen flex bg-[#F8FAFF]">
-          {profile && !profile.isSuperAdmin && profile.role === 'member' && (
-            <RoleOnboardingModal onSelectRole={handleSelectUserRole} />
-          )}
           <Sidebar
             activeTab={activeTab}
             setActiveTab={handleSelectTab}
