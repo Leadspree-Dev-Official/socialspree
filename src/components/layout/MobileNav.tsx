@@ -18,7 +18,6 @@ export const MobileNav: React.FC<MobileNavProps> = ({
     { id: 'composer', label: 'Compose', icon: Edit },
     { id: 'media', label: 'Media', icon: Film },
     { id: 'calendar', label: 'Calendar', icon: CalendarIcon },
-    { id: 'agents', label: 'Agents', icon: Bot },
   ];
 
   if (isSuperAdmin) {
