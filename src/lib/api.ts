@@ -152,7 +152,7 @@ export const auth = {
 };
 
 // ---- DB row mappers (snake_case -> camelCase) ---------------------------------
-function mapProfile(r: any): Profile {
+export function mapProfile(r: any): Profile {
   return {
     id: r.id,
     email: r.email,

@@ -48,7 +48,7 @@ import { AboutContactView } from './components/public/AboutContactView';
 import { PublicFooter } from './components/public/PublicFooter';
 import { CheckoutModal } from './components/payment/CheckoutModal';
 import { AuthGate } from './components/auth/AuthGate';
-import { clearAuthenticatedCache, hydrateFromCloud, type Profile } from './lib/api';
+import { clearAuthenticatedCache, hydrateFromCloud, mapProfile, type Profile } from './lib/api';
 import { auth } from './lib/api';
 import { setClerkTokenProvider, supabase } from './lib/supabase';
 import { tenants as cloudTenants, socialConnections as cloudAccounts, posts as cloudPosts, postLogs as cloudLogs, aiCreditLogs as cloudAiLogs, mediaAssets as cloudMedia } from './lib/api';
@@ -161,17 +161,18 @@ export function App() {
       const primaryEmail = user.primaryEmailAddress?.emailAddress;
       if (!primaryEmail) throw new Error('Your Clerk account has no verified primary email.');
 
-      const { error: provisionError } = await supabase.rpc('ensure_clerk_profile', {
+      const { data: provisionData, error: provisionError } = await supabase.rpc('ensure_clerk_profile', {
         p_email: primaryEmail,
         p_full_name: user.fullName || user.firstName || 'User',
         p_avatar_url: user.imageUrl || null,
       });
       if (provisionError) throw new Error(`Unable to provision your workspace profile: ${provisionError.message}`);
 
-      let userProfile = await auth.getProfile(primaryEmail);
+      let userProfile: Profile | null = null;
+      if (provisionData) {
+        userProfile = mapProfile(Array.isArray(provisionData) ? provisionData[0] : provisionData);
+      }
       if (!userProfile) {
-        // Short retry if profile indexing has a microsecond delay
-        await new Promise(r => setTimeout(r, 500));
         userProfile = await auth.getProfile(primaryEmail);
       }
       if (!userProfile) throw new Error('Your workspace profile is not available yet. Please try again.');
