@@ -10,7 +10,7 @@ interface AuthGateProps {
 
 export function AuthGate({ onCancel, onDemoLogin }: AuthGateProps) {
   const [mode, setMode] = useState<'sign-in' | 'sign-up'>('sign-in');
-  const hasClerkKey = Boolean((import.meta as any).env?.VITE_CLERK_PUBLISHABLE_KEY);
+  const hasClerkKey = Boolean((import.meta as any).env?.VITE_CLERK_PUBLISHABLE_KEY || 'pk_test_ZmxleGlibGUtbGFkeWJpcmQtMzEuY2xlcmsuYWNjb3VudHMuZGV2JA');
   const [emailInput, setEmailInput] = useState('');
   const [passwordInput, setPasswordInput] = useState('');
 
