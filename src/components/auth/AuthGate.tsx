@@ -47,7 +47,7 @@ export function AuthGate({ onCancel, onDemoLogin, onAuthenticated }: AuthGatePro
     }
   };
 
-  // Official Clerk Email & Password Sign-In
+  // Official Clerk Email & Password Sign-In (Strict Verification)
   const handleClerkSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setAuthError(null);
@@ -61,34 +61,8 @@ export function AuthGate({ onCancel, onDemoLogin, onAuthenticated }: AuthGatePro
       return;
     }
 
-    // Check if user is triggering quick demo login email
-    const lower = emailInput.toLowerCase();
-    if (onDemoLogin && (lower.includes('demo') || passwordInput === 'demo123')) {
-      if (lower.includes('admin') || lower === 'leadspree24x7@gmail.com') {
-        onDemoLogin('super_admin');
-      } else if (lower.includes('agency')) {
-        onDemoLogin('agency');
-      } else if (lower.includes('creator') || lower.includes('influencer')) {
-        onDemoLogin('influencer');
-      } else {
-        onDemoLogin('business');
-      }
-      return;
-    }
-
     if (!isSignInLoaded || !signIn) {
-      // Fallback demo authentication if Clerk is still connecting
-      if (onDemoLogin) {
-        if (lower.includes('admin') || lower === 'leadspree24x7@gmail.com') {
-          onDemoLogin('super_admin');
-        } else if (lower.includes('agency')) {
-          onDemoLogin('agency');
-        } else if (lower.includes('creator') || lower.includes('influencer')) {
-          onDemoLogin('influencer');
-        } else {
-          onDemoLogin('business');
-        }
-      }
+      setAuthError('Clerk authentication service is initializing. Please try again in a moment.');
       return;
     }
 
@@ -105,24 +79,11 @@ export function AuthGate({ onCancel, onDemoLogin, onAuthenticated }: AuthGatePro
         }
         if (onAuthenticated) await onAuthenticated();
       } else {
-        setAuthError('Authentication multi-factor or verification required.');
+        setAuthError(`Clerk authentication status: ${result.status}. Additional verification required.`);
       }
     } catch (err: any) {
-      // Direct access fallback for demo workspace login
-      if (onDemoLogin) {
-        if (lower.includes('admin') || lower === 'leadspree24x7@gmail.com') {
-          onDemoLogin('super_admin');
-        } else if (lower.includes('agency')) {
-          onDemoLogin('agency');
-        } else if (lower.includes('creator') || lower.includes('influencer')) {
-          onDemoLogin('influencer');
-        } else {
-          onDemoLogin('business');
-        }
-      } else {
-        const clerkErrMsg = err?.errors?.[0]?.longMessage || err?.errors?.[0]?.message || err?.message;
-        setAuthError(clerkErrMsg || 'Clerk authentication failed.');
-      }
+      const clerkErrMsg = err?.errors?.[0]?.longMessage || err?.errors?.[0]?.message || err?.message;
+      setAuthError(clerkErrMsg || 'Invalid email or password in Clerk database.');
     } finally {
       setAuthLoading(false);
     }
