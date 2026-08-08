@@ -109,6 +109,8 @@ export interface SystemSettings {
   platformName: string;
   supportEmail: string;
   aiApiKey?: string;
+  composioApiKey?: string;
+  dispatchEngine?: 'zernio' | 'composio';
   defaultAiCredits?: number;
   websiteEnabled?: boolean;
   agencyModeEnabled?: boolean;
@@ -123,6 +125,8 @@ export interface Tenant {
   apiKey: string; // Master Primary API Key
   tierPlan: 'free' | 'pro' | 'agency' | string;
   planId?: string;
+  dispatchEngine?: 'zernio' | 'composio';
+  composioApiKey?: string;
   allocatedApiSlots: number; // Number of 2-channel API keys allocated by Super Admin
   maxSocialAccounts: number; // allocatedApiSlots * 2
   customZernioDailyLimit?: number;

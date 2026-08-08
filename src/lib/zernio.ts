@@ -35,14 +35,19 @@ export function validateCloudflareMediaForScheduling(mediaUrls: string[], isClou
   return { isValid: true };
 }
 
+import { executeComposioPublishing } from './composio';
+
 /**
- * Execute Enterprise Publishing Engine / Dispatcher
- * Dispatches to live backend API endpoint if VITE_ZERNIO_API_URL is configured, or formats standard dispatch payload.
+ * Execute Enterprise Publishing Engine / Dispatcher (Zernio or Composio)
  */
 export async function executePublishing(
   postInput: Omit<Post, 'id' | 'createdAt' | 'status'>,
   tenant: Tenant
 ): Promise<PublishResult> {
+  if (tenant.dispatchEngine === 'composio') {
+    return executeComposioPublishing(postInput, tenant);
+  }
+
   const isScheduled = Boolean(postInput.scheduledFor);
 
   // 1. Content & Media Validation
