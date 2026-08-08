@@ -10,26 +10,6 @@ interface AuthGateProps {
 
 export function AuthGate({ onCancel, onDemoLogin }: AuthGateProps) {
   const [mode, setMode] = useState<'sign-in' | 'sign-up'>('sign-in');
-  const hasClerkKey = Boolean((import.meta as any).env?.VITE_CLERK_PUBLISHABLE_KEY || 'pk_test_ZmxleGlibGUtbGFkeWJpcmQtMzEuY2xlcmsuYWNjb3VudHMuZGV2JA');
-  const [emailInput, setEmailInput] = useState('');
-  const [passwordInput, setPasswordInput] = useState('');
-
-  const handleManualAuth = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!emailInput.trim()) return;
-
-    if (onDemoLogin) {
-      if (emailInput.toLowerCase().includes('admin') || emailInput.toLowerCase() === 'leadspree24x7@gmail.com') {
-        onDemoLogin('super_admin');
-      } else if (emailInput.toLowerCase().includes('agency')) {
-        onDemoLogin('agency');
-      } else if (emailInput.toLowerCase().includes('creator') || emailInput.toLowerCase().includes('influencer')) {
-        onDemoLogin('influencer');
-      } else {
-        onDemoLogin('business');
-      }
-    }
-  };
 
   return (
     <div className="min-h-screen bg-[#F8FAFF] flex flex-col items-center justify-center p-5 font-['Inter'] space-y-6">
@@ -130,71 +110,30 @@ export function AuthGate({ onCancel, onDemoLogin }: AuthGateProps) {
           </div>
         )}
 
+        {/* OFFICIAL CLERK AUTH COMPONENT */}
         <div className="w-full flex justify-center">
-          {hasClerkKey ? (
-            mode === 'sign-in' ? (
-              <SignIn 
-                appearance={{
-                  elements: {
-                    rootBox: "w-full shadow-2xl shadow-violet-100 rounded-3xl overflow-hidden",
-                    card: "shadow-none border border-slate-200 rounded-3xl",
-                    headerTitle: "text-slate-950 font-black text-2xl",
-                    formButtonPrimary: "bg-[#5D3FD3] hover:bg-purple-700 text-white font-bold"
-                  }
-                }}
-              />
-            ) : (
-              <SignUp 
-                appearance={{
-                  elements: {
-                    rootBox: "w-full shadow-2xl shadow-violet-100 rounded-3xl overflow-hidden",
-                    card: "shadow-none border border-slate-200 rounded-3xl",
-                    headerTitle: "text-slate-950 font-black text-2xl",
-                    formButtonPrimary: "bg-[#5D3FD3] hover:bg-purple-700 text-white font-bold"
-                  }
-                }}
-              />
-            )
+          {mode === 'sign-in' ? (
+            <SignIn 
+              appearance={{
+                elements: {
+                  rootBox: "w-full shadow-2xl shadow-violet-100 rounded-3xl overflow-hidden",
+                  card: "shadow-none border border-slate-200 rounded-3xl",
+                  headerTitle: "text-slate-950 font-black text-2xl",
+                  formButtonPrimary: "bg-[#5D3FD3] hover:bg-purple-700 text-white font-bold"
+                }
+              }}
+            />
           ) : (
-            <form onSubmit={handleManualAuth} className="w-full bg-white p-6 rounded-3xl border border-slate-200 shadow-xl space-y-4 text-xs">
-              <div className="text-center space-y-1">
-                <h3 className="font-black text-slate-950 text-lg">
-                  {mode === 'sign-in' ? 'Sign in to SocialSpree' : 'Create SocialSpree Account'}
-                </h3>
-                <p className="text-slate-500 text-xs">Enter your email and password to access your workspace</p>
-              </div>
-
-              <div>
-                <label className="block font-semibold text-slate-700 mb-1">Email Address</label>
-                <input
-                  type="email"
-                  required
-                  placeholder="name@company.com"
-                  value={emailInput}
-                  onChange={(e) => setEmailInput(e.target.value)}
-                  className="w-full p-3 border rounded-xl text-xs font-mono"
-                />
-              </div>
-
-              <div>
-                <label className="block font-semibold text-slate-700 mb-1">Password</label>
-                <input
-                  type="password"
-                  required
-                  placeholder="••••••••••••"
-                  value={passwordInput}
-                  onChange={(e) => setPasswordInput(e.target.value)}
-                  className="w-full p-3 border rounded-xl text-xs"
-                />
-              </div>
-
-              <button
-                type="submit"
-                className="w-full py-3 bg-[#5D3FD3] hover:bg-purple-700 text-white font-bold rounded-xl shadow-md transition-all text-xs"
-              >
-                {mode === 'sign-in' ? 'Sign In to Workspace' : 'Create Account'}
-              </button>
-            </form>
+            <SignUp 
+              appearance={{
+                elements: {
+                  rootBox: "w-full shadow-2xl shadow-violet-100 rounded-3xl overflow-hidden",
+                  card: "shadow-none border border-slate-200 rounded-3xl",
+                  headerTitle: "text-slate-950 font-black text-2xl",
+                  formButtonPrimary: "bg-[#5D3FD3] hover:bg-purple-700 text-white font-bold"
+                }
+              }}
+            />
           )}
         </div>
       </div>
