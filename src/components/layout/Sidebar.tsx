@@ -110,115 +110,115 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {/* ========================================================================= */}
         {isSuperAdmin ? (
           <div className="space-y-1">
-            <div className="px-3 text-[10px] font-mono font-bold uppercase tracking-wider text-amber-400/90 mb-3 flex items-center justify-between">
-              <span>Super Admin Governance</span>
-              <span className="bg-amber-400/20 text-amber-300 text-[9px] px-1.5 py-0.5 rounded font-mono font-bold">
-                ROOT PANEL
+            <div className="px-3 text-[10px] font-mono font-bold uppercase tracking-wider text-amber-400 mb-3 flex items-center justify-between">
+              <span>Governance Suite</span>
+              <span className="bg-amber-400/20 text-amber-300 text-[9px] px-2 py-0.5 rounded font-mono font-bold border border-amber-400/30">
+                SUPER ADMIN
               </span>
             </div>
 
-            {/* 1. Governance Dashboard */}
+            {/* Overview & Metrics */}
             <button
               onClick={() => handleAdminSubTabClick('dashboard')}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-all ${
                 activeTab === 'admin' && activeAdminSubTab === 'dashboard'
-                  ? 'bg-amber-500 text-slate-950 font-bold shadow-md shadow-amber-900/30'
-                  : 'text-amber-300/80 hover:text-white hover:bg-amber-500/10'
+                  ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-900/40'
+                  : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
               }`}
             >
-              <LayoutDashboard className="w-4 h-4 text-amber-400" />
-              <span>1. Overview & Metrics</span>
+              <LayoutDashboard className="w-4 h-4 text-purple-400" />
+              <span>Overview & Metrics</span>
             </button>
 
-            {/* 2. Subscriptions */}
+            {/* Tenant Accounts */}
             <button
               onClick={() => handleAdminSubTabClick('subscriptions')}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-all ${
                 activeTab === 'admin' && activeAdminSubTab === 'subscriptions'
-                  ? 'bg-amber-500 text-slate-950 font-bold shadow-md shadow-amber-900/30'
-                  : 'text-amber-300/80 hover:text-white hover:bg-amber-500/10'
+                  ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-900/40'
+                  : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
               }`}
             >
-              <CreditCard className="w-4 h-4 text-amber-400" />
-              <span>2. Tenant Accounts</span>
+              <CreditCard className="w-4 h-4 text-purple-400" />
+              <span>Tenant Accounts</span>
             </button>
 
-            {/* 3. Pricing Plans */}
+            {/* Subscription Tiers */}
             <button
               onClick={() => handleAdminSubTabClick('plans')}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-all ${
                 activeTab === 'admin' && activeAdminSubTab === 'plans'
-                  ? 'bg-amber-500 text-slate-950 font-bold shadow-md shadow-amber-900/30'
-                  : 'text-amber-300/80 hover:text-white hover:bg-amber-500/10'
+                  ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-900/40'
+                  : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
               }`}
             >
-              <Layers className="w-4 h-4 text-amber-400" />
-              <span>3. Subscription Tiers</span>
+              <Layers className="w-4 h-4 text-purple-400" />
+              <span>Subscription Tiers</span>
             </button>
 
-            {/* 4. API Allocation */}
+            {/* API Allocation */}
             <button
               onClick={() => handleAdminSubTabClick('api_allocation')}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-all ${
                 activeTab === 'admin' && activeAdminSubTab === 'api_allocation'
-                  ? 'bg-amber-500 text-slate-950 font-bold shadow-md shadow-amber-900/30'
-                  : 'text-amber-300/80 hover:text-white hover:bg-amber-500/10'
+                  ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-900/40'
+                  : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
               }`}
             >
-              <Key className="w-4 h-4 text-amber-400" />
-              <span>4. API Allocation & Limits</span>
+              <Key className="w-4 h-4 text-purple-400" />
+              <span>API Allocation & Limits</span>
             </button>
 
-            {/* 5. Storage & CDN */}
+            {/* Storage & CDN */}
             <button
               onClick={() => handleAdminSubTabClick('cloudflare')}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-all ${
                 activeTab === 'admin' && activeAdminSubTab === 'cloudflare'
-                  ? 'bg-amber-500 text-slate-950 font-bold shadow-md shadow-amber-900/30'
-                  : 'text-amber-300/80 hover:text-white hover:bg-amber-500/10'
+                  ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-900/40'
+                  : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
               }`}
             >
-              <HardDrive className="w-4 h-4 text-amber-400" />
-              <span>5. Storage & Cloudflare CDN</span>
+              <HardDrive className="w-4 h-4 text-purple-400" />
+              <span>Storage & Cloudflare CDN</span>
             </button>
 
-            {/* 6. AI Credits & Limits */}
+            {/* AI Credits & Limits */}
             <button
               onClick={() => handleAdminSubTabClick('ai_credits')}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-all ${
                 activeTab === 'admin' && activeAdminSubTab === 'ai_credits'
-                  ? 'bg-amber-500 text-slate-950 font-bold shadow-md shadow-amber-900/30'
-                  : 'text-amber-300/80 hover:text-white hover:bg-amber-500/10'
+                  ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 shadow-md shadow-amber-900/40 font-extrabold'
+                  : 'text-amber-300 hover:text-amber-200 hover:bg-amber-500/10'
               }`}
             >
               <Sparkles className="w-4 h-4 text-amber-400" />
-              <span>6. AI Credits & Settings</span>
+              <span>AI Credits & Settings</span>
             </button>
 
-            {/* 7. Server Presets & Mode */}
+            {/* Server Profile Presets */}
             <button
               onClick={() => handleAdminSubTabClick('settings')}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-all ${
                 activeTab === 'admin' && activeAdminSubTab === 'settings'
-                  ? 'bg-amber-500 text-slate-950 font-bold shadow-md shadow-amber-900/30'
-                  : 'text-amber-300/80 hover:text-white hover:bg-amber-500/10'
+                  ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-900/40'
+                  : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
               }`}
             >
-              <Settings className="w-4 h-4 text-amber-400" />
-              <span>7. Server Presets & Mode</span>
+              <Settings className="w-4 h-4 text-purple-400" />
+              <span>Server Presets & Mode</span>
             </button>
 
-            {/* 8. Privileges & Access Control */}
+            {/* Privilege & Access Control */}
             <button
               onClick={() => handleAdminSubTabClick('privileges')}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-all ${
                 activeTab === 'admin' && activeAdminSubTab === 'privileges'
-                  ? 'bg-amber-500 text-slate-950 font-bold shadow-md shadow-amber-900/30'
-                  : 'text-amber-300/80 hover:text-white hover:bg-amber-500/10'
+                  ? 'bg-purple-900 text-amber-300 border border-amber-400/50 shadow-md font-bold'
+                  : 'text-purple-300 hover:text-white hover:bg-purple-900/30'
               }`}
             >
               <Lock className="w-4 h-4 text-amber-400" />
-              <span>8. Privilege & Access Control</span>
+              <span>Privilege & Access Control</span>
             </button>
           </div>
         ) : (

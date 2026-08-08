@@ -515,102 +515,102 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
   return (
     <div className="max-w-7xl mx-auto space-y-6 font-['Inter'] pb-20 md:pb-0">
       {/* Super Admin Navigation Header Bar with Provision Button */}
-      <div className="bg-white p-2.5 rounded-2xl border border-slate-200 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="flex flex-wrap gap-2">
+      <div className="bg-white p-3 rounded-3xl border border-slate-200 shadow-md flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+        <div className="flex flex-wrap gap-1.5">
           <button
             onClick={() => onSelectSubTab('dashboard')}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-2xl text-xs font-bold transition-all ${
               activeSubTab === 'dashboard'
-                ? 'bg-[#5D3FD3] text-white shadow-md'
-                : 'text-slate-600 hover:bg-slate-100'
+                ? 'bg-[#5D3FD3] text-white shadow-md shadow-purple-500/20'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
             }`}
           >
-            <LayoutDashboard className="w-4 h-4" />
-            <span>1. Dashboard</span>
+            <LayoutDashboard className="w-3.5 h-3.5" />
+            <span>Dashboard</span>
           </button>
 
           <button
             onClick={() => onSelectSubTab('subscriptions')}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-2xl text-xs font-bold transition-all ${
               activeSubTab === 'subscriptions'
-                ? 'bg-[#5D3FD3] text-white shadow-md'
-                : 'text-slate-600 hover:bg-slate-100'
+                ? 'bg-[#5D3FD3] text-white shadow-md shadow-purple-500/20'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
             }`}
           >
-            <CreditCard className="w-4 h-4" />
-            <span>2. Subscriptions</span>
+            <CreditCard className="w-3.5 h-3.5" />
+            <span>Tenant Accounts</span>
           </button>
 
           <button
             onClick={() => onSelectSubTab('plans')}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-2xl text-xs font-bold transition-all ${
               activeSubTab === 'plans'
-                ? 'bg-[#5D3FD3] text-white shadow-md'
-                : 'text-slate-600 hover:bg-slate-100'
+                ? 'bg-[#5D3FD3] text-white shadow-md shadow-purple-500/20'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
             }`}
           >
-            <Package className="w-4 h-4" />
-            <span>3. Plans</span>
+            <Package className="w-3.5 h-3.5" />
+            <span>Subscription Tiers</span>
           </button>
 
           <button
             onClick={() => onSelectSubTab('api_allocation')}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-2xl text-xs font-bold transition-all ${
               activeSubTab === 'api_allocation'
-                ? 'bg-[#5D3FD3] text-white shadow-md'
-                : 'text-slate-600 hover:bg-slate-100'
+                ? 'bg-[#5D3FD3] text-white shadow-md shadow-purple-500/20'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
             }`}
           >
-            <Key className="w-4 h-4" />
-            <span>4. API Allocation</span>
+            <Key className="w-3.5 h-3.5" />
+            <span>API Allocation</span>
           </button>
 
           <button
             onClick={() => onSelectSubTab('cloudflare')}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-2xl text-xs font-bold transition-all ${
               activeSubTab === 'cloudflare'
-                ? 'bg-[#5D3FD3] text-white shadow-md'
-                : 'text-slate-600 hover:bg-slate-100'
+                ? 'bg-[#5D3FD3] text-white shadow-md shadow-purple-500/20'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
             }`}
           >
-            <HardDrive className="w-4 h-4" />
-            <span>5. Cloudinary & Storage CDN</span>
+            <HardDrive className="w-3.5 h-3.5" />
+            <span>Storage & CDN</span>
           </button>
 
           <button
             onClick={() => onSelectSubTab('ai_credits')}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-2xl text-xs font-bold transition-all ${
               activeSubTab === 'ai_credits'
-                ? 'bg-amber-500 text-slate-950 font-black shadow-md'
-                : 'text-amber-700 bg-amber-50 hover:bg-amber-100'
+                ? 'bg-amber-500 text-slate-950 font-extrabold shadow-md shadow-amber-500/20'
+                : 'text-amber-700 bg-amber-50/80 hover:bg-amber-100 border border-amber-200/60'
             }`}
           >
-            <Sparkles className="w-4 h-4 text-amber-600" />
-            <span>6. AI Credits & Settings</span>
+            <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+            <span>AI Credits & Settings</span>
           </button>
 
           <button
             onClick={() => onSelectSubTab('settings')}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-2xl text-xs font-bold transition-all ${
               activeSubTab === 'settings'
-                ? 'bg-[#5D3FD3] text-white shadow-md'
-                : 'text-slate-600 hover:bg-slate-100'
+                ? 'bg-[#5D3FD3] text-white shadow-md shadow-purple-500/20'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
             }`}
           >
-            <Settings className="w-4 h-4" />
-            <span>7. System Settings</span>
+            <Settings className="w-3.5 h-3.5" />
+            <span>Server Presets & Mode</span>
           </button>
 
           <button
             onClick={() => onSelectSubTab('privileges')}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-2xl text-xs font-bold transition-all ${
               activeSubTab === 'privileges'
-                ? 'bg-purple-900 text-amber-300 font-black shadow-md border border-amber-400/40'
-                : 'text-purple-900 bg-purple-50 hover:bg-purple-100 border border-purple-200'
+                ? 'bg-purple-900 text-amber-300 font-extrabold shadow-md shadow-purple-900/30 border border-amber-400/40'
+                : 'text-purple-900 bg-purple-50 hover:bg-purple-100 border border-purple-200/80'
             }`}
           >
-            <ShieldCheck className="w-4 h-4 text-purple-700" />
-            <span>8. Privilege & Access Control</span>
+            <ShieldCheck className="w-3.5 h-3.5 text-purple-700" />
+            <span>Privileges & Access Control</span>
           </button>
         </div>
 
