@@ -369,6 +369,25 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
     setShowAddModal(false);
   };
 
+  const handleUpdateTenantTierPlan = async (tenantId: string, newTier: string) => {
+    onUpdateTenantTier(tenantId, newTier as any);
+    let postLimit = 2;
+    if (newTier === 'starter') postLimit = 50;
+    else if (newTier === 'pro' || newTier === 'influencer') postLimit = 500;
+    else if (newTier === 'agency') postLimit = 5000;
+    else if (newTier === 'enterprise') postLimit = 10000;
+    onUpdateTenantLimit(tenantId, postLimit);
+
+    try {
+      await supabase.from('tenants').update({
+        tier_plan: newTier,
+        custom_zernio_monthly_limit: postLimit
+      }).eq('id', tenantId);
+    } catch {
+      /* ignore offline update errors */
+    }
+  };
+
   const handleSaveApiSlotsModal = async (e: React.FormEvent) => {
     e.preventDefault();
     const targetTenant = tenants.find(t => t.id === targetTenantId);
@@ -597,9 +616,17 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
                         ⚡ {tenant.aiCredits ?? 1000} Credits
                       </td>
                       <td className="px-4 py-3.5">
-                        <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase bg-purple-100 text-purple-800 border border-purple-200">
-                          {tenant.tierPlan}
-                        </span>
+                        <select
+                          value={tenant.tierPlan || 'free'}
+                          onChange={(e) => handleUpdateTenantTierPlan(tenant.id, e.target.value)}
+                          className="px-2 py-1 rounded text-[11px] font-mono font-bold uppercase bg-purple-50 text-purple-900 border border-purple-200 cursor-pointer hover:bg-purple-100 shadow-xs"
+                        >
+                          <option value="free">FREE PLAN (2 Posts/mo, 2 Channels)</option>
+                          <option value="starter">STARTER (50 Posts/mo, 4 Channels)</option>
+                          <option value="pro">PRO / INFLUENCER (500 Posts/mo, 10 Channels)</option>
+                          <option value="agency">AGENCY TIER (5,000 Posts/mo, 20 Channels)</option>
+                          <option value="enterprise">ENTERPRISE TIER (Unlimited Access)</option>
+                        </select>
                       </td>
                       <td className="px-4 py-3.5">
                         <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase ${

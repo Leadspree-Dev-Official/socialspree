@@ -252,6 +252,17 @@ export const PostComposer: React.FC<PostComposerProps> = ({
       return;
     }
 
+    const monthlyLimit = tenant.tierPlan === 'free' ? (tenant.customZernioMonthlyLimit || 2) : (tenant.customZernioMonthlyLimit || 10000);
+    const monthlyDispatches = tenant.zernioMonthlyDispatchCount || 0;
+    if (monthlyDispatches >= monthlyLimit) {
+      setNotification({
+        type: 'error',
+        title: 'Monthly Free Plan Post Limit Reached',
+        message: `Your Free Plan permits a maximum of ${monthlyLimit} posts per month (used: ${monthlyDispatches}/${monthlyLimit}). Please contact your Super Admin to upgrade your workspace access.`
+      });
+      return;
+    }
+
     setIsSubmitting(true);
     setNotification(null);
 

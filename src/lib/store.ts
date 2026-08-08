@@ -33,6 +33,26 @@ export const GLOBAL_SYSTEM_SETTINGS: SystemSettings = {
 // Global Subscription Plans (Multi-Currency Regional Plans with AI Credits)
 export const INITIAL_PLANS: SubscriptionPlan[] = [
   {
+    id: 'plan-free',
+    name: 'Free Plan (Default Sign-Up)',
+    priceMonthly: 0,
+    currency: 'USD',
+    currencySymbol: '$',
+    allocatedApiSlots: 1,
+    maxSocialAccounts: 2,
+    maxZernioTriggersPerDay: 2,
+    maxZernioTriggersPerMonth: 2,
+    maxStorageMb: 500,
+    chatGptConnectorAllowed: false,
+    aiCredits: 50,
+    features: [
+      '2 Social Channel Accounts Maximum',
+      '2 Post dispatches per month',
+      '500 MB Media Storage',
+      '50 AI Credits/mo'
+    ]
+  },
+  {
     id: 'plan-starter',
     name: 'Starter Plan (US/Global)',
     priceMonthly: 19,
