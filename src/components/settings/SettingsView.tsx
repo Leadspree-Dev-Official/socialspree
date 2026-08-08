@@ -76,7 +76,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   const [userEmail] = useState(userProfile?.email || tenant.ownerEmail);
   const [avatarUrl, setAvatarUrl] = useState(userProfile?.avatarUrl || '');
   const [jobTitle, setJobTitle] = useState(userProfile?.jobTitle || 'Social Media Manager');
-  const [phoneNumber, setPhoneNumber] = useState(userProfile?.phoneNumber || '+1 (555) 234-5678');
   const [timezone, setTimezone] = useState(userProfile?.timezone || 'UTC');
   const [notifications, setNotifications] = useState(userProfile?.notifications || {
     emailDigest: true,
@@ -236,7 +235,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         fullName: fullName.trim(),
         avatarUrl: avatarUrl.trim(),
         jobTitle: jobTitle.trim(),
-        phoneNumber: phoneNumber.trim(),
         timezone,
         notifications
       });
@@ -503,17 +501,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                       onChange={(e) => setJobTitle(e.target.value)}
                       placeholder="e.g. Lead Social Strategist"
                       className="w-full p-2.5 border rounded-lg text-xs focus:ring-2 focus:ring-[#5D3FD3]"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block font-semibold text-slate-700 mb-1">Phone Number</label>
-                    <input
-                      type="text"
-                      value={phoneNumber}
-                      onChange={(e) => setPhoneNumber(e.target.value)}
-                      placeholder="+1 (555) 000-0000"
-                      className="w-full p-2.5 border rounded-lg text-xs font-mono focus:ring-2 focus:ring-[#5D3FD3]"
                     />
                   </div>
 
