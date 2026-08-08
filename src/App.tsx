@@ -77,7 +77,7 @@ export function App() {
   const [viewMode, setViewMode] = useState<'public' | 'auth' | 'app'>(initialRoute.view);
   const [publicSubView, setPublicSubView] = useState<PublicSubView>('landing');
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [cloudLoading, setCloudLoading] = useState(true);
+  const [cloudLoading, setCloudLoading] = useState(false);
   const [cloudError, setCloudError] = useState('');
   const [cloudReady, setCloudReady] = useState(false);
 
@@ -171,16 +171,29 @@ export function App() {
         updatedAt: new Date().toISOString()
       };
 
+      const fallbackCloudData = {
+        tenants: INITIAL_TENANTS,
+        plans: getStoredPlans(),
+        accounts: INITIAL_ACCOUNTS,
+        posts: INITIAL_POSTS,
+        logs: INITIAL_POST_LOGS,
+        aiLogs: getStoredAiLogs(),
+        media: getStoredMediaAssets(),
+        reviews: INITIAL_REVIEWS
+      };
 
-      const cloud = await hydrateFromCloud();
+      const cloudPromise = hydrateFromCloud();
+      const timeoutPromise = new Promise(resolve => setTimeout(() => resolve(fallbackCloudData), 2000));
+      const cloud: any = await Promise.race([cloudPromise, timeoutPromise]);
+
       setProfile(userProfile);
-      setTenants(cloud.tenants.length ? cloud.tenants : INITIAL_TENANTS);
-      setCurrentTenant(cloud.tenants[0] || INITIAL_TENANTS[0]);
-      setAccounts(cloud.accounts);
-      setPosts(cloud.posts);
-      setLogs(cloud.logs);
-      setAiLogs(cloud.aiLogs);
-      setMediaAssets(cloud.media);
+      setTenants(cloud.tenants && cloud.tenants.length ? cloud.tenants : INITIAL_TENANTS);
+      setCurrentTenant(cloud.tenants && cloud.tenants[0] ? cloud.tenants[0] : INITIAL_TENANTS[0]);
+      setAccounts(cloud.accounts || INITIAL_ACCOUNTS);
+      setPosts(cloud.posts || INITIAL_POSTS);
+      setLogs(cloud.logs || INITIAL_POST_LOGS);
+      setAiLogs(cloud.aiLogs || getStoredAiLogs());
+      setMediaAssets(cloud.media || getStoredMediaAssets());
       setCloudReady(true);
       setIsSuperAdminMode(isSuperAdmin);
       if (isSuperAdmin && ['composer', 'calendar', 'connections', 'autoresponder', 'media'].includes(activeTab)) {
