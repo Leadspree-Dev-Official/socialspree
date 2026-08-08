@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSignIn, useClerk, SignInButton } from '@clerk/react';
 import { 
   LockKeyhole, 
@@ -11,7 +11,8 @@ import {
   ArrowRight,
   Loader2,
   AlertCircle,
-  ExternalLink
+  ExternalLink,
+  ShieldAlert
 } from 'lucide-react';
 
 interface AuthGateProps {
@@ -29,6 +30,20 @@ export function AuthGate({ onCancel, onDemoLogin, onAuthenticated }: AuthGatePro
 
   const { isLoaded: isSignInLoaded, signIn, setActive } = useSignIn() as any;
   const clerk = useClerk();
+
+  // Automatically trigger Clerk's native modal popup on mount
+  useEffect(() => {
+    if (clerk && (clerk as any).loaded && clerk.openSignIn) {
+      const timer = setTimeout(() => {
+        try {
+          clerk.openSignIn();
+        } catch (e) {
+          console.warn('Clerk modal auto-open:', e);
+        }
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [clerk]);
 
   // Official Clerk OAuth Sign-In (Google & Facebook)
   const handleOAuthLogin = async (strategy: 'oauth_google' | 'oauth_facebook') => {
@@ -127,6 +142,20 @@ export function AuthGate({ onCancel, onDemoLogin, onAuthenticated }: AuthGatePro
 
         <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#5D3FD3] text-white shadow-lg shadow-purple-500/20 mb-4">
           <LockKeyhole size={23} />
+        </div>
+
+        {/* NATIVE CLERK MODAL POPUP PRIMARY ACTION BUTTON */}
+        <div className="w-full mb-4">
+          <SignInButton mode="modal">
+            <button
+              type="button"
+              className="w-full py-4 px-6 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-extrabold rounded-3xl shadow-xl shadow-purple-500/25 flex items-center justify-center gap-3 text-sm transition-all transform hover:scale-[1.01] cursor-pointer"
+            >
+              <ShieldAlert className="w-5 h-5 text-amber-300" />
+              <span>Launch Default Native Clerk Modal Popup</span>
+              <ExternalLink className="w-4 h-4 ml-auto opacity-80" />
+            </button>
+          </SignInButton>
         </div>
 
         {/* 1-CLICK QUICK DEMO ROLE LOGIN SELECTOR */}
@@ -293,12 +322,14 @@ export function AuthGate({ onCancel, onDemoLogin, onAuthenticated }: AuthGatePro
           </form>
 
           <div className="pt-2 text-center">
-            <SignInButton mode="modal">
-              <button className="text-xs font-bold text-[#5D3FD3] hover:underline cursor-pointer flex items-center justify-center gap-1 mx-auto">
-                <span>Launch Native Clerk Modal Popup</span>
-                <ExternalLink className="w-3.5 h-3.5" />
-              </button>
-            </SignInButton>
+            <button 
+              type="button"
+              onClick={() => { if (clerk && clerk.openSignIn) clerk.openSignIn(); }}
+              className="text-xs font-bold text-[#5D3FD3] hover:underline cursor-pointer flex items-center justify-center gap-1 mx-auto"
+            >
+              <span>Launch Default Native Clerk Modal Popup</span>
+              <ExternalLink className="w-3.5 h-3.5" />
+            </button>
           </div>
         </div>
 
