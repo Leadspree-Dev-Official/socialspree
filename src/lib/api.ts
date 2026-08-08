@@ -75,15 +75,29 @@ export function clearAuthenticatedCache(): void {
 
 // ---- Auth helpers ------------------------------------------------------------
 export const auth = {
-  async getProfile(): Promise<Profile | null> {
-    const { data: uid, error: uidError } = await supabase.rpc('current_clerk_user_id');
-    if (uidError || !uid) return null;
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('id,email,full_name,avatar_url,job_title,phone_number,timezone,notifications,tenant_id,is_super_admin,role,created_at,updated_at')
-      .eq('id', uid)
-      .maybeSingle();
-    if (error || !data) return null;
+  async getProfile(userEmail?: string): Promise<Profile | null> {
+    const { data: uid } = await supabase.rpc('current_clerk_user_id');
+    let data: any = null;
+
+    if (uid) {
+      const res = await supabase
+        .from('profiles')
+        .select('id,email,full_name,avatar_url,job_title,phone_number,timezone,notifications,tenant_id,is_super_admin,role,created_at,updated_at')
+        .eq('id', uid)
+        .maybeSingle();
+      data = res.data;
+    }
+
+    if (!data && userEmail) {
+      const res = await supabase
+        .from('profiles')
+        .select('id,email,full_name,avatar_url,job_title,phone_number,timezone,notifications,tenant_id,is_super_admin,role,created_at,updated_at')
+        .ilike('email', userEmail.trim())
+        .maybeSingle();
+      data = res.data;
+    }
+
+    if (!data) return null;
     const p = mapProfile(data);
     cacheSet(CACHE_KEYS.USER_PROFILE, p);
     return p;

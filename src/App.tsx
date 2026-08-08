@@ -168,7 +168,12 @@ export function App() {
       });
       if (provisionError) throw new Error(`Unable to provision your workspace profile: ${provisionError.message}`);
 
-      const userProfile = await auth.getProfile();
+      let userProfile = await auth.getProfile(primaryEmail);
+      if (!userProfile) {
+        // Short retry if profile indexing has a microsecond delay
+        await new Promise(r => setTimeout(r, 500));
+        userProfile = await auth.getProfile(primaryEmail);
+      }
       if (!userProfile) throw new Error('Your workspace profile is not available yet. Please try again.');
       const isSuperAdmin = userProfile.isSuperAdmin;
 

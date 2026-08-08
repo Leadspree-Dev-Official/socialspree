@@ -260,7 +260,7 @@ export const AgentsView: React.FC<AgentsViewProps> = ({
       if (h >= 0 && h <= 23) hours = h;
       if (m >= 0 && m <= 59) minutes = m;
     } else if (colonTimeMatch) {
-      let h = parseInt(colonTimeMatch[1], 10);
+      const h = parseInt(colonTimeMatch[1], 10);
       const m = parseInt(colonTimeMatch[2], 10);
       if (h >= 0 && h <= 23) hours = h;
       if (m >= 0 && m <= 59) minutes = m;
