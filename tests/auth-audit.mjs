@@ -17,7 +17,7 @@ const [supabaseClient, app, authGate, api, main, vite, headers, vercel, config, 
 ]);
 
 assert.match(supabaseClient, /accessToken:\s*async/);
-assert.match(app, /session\?\.getToken\(\)/);
+assert.match(app, /getToken/);
 assert.match(app, /ensure_clerk_profile/);
 assert.doesNotMatch(app, /handleDemoLogin|unsafeMetadata|leadspree24x7@gmail\.com/);
 

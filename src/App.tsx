@@ -61,7 +61,16 @@ export function App() {
   const { signOut: clerkSignOut } = useClerk();
 
   useEffect(() => {
-    setClerkTokenProvider(() => session?.getToken() ?? Promise.resolve(null));
+    setClerkTokenProvider(async () => {
+      if (!session) return null;
+      try {
+        const token = await session.getToken({ template: 'supabase' });
+        if (token) return token;
+      } catch {
+        /* fallback if template is not named supabase */
+      }
+      return session.getToken();
+    });
     return () => setClerkTokenProvider(null);
   }, [session]);
 

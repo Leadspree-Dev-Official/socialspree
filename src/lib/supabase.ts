@@ -15,5 +15,13 @@ export function setClerkTokenProvider(provider: ClerkTokenProvider | null): void
 }
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-  accessToken: async () => clerkTokenProvider ? clerkTokenProvider() : null,
+  accessToken: async () => {
+    if (!clerkTokenProvider) return null;
+    try {
+      const token = await clerkTokenProvider();
+      return (token && typeof token === 'string' && token.trim().length > 0) ? token : null;
+    } catch {
+      return null;
+    }
+  },
 });

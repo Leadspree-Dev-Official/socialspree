@@ -49,6 +49,7 @@ export const CACHE_KEYS = {
   LOGS: 'socialspree_logs_v1',
   AI_LOGS: 'socialspree_ai_logs_v1',
   MEDIA: 'socialspree_media_v1',
+  REVIEWS: 'socialspree_reviews_v1',
   USER_PROFILE: 'socialspree_user_profile_v1',
 };
 
@@ -647,12 +648,25 @@ export async function hydrateFromCloud(): Promise<{
   posts: Post[]; logs: PostLog[]; aiLogs: AiCreditLog[]; media: MediaAsset[];
   reviews: GoogleReview[];
 }> {
+  const safeList = async <T>(fn: () => Promise<T[]>, fallbackKey: string): Promise<T[]> => {
+    try {
+      return await fn();
+    } catch {
+      return cacheGet<T[]>(fallbackKey) ?? [];
+    }
+  };
+
   const [tenantRows, planRows, accountRows, postRows, logRows, aiRows, mediaRows, reviewRows] = await Promise.all([
-    tenants.list(), plans.list(), socialConnections.list(), posts.list(),
-    postLogs.list(), aiCreditLogs.list(), mediaAssets.list(),
-    googleReviews.list(),
+    safeList(() => tenants.list(), CACHE_KEYS.TENANTS),
+    safeList(() => plans.list(), CACHE_KEYS.PLANS),
+    safeList(() => socialConnections.list(), CACHE_KEYS.ACCOUNTS),
+    safeList(() => posts.list(), CACHE_KEYS.POSTS),
+    safeList(() => postLogs.list(), CACHE_KEYS.LOGS),
+    safeList(() => aiCreditLogs.list(), CACHE_KEYS.AI_LOGS),
+    safeList(() => mediaAssets.list(), CACHE_KEYS.MEDIA),
+    safeList(() => googleReviews.list(), CACHE_KEYS.REVIEWS),
   ]);
-  // cache reads already write the localStorage cache during list(); return cloud data.
+
   return {
     tenants: tenantRows,
     plans: planRows,
