@@ -427,7 +427,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <span>Help Center</span>
           </button>
 
-          {onReturnToPublic && (
+          {onReturnToPublic && isSuperAdmin && (
             <button
               onClick={onReturnToPublic}
               className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-purple-300 hover:text-white hover:bg-purple-900/30 transition-all border border-purple-500/20 mt-2"

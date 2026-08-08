@@ -1,0 +1,11 @@
+{
+    "schema_version": 2,
+    "commit": "37f34ad71ea252a278e53c5da760b3d4bbe4bad2",
+    "indexed_at": "2026-08-08T16:11:08Z",
+    "project": "SocialSpree",
+    "nodes": 1011,
+    "edges": 1682,
+    "original_size": 2949120,
+    "compressed_size": 577862,
+    "compression_level": 9
+}

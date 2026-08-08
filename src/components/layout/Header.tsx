@@ -70,18 +70,6 @@ export const Header: React.FC<HeaderProps> = ({
 
       {/* Right Controls */}
       <div className="flex items-center gap-3 shrink-0">
-        {/* Back to Marketing Site button */}
-        {onReturnToPublic && (
-          <button
-            onClick={onReturnToPublic}
-            className="flex items-center gap-1 px-2.5 py-1.5 bg-white hover:bg-purple-50 rounded-xl border border-slate-200 hover:border-purple-300 text-[11px] font-bold text-slate-700 hover:text-[#5D3FD3] transition-all whitespace-nowrap leading-none shrink-0"
-            title="Return to Public Marketing Site"
-          >
-            <Globe className="w-3.5 h-3.5 text-[#5D3FD3] shrink-0" />
-            <span className="whitespace-nowrap leading-none">Marketing Site</span>
-          </button>
-        )}
-
         {/* Strict Workspace Badge */}
         <div className="flex items-center gap-2 px-2.5 py-1.5 bg-white rounded-xl border border-slate-200 text-xs font-semibold text-slate-900 shadow-2xs whitespace-nowrap leading-none shrink-0">
           <Building2 className="w-3.5 h-3.5 text-[#5D3FD3] shrink-0" />
@@ -102,22 +90,6 @@ export const Header: React.FC<HeaderProps> = ({
             onOpenBrandManager={onOpenBrandManager}
           />
         )}
-
-        {/* Super Admin Mode Toggle Button */}
-        <button
-          onClick={onToggleSuperAdmin}
-          className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-[11px] font-bold transition-all border whitespace-nowrap leading-none shrink-0 ${
-            isSuperAdminMode
-              ? 'bg-amber-400 text-slate-950 border-amber-500 shadow-xs'
-              : 'bg-slate-900 text-amber-300 border-slate-700 hover:bg-slate-800'
-          }`}
-          title="Toggle LeadSpree Super Admin Portal"
-        >
-          <ShieldCheck className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-          <span className="whitespace-nowrap leading-none">
-            {isSuperAdminMode ? 'Exit Super Admin' : 'Super Admin Mode'}
-          </span>
-        </button>
 
         {/* Notification Bell */}
         <button className="p-2 text-slate-500 hover:text-[#5D3FD3] transition-colors relative">
