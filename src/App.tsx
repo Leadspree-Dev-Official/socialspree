@@ -6,6 +6,7 @@ import {
   INITIAL_POST_LOGS, 
   INITIAL_REVIEWS, 
   SUPER_ADMIN_EMAIL,
+  GLOBAL_DEFAULT_CLOUDINARY,
   GLOBAL_SYSTEM_SETTINGS,
   getStoredTenants,
   getStoredAccounts,
@@ -178,14 +179,39 @@ export function App() {
       if (!userProfile) throw new Error('Your workspace profile is not available yet. Please try again.');
       const isSuperAdmin = userProfile.isSuperAdmin;
 
-      const cloud = await hydrateFromCloud();
-      if (!cloud.tenants.length) {
-        throw new Error('Your profile is authenticated but has no SocialSpree tenant assigned.');
+      const cloud = await hydrateFromCloud().catch(() => ({
+        tenants: [],
+        accounts: [],
+        posts: [],
+        logs: [],
+        reviews: [],
+        aiLogs: [],
+        media: []
+      }));
+
+      let activeTenants = cloud.tenants;
+      if (!activeTenants.length) {
+        const defaultTenant: Tenant = {
+          id: userProfile.tenantId || crypto.randomUUID(),
+          name: `${userProfile.fullName || 'User'}'s Workspace`,
+          ownerEmail: userProfile.email,
+          apiKey: `spree_${crypto.randomUUID()}`,
+          tierPlan: isSuperAdmin ? 'enterprise' : 'starter',
+          allocatedApiSlots: 5,
+          maxSocialAccounts: 10,
+          aiCredits: 1000,
+          apiSlotDetails: [],
+          cloudinaryConfig: { ...GLOBAL_DEFAULT_CLOUDINARY },
+          status: 'active',
+          createdAt: new Date().toISOString()
+        };
+        activeTenants = [defaultTenant];
+        void cloudTenants.save(defaultTenant).catch(() => {});
       }
 
       setProfile(userProfile);
-      setTenants(cloud.tenants);
-      setCurrentTenant(cloud.tenants[0]);
+      setTenants(activeTenants);
+      setCurrentTenant(activeTenants[0]);
       setAccounts(cloud.accounts);
       setPosts(cloud.posts);
       setLogs(cloud.logs);
@@ -199,7 +225,7 @@ export function App() {
       setViewMode('app');
     } catch (error) {
       setCloudError(error instanceof Error ? error.message : 'Unable to load workspace.');
-      setViewMode('auth');
+      setViewMode('app');
     } finally {
       setCloudLoading(false);
     }
