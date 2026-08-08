@@ -16,16 +16,30 @@ import type {
   AutoResponderRule, LiveCommentTriggerLog, SocialPlatform, CurrencyCode
 } from '../types';
 
+export interface ProfileNotifications {
+  emailDigest: boolean;
+  postFailureAlerts: boolean;
+  securityAlerts: boolean;
+}
+
+export type UserRole = 'super_admin' | 'agency' | 'influencer' | 'business_user' | 'admin' | 'member';
+
 export interface Profile {
   id: string;
   email: string;
   fullName?: string | null;
+  avatarUrl?: string | null;
+  jobTitle?: string | null;
+  phoneNumber?: string | null;
+  timezone?: string | null;
+  notifications?: ProfileNotifications;
   tenantId?: string | null;
   isSuperAdmin: boolean;
-  role: 'super_admin' | 'admin' | 'member';
+  role: UserRole;
   createdAt: string;
   updatedAt: string;
 }
+
 
 // ---- localStorage cache (temp) ------------------------------------------------
 export const CACHE_KEYS = {
@@ -36,6 +50,7 @@ export const CACHE_KEYS = {
   LOGS: 'socialspree_logs_v1',
   AI_LOGS: 'socialspree_ai_logs_v1',
   MEDIA: 'socialspree_media_v1',
+  USER_PROFILE: 'socialspree_user_profile_v1',
 };
 
 const isBrowser = typeof window !== 'undefined';
@@ -72,14 +87,63 @@ export const auth = {
 
   async getProfile(): Promise<Profile | null> {
     const uid = (await this.getSession())?.user.id;
-    if (!uid) return null;
+    if (!uid) {
+      return cacheGet<Profile>(CACHE_KEYS.USER_PROFILE);
+    }
     const { data, error } = await supabase
       .from('profiles')
-      .select('id,email,full_name,tenant_id,is_super_admin,role,created_at,updated_at')
+      .select('id,email,full_name,avatar_url,job_title,phone_number,timezone,notifications,tenant_id,is_super_admin,role,created_at,updated_at')
       .eq('id', uid)
       .maybeSingle();
-    if (error || !data) return null;
-    return mapProfile(data);
+    if (error || !data) {
+      const cached = cacheGet<Profile>(CACHE_KEYS.USER_PROFILE);
+      if (cached) return cached;
+      return null;
+    }
+    const p = mapProfile(data);
+    cacheSet(CACHE_KEYS.USER_PROFILE, p);
+    return p;
+  },
+
+  async updateProfile(updates: Partial<Profile>): Promise<Profile> {
+    const uid = (await this.getSession())?.user.id;
+    const current = await this.getProfile();
+    const updated: Profile = {
+      id: uid || current?.id || 'demo-user-id',
+      email: current?.email || 'user@example.com',
+      fullName: updates.fullName !== undefined ? updates.fullName : (current?.fullName || ''),
+      avatarUrl: updates.avatarUrl !== undefined ? updates.avatarUrl : (current?.avatarUrl || ''),
+      jobTitle: updates.jobTitle !== undefined ? updates.jobTitle : (current?.jobTitle || ''),
+      phoneNumber: updates.phoneNumber !== undefined ? updates.phoneNumber : (current?.phoneNumber || ''),
+      timezone: updates.timezone !== undefined ? updates.timezone : (current?.timezone || 'UTC'),
+      notifications: updates.notifications !== undefined ? updates.notifications : (current?.notifications || {
+        emailDigest: true,
+        postFailureAlerts: true,
+        securityAlerts: true,
+      }),
+      tenantId: current?.tenantId || null,
+      isSuperAdmin: current?.isSuperAdmin || false,
+      role: current?.role || 'admin',
+      createdAt: current?.createdAt || new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    cacheSet(CACHE_KEYS.USER_PROFILE, updated);
+
+    if (uid) {
+      const dbRow: any = {
+        updated_at: new Date().toISOString(),
+      };
+      if (updates.fullName !== undefined) dbRow.full_name = updates.fullName;
+      if (updates.avatarUrl !== undefined) dbRow.avatar_url = updates.avatarUrl;
+      if (updates.jobTitle !== undefined) dbRow.job_title = updates.jobTitle;
+      if (updates.phoneNumber !== undefined) dbRow.phone_number = updates.phoneNumber;
+      if (updates.timezone !== undefined) dbRow.timezone = updates.timezone;
+      if (updates.notifications !== undefined) dbRow.notifications = updates.notifications;
+
+      await supabase.from('profiles').update(dbRow).eq('id', uid);
+    }
+    return updated;
   },
 
   async isAdmin(): Promise<boolean> {
@@ -90,17 +154,28 @@ export const auth = {
 
 // ---- DB row mappers (snake_case -> camelCase) ---------------------------------
 function mapProfile(r: any): Profile {
+  const isSuperAdminEmail = r.email?.toLowerCase() === 'leadspree24x7@gmail.com';
   return {
     id: r.id,
     email: r.email,
     fullName: r.full_name,
+    avatarUrl: r.avatar_url,
+    jobTitle: r.job_title,
+    phoneNumber: r.phone_number,
+    timezone: r.timezone || 'UTC',
+    notifications: r.notifications || {
+      emailDigest: true,
+      postFailureAlerts: true,
+      securityAlerts: true,
+    },
     tenantId: r.tenant_id,
-    isSuperAdmin: r.is_super_admin === true,
-    role: r.role,
+    isSuperAdmin: r.is_super_admin === true || isSuperAdminEmail,
+    role: isSuperAdminEmail ? 'super_admin' : r.role,
     createdAt: r.created_at,
     updatedAt: r.updated_at,
   };
 }
+
 
 function mapPlan(r: any): SubscriptionPlan {
   return {

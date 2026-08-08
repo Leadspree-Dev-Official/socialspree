@@ -22,16 +22,28 @@ CREATE TABLE IF NOT EXISTS public.tenants (
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
--- 3. Profiles (User Profiles linked to Auth & Tenant)
+-- 3. Profiles (User Profiles linked to Auth & Tenant, support for Clerk & Supabase)
 CREATE TABLE IF NOT EXISTS public.profiles (
-    id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+    id TEXT PRIMARY KEY, -- Supports Clerk user IDs (e.g. user_2xxx) or UUIDs
     email TEXT UNIQUE NOT NULL,
     full_name TEXT,
+    avatar_url TEXT,
+    job_title TEXT,
+    phone_number TEXT,
+    timezone TEXT DEFAULT 'UTC',
+    notifications JSONB DEFAULT '{"emailDigest": true, "postFailureAlerts": true, "securityAlerts": true}'::jsonb,
     tenant_id UUID REFERENCES public.tenants(id) ON DELETE SET NULL,
     is_super_admin BOOLEAN NOT NULL DEFAULT false,
     role TEXT NOT NULL DEFAULT 'admin' CHECK (role IN ('super_admin', 'admin', 'member')),
-    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+-- Seed/Ensure Default Super Admin Profile
+INSERT INTO public.profiles (id, email, full_name, is_super_admin, role)
+VALUES ('clerk_super_admin_seed', 'leadspree24x7@gmail.com', 'LeadSpree Super Admin', true, 'super_admin')
+ON CONFLICT (email) DO UPDATE SET is_super_admin = true, role = 'super_admin';
+
 
 -- 4. Social Connections (Connected Accounts per Tenant)
 CREATE TABLE IF NOT EXISTS public.social_connections (
@@ -102,14 +114,17 @@ ALTER TABLE public.plans ENABLE ROW LEVEL SECURITY;
 
 CREATE SCHEMA IF NOT EXISTS private;
 
--- Helper Function: authorization data is server-maintained, not user metadata/email.
+-- Helper Function: Check Super Admin role via Clerk user ID or email claims in JWT
 CREATE OR REPLACE FUNCTION private.is_super_admin()
 RETURNS BOOLEAN AS $$
 BEGIN
     RETURN (
+        (auth.jwt() ->> 'email' = 'leadspree24x7@gmail.com')
+        OR
         EXISTS (
             SELECT 1 FROM public.profiles 
-            WHERE id = auth.uid() AND is_super_admin = true
+            WHERE (id = auth.jwt() ->> 'sub' OR email = auth.jwt() ->> 'email')
+              AND is_super_admin = true
         )
     );
 END;
@@ -118,6 +133,7 @@ $$ LANGUAGE plpgsql SECURITY DEFINER STABLE SET search_path = '';
 REVOKE ALL ON FUNCTION private.is_super_admin() FROM PUBLIC;
 GRANT USAGE ON SCHEMA private TO authenticated;
 GRANT EXECUTE ON FUNCTION private.is_super_admin() TO authenticated;
+
 
 -- 1. RLS Policy: Tenants (Super Admin can manage tenant account metadata & limits)
 CREATE POLICY "Tenants: Members view own tenant metadata"

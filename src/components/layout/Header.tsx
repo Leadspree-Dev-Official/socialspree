@@ -1,7 +1,9 @@
 import React from 'react';
+import { UserButton } from '@clerk/react';
 import { Tenant } from '../../types';
 import { SUPER_ADMIN_EMAIL } from '../../lib/store';
 import { Search, Bell, ShieldCheck, Building2, Globe, LogOut, User } from 'lucide-react';
+
 
 interface HeaderProps {
   tenants: Tenant[];
@@ -13,6 +15,8 @@ interface HeaderProps {
   onReturnToPublic?: () => void;
   onSignOut?: () => void;
   userEmail?: string;
+  userProfile?: { fullName?: string | null; avatarUrl?: string | null } | null;
+  onOpenUserProfile?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -24,10 +28,16 @@ export const Header: React.FC<HeaderProps> = ({
   pageTitle,
   onReturnToPublic,
   onSignOut,
-  userEmail
+  userEmail,
+  userProfile,
+  onOpenUserProfile
 }) => {
   const activeEmail = userEmail || (isSuperAdminMode ? SUPER_ADMIN_EMAIL : currentTenant.ownerEmail);
-  const displayName = isSuperAdminMode ? 'LeadSpree Super Admin' : (activeEmail.split('@')[0] || 'User');
+  const displayName = isSuperAdminMode 
+    ? 'LeadSpree Super Admin' 
+    : (userProfile?.fullName || activeEmail.split('@')[0] || 'User');
+  const avatarUrl = userProfile?.avatarUrl;
+
   return (
     <header className="sticky top-0 z-40 bg-[#F8FAFF]/90 backdrop-blur-xl border-b border-slate-200/80 flex justify-between items-center h-16 px-6 w-full">
       {/* Title & Search Bar */}
@@ -96,15 +106,26 @@ export const Header: React.FC<HeaderProps> = ({
 
         <div className="h-6 w-px bg-slate-200 mx-1 hidden sm:block"></div>
 
-        {/* Generic Male User Profile Avatar & Two-Line Email Display */}
+        {/* User Profile Avatar & Details Button with Clerk UserButton */}
         <div className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-full bg-slate-200 text-slate-700 border border-slate-300 flex items-center justify-center font-bold text-sm shadow-xs shrink-0" title={displayName}>
-            <User className="w-5 h-5 text-slate-600" />
-          </div>
-          <div className="hidden sm:flex flex-col text-xs leading-tight">
-            <span className="font-bold text-slate-900">{displayName}</span>
-            <span className="text-[11px] text-slate-500 font-mono mt-0.5">{activeEmail}</span>
-          </div>
+          <UserButton 
+            appearance={{
+              elements: {
+                avatarBox: "w-9 h-9 rounded-full border border-slate-300 hover:border-[#5D3FD3]"
+              }
+            }}
+          />
+
+          <button
+            onClick={onOpenUserProfile}
+            className="flex items-center gap-2 group p-1 hover:bg-purple-50 rounded-xl transition-all text-left"
+            title="Manage User Profile & Settings"
+          >
+            <div className="hidden sm:flex flex-col text-xs leading-tight">
+              <span className="font-bold text-slate-900 group-hover:text-[#5D3FD3] transition-colors">{displayName}</span>
+              <span className="text-[11px] text-slate-500 font-mono mt-0.5">{activeEmail}</span>
+            </div>
+          </button>
 
           {onSignOut && (
             <button
@@ -116,6 +137,7 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
           )}
         </div>
+
       </div>
     </header>
   );

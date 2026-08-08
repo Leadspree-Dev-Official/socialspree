@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Tenant, CloudinaryConfig, CloudinaryAccountItem } from '../../types';
+import { auth, type Profile } from '../../lib/api';
 import { 
   GLOBAL_DEFAULT_CLOUDINARY, 
   GLOBAL_CLOUDINARY_POOL 
@@ -19,21 +20,33 @@ import {
   Plus,
   Trash2,
   Edit2,
-  CheckCircle
+  CheckCircle,
+  User,
+  Camera,
+  Lock,
+  Bell,
+  Globe,
+  AlertCircle
 } from 'lucide-react';
 
 interface SettingsViewProps {
   tenant: Tenant;
+  userProfile?: Profile | null;
+  onUpdateUserProfile?: (updated: Profile) => void;
   onUpdateTenantCloudinary: (tenantId: string, config: CloudinaryConfig) => void;
   onUpdateTenantProfile: (tenantId: string, name: string, ownerEmail: string) => void;
+  initialTab?: 'user' | 'storage' | 'api' | 'social_keys' | 'org';
 }
 
 export const SettingsView: React.FC<SettingsViewProps> = ({
   tenant,
+  userProfile,
+  onUpdateUserProfile,
   onUpdateTenantCloudinary,
-  onUpdateTenantProfile
+  onUpdateTenantProfile,
+  initialTab = 'user'
 }) => {
-  const [activeTab, setActiveTab] = useState<'storage' | 'api' | 'social_keys' | 'org'>('storage');
+  const [activeTab, setActiveTab] = useState<'user' | 'storage' | 'api' | 'social_keys' | 'org'>(initialTab);
 
   // Cloudinary Local State (Multiple Accounts with 3 Fields: Cloud Name, Upload Preset, Bucket Name)
   const cldConfig = tenant.cloudinaryConfig || GLOBAL_DEFAULT_CLOUDINARY;
@@ -50,9 +63,32 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   const [cldUploadPresetInput, setCldUploadPresetInput] = useState('');
   const [cldBucketNameInput, setCldBucketNameInput] = useState('');
 
-  // Profile Local State
+  // Tenant Organization Local State
   const [orgName, setOrgName] = useState(tenant.name);
   const [ownerEmail, setOwnerEmail] = useState(tenant.ownerEmail);
+
+  // User Profile Local State
+  const [fullName, setFullName] = useState(userProfile?.fullName || tenant.ownerEmail.split('@')[0] || 'User');
+  const [userEmail] = useState(userProfile?.email || tenant.ownerEmail);
+  const [avatarUrl, setAvatarUrl] = useState(userProfile?.avatarUrl || '');
+  const [jobTitle, setJobTitle] = useState(userProfile?.jobTitle || 'Social Media Manager');
+  const [phoneNumber, setPhoneNumber] = useState(userProfile?.phoneNumber || '+1 (555) 234-5678');
+  const [timezone, setTimezone] = useState(userProfile?.timezone || 'UTC');
+  const [notifications, setNotifications] = useState(userProfile?.notifications || {
+    emailDigest: true,
+    postFailureAlerts: true,
+    securityAlerts: true,
+  });
+
+  // Password Change State
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordSuccess, setPasswordSuccess] = useState<string | null>(null);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [passwordLoading, setPasswordLoading] = useState(false);
+
+  // Profile Save State
+  const [profileSaving, setProfileSaving] = useState(false);
 
   // Social API Keys State (Simulated credentials)
   const [metaAppId, setMetaAppId] = useState('meta_app_99182049182');
@@ -195,6 +231,96 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     setTimeout(() => setNotification(null), 3000);
   };
 
+  const handleSaveUserProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setProfileSaving(true);
+    try {
+      const updated = await auth.updateProfile({
+        fullName: fullName.trim(),
+        avatarUrl: avatarUrl.trim(),
+        jobTitle: jobTitle.trim(),
+        phoneNumber: phoneNumber.trim(),
+        timezone,
+        notifications
+      });
+      if (onUpdateUserProfile) {
+        onUpdateUserProfile(updated);
+      }
+      setNotification('User Profile & Personal Preferences Saved Successfully!');
+      setTimeout(() => setNotification(null), 3000);
+    } catch (err) {
+      setNotification('Failed to update user profile.');
+    } finally {
+      setProfileSaving(false);
+    }
+  };
+
+  const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      alert('Please select a valid image file (PNG, JPG, WEBP).');
+      return;
+    }
+
+    // Direct client reader with high quality preview URL
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      const result = event.target?.result as string;
+      if (result) {
+        setAvatarUrl(result);
+        if (onUpdateUserProfile) {
+          const updated = await auth.updateProfile({ avatarUrl: result });
+          onUpdateUserProfile(updated);
+        }
+        setNotification('Profile Photo Updated Successfully!');
+        setTimeout(() => setNotification(null), 3000);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemoveAvatar = async () => {
+    setAvatarUrl('');
+    if (onUpdateUserProfile) {
+      const updated = await auth.updateProfile({ avatarUrl: '' });
+      onUpdateUserProfile(updated);
+    }
+    setNotification('Profile Photo Removed.');
+    setTimeout(() => setNotification(null), 3000);
+  };
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPasswordError(null);
+    setPasswordSuccess(null);
+
+    if (newPassword.length < 6) {
+      setPasswordError('Password must be at least 6 characters long.');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setPasswordError('New Password and Confirm Password do not match.');
+      return;
+    }
+
+    setPasswordLoading(true);
+    try {
+      const { error } = await auth.updatePassword(newPassword);
+      if (error) {
+        setPasswordError(error.message || 'Unable to update password.');
+      } else {
+        setPasswordSuccess('Account Password Changed Successfully!');
+        setNewPassword('');
+        setConfirmPassword('');
+      }
+    } catch (err) {
+      setPasswordError(err instanceof Error ? err.message : 'An error occurred while updating your password.');
+    } finally {
+      setPasswordLoading(false);
+    }
+  };
+
   return (
     <div className="max-w-7xl mx-auto space-y-6 font-['Inter'] pb-20 md:pb-0">
       {/* Header Banner */}
@@ -229,6 +355,18 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         
         {/* Left Vertical Sub-Nav Tabs */}
         <div className="lg:col-span-3 space-y-2">
+          <button
+            onClick={() => setActiveTab('user')}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold transition-all text-left ${
+              activeTab === 'user'
+                ? 'bg-[#5D3FD3] text-white shadow-md'
+                : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'
+            }`}
+          >
+            <User className="w-4 h-4" />
+            <span>User Profile & Security</span>
+          </button>
+
           <button
             onClick={() => setActiveTab('storage')}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold transition-all text-left ${
@@ -281,7 +419,263 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         {/* Right Content Panel */}
         <div className="lg:col-span-9 bg-white border border-slate-200 rounded-2xl p-6 shadow-xs space-y-6">
           
-          {/* TAB 1: MEDIA CDN & STORAGE (MULTI-CLOUDINARY) */}
+          {/* TAB 0: USER PROFILE, PHOTO & PASSWORD */}
+          {activeTab === 'user' && (
+            <div className="space-y-8">
+              {/* Profile Photo Uploader Section */}
+              <div className="border-b border-slate-100 pb-6 space-y-4">
+                <div>
+                  <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                    <Camera className="w-5 h-5 text-[#5D3FD3]" />
+                    <span>Profile Photo & Avatar</span>
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Upload a high-resolution profile photo to personalize your account across SocialSpree.
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-5 pt-2">
+                  <div className="relative group">
+                    <div className="w-20 h-20 rounded-2xl bg-gradient-to-tr from-purple-100 to-indigo-100 border-2 border-slate-200 flex items-center justify-center text-slate-700 overflow-hidden shadow-sm">
+                      {avatarUrl ? (
+                        <img src={avatarUrl} alt={fullName} className="w-full h-full object-cover" />
+                      ) : (
+                        <User className="w-10 h-10 text-slate-400" />
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-3">
+                      <label className="px-4 py-2 bg-[#5D3FD3] hover:bg-purple-700 text-white rounded-xl font-bold text-xs cursor-pointer transition-colors shadow-sm flex items-center gap-2">
+                        <Camera className="w-4 h-4" />
+                        <span>Upload Photo</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleAvatarUpload}
+                          className="hidden"
+                        />
+                      </label>
+                      {avatarUrl && (
+                        <button
+                          type="button"
+                          onClick={handleRemoveAvatar}
+                          className="px-3.5 py-2 bg-slate-100 hover:bg-red-50 text-slate-600 hover:text-red-600 rounded-xl font-semibold text-xs transition-colors border border-slate-200"
+                        >
+                          Remove Photo
+                        </button>
+                      )}
+                    </div>
+                    <p className="text-[11px] text-slate-400">
+                      Supports PNG, JPG, GIF or WEBP up to 5MB. Photo will be synchronized across header navigation.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Personal Details Form */}
+              <form onSubmit={handleSaveUserProfile} className="border-b border-slate-100 pb-6 space-y-4">
+                <div>
+                  <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                    <User className="w-5 h-5 text-[#5D3FD3]" />
+                    <span>Personal Details & Preferences</span>
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Manage your display name, title, contact details, and default timezone.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                  <div>
+                    <label className="block font-semibold text-slate-700 mb-1">Full Name</label>
+                    <input
+                      type="text"
+                      required
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      placeholder="e.g. Aniruddha Das"
+                      className="w-full p-2.5 border rounded-lg text-xs focus:ring-2 focus:ring-[#5D3FD3]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-semibold text-slate-700 mb-1">Email Address</label>
+                    <input
+                      type="email"
+                      disabled
+                      value={userEmail}
+                      className="w-full p-2.5 border rounded-lg text-xs bg-slate-50 text-slate-500 font-mono"
+                    />
+                    <p className="text-[10px] text-slate-400 mt-0.5">Primary account email used for authentication.</p>
+                  </div>
+
+                  <div>
+                    <label className="block font-semibold text-slate-700 mb-1">Job Title / Role</label>
+                    <input
+                      type="text"
+                      value={jobTitle}
+                      onChange={(e) => setJobTitle(e.target.value)}
+                      placeholder="e.g. Lead Social Strategist"
+                      className="w-full p-2.5 border rounded-lg text-xs focus:ring-2 focus:ring-[#5D3FD3]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-semibold text-slate-700 mb-1">Phone Number</label>
+                    <input
+                      type="text"
+                      value={phoneNumber}
+                      onChange={(e) => setPhoneNumber(e.target.value)}
+                      placeholder="+1 (555) 000-0000"
+                      className="w-full p-2.5 border rounded-lg text-xs font-mono focus:ring-2 focus:ring-[#5D3FD3]"
+                    />
+                  </div>
+
+                  <div className="sm:col-span-2">
+                    <label className="block font-semibold text-slate-700 mb-1">Default Timezone</label>
+                    <select
+                      value={timezone}
+                      onChange={(e) => setTimezone(e.target.value)}
+                      className="w-full p-2.5 border rounded-lg text-xs focus:ring-2 focus:ring-[#5D3FD3] bg-white"
+                    >
+                      <option value="UTC">UTC (Coordinated Universal Time)</option>
+                      <option value="Asia/Kolkata">Asia/Kolkata (IST +05:30)</option>
+                      <option value="America/New_York">America/New_York (EST/EDT)</option>
+                      <option value="America/Los_Angeles">America/Los_Angeles (PST/PDT)</option>
+                      <option value="Europe/London">Europe/London (GMT/BST)</option>
+                      <option value="Europe/Paris">Europe/Paris (CET/CEST)</option>
+                      <option value="Asia/Tokyo">Asia/Tokyo (JST +09:00)</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Notifications Preferences */}
+                <div className="pt-3 space-y-3">
+                  <label className="block font-bold text-slate-900 text-xs flex items-center gap-1.5">
+                    <Bell className="w-4 h-4 text-purple-600" />
+                    <span>Notification Preferences</span>
+                  </label>
+
+                  <div className="space-y-2 bg-slate-50 p-3.5 rounded-xl border border-slate-200 text-xs">
+                    <label className="flex items-center gap-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={notifications.emailDigest}
+                        onChange={(e) => setNotifications({ ...notifications, emailDigest: e.target.checked })}
+                        className="w-4 h-4 text-[#5D3FD3] rounded"
+                      />
+                      <div>
+                        <span className="font-semibold text-slate-800">Weekly Performance Digest Email</span>
+                        <p className="text-[11px] text-slate-500">Receive weekly summary reports of engagement, post reach, and AI usage.</p>
+                      </div>
+                    </label>
+
+                    <label className="flex items-center gap-3 cursor-pointer pt-1 border-t border-slate-200/60">
+                      <input
+                        type="checkbox"
+                        checked={notifications.postFailureAlerts}
+                        onChange={(e) => setNotifications({ ...notifications, postFailureAlerts: e.target.checked })}
+                        className="w-4 h-4 text-[#5D3FD3] rounded"
+                      />
+                      <div>
+                        <span className="font-semibold text-slate-800">Post Publishing Failure Alerts</span>
+                        <p className="text-[11px] text-slate-500">Get instant alerts if a scheduled post fails due to token expiry or network glitch.</p>
+                      </div>
+                    </label>
+
+                    <label className="flex items-center gap-3 cursor-pointer pt-1 border-t border-slate-200/60">
+                      <input
+                        type="checkbox"
+                        checked={notifications.securityAlerts}
+                        onChange={(e) => setNotifications({ ...notifications, securityAlerts: e.target.checked })}
+                        className="w-4 h-4 text-[#5D3FD3] rounded"
+                      />
+                      <div>
+                        <span className="font-semibold text-slate-800">Security & Password Alerts</span>
+                        <p className="text-[11px] text-slate-500">Receive notifications when your account settings or password are modified.</p>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+
+                <div className="flex justify-end pt-2">
+                  <button
+                    type="submit"
+                    disabled={profileSaving}
+                    className="px-6 py-2.5 bg-[#5D3FD3] hover:bg-purple-700 text-white font-bold rounded-xl text-xs transition-colors shadow-md flex items-center gap-2 disabled:opacity-50"
+                  >
+                    <Save className="w-4 h-4" />
+                    <span>{profileSaving ? 'Saving Profile...' : 'Save Profile Changes'}</span>
+                  </button>
+                </div>
+              </form>
+
+              {/* Password Change Section */}
+              <form onSubmit={handleChangePassword} className="space-y-4">
+                <div>
+                  <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                    <Lock className="w-5 h-5 text-amber-600" />
+                    <span>Security & Change Password</span>
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Update your account login password. Must be at least 6 characters.
+                  </p>
+                </div>
+
+                {passwordSuccess && (
+                  <div className="p-3.5 bg-emerald-50 border border-emerald-300 rounded-xl text-xs text-emerald-900 flex items-center gap-2 font-semibold">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>{passwordSuccess}</span>
+                  </div>
+                )}
+
+                {passwordError && (
+                  <div className="p-3.5 bg-red-50 border border-red-300 rounded-xl text-xs text-red-900 flex items-center gap-2 font-semibold">
+                    <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+                    <span>{passwordError}</span>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                  <div>
+                    <label className="block font-semibold text-slate-700 mb-1">New Password</label>
+                    <input
+                      type="password"
+                      required
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      placeholder="••••••••••••"
+                      className="w-full p-2.5 border rounded-lg font-mono text-xs focus:ring-2 focus:ring-amber-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-semibold text-slate-700 mb-1">Confirm New Password</label>
+                    <input
+                      type="password"
+                      required
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      placeholder="••••••••••••"
+                      className="w-full p-2.5 border rounded-lg font-mono text-xs focus:ring-2 focus:ring-amber-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex justify-end pt-2">
+                  <button
+                    type="submit"
+                    disabled={passwordLoading}
+                    className="px-6 py-2.5 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl text-xs transition-colors shadow-md flex items-center gap-2 disabled:opacity-50"
+                  >
+                    <Lock className="w-4 h-4" />
+                    <span>{passwordLoading ? 'Updating Password...' : 'Update Password'}</span>
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
           {activeTab === 'storage' && (
             <form onSubmit={handleSaveStorage} className="space-y-6">
 

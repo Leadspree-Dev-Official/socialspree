@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
+import { Show, SignInButton, SignUpButton, UserButton } from '@clerk/react';
 import { Sparkles, Menu, X, ArrowRight, LayoutDashboard, ShieldCheck } from 'lucide-react';
+
 
 export type PublicSubView = 'landing' | 'features' | 'pricing' | 'testimonials' | 'about';
 
@@ -85,32 +87,50 @@ export const PublicNavbar: React.FC<PublicNavbarProps> = ({
 
           {/* Desktop Right CTAs */}
           <div className="hidden md:flex items-center gap-3">
-            <button
-              onClick={onLaunchApp}
-              className="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-700 hover:text-[#5D3FD3] hover:border-purple-200 hover:bg-purple-50/50 text-xs font-bold transition-all flex items-center gap-2"
-            >
-              <LayoutDashboard className="w-3.5 h-3.5" />
-              <span>Sign In / Dashboard</span>
-            </button>
-
-            <button
-              onClick={onLaunchApp}
-              className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#5D3FD3] to-[#0066FF] text-white text-xs font-bold shadow-md shadow-purple-500/20 hover:shadow-lg hover:shadow-purple-500/30 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center gap-2"
-            >
-              <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-              <span>Launch Workspace Demo</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </button>
+            <Show when="signed-out">
+              <SignInButton mode="modal">
+                <button
+                  className="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-700 hover:text-[#5D3FD3] hover:border-purple-200 hover:bg-purple-50/50 text-xs font-bold transition-all flex items-center gap-2 cursor-pointer"
+                >
+                  <LayoutDashboard className="w-3.5 h-3.5" />
+                  <span>Sign In</span>
+                </button>
+              </SignInButton>
+              <SignUpButton mode="modal">
+                <button
+                  className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#5D3FD3] to-[#0066FF] text-white text-xs font-bold shadow-md shadow-purple-500/20 hover:shadow-lg hover:shadow-purple-500/30 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center gap-2 cursor-pointer"
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                  <span>Get Started</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+              </SignUpButton>
+            </Show>
+            <Show when="signed-in">
+              <button
+                onClick={onLaunchApp}
+                className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#5D3FD3] to-[#0066FF] text-white text-xs font-bold shadow-md shadow-purple-500/20 hover:shadow-lg hover:shadow-purple-500/30 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center gap-2 cursor-pointer"
+              >
+                <LayoutDashboard className="w-3.5 h-3.5 text-amber-300" />
+                <span>Go to Dashboard</span>
+              </button>
+              <UserButton />
+            </Show>
           </div>
 
           {/* Mobile Menu Button */}
           <div className="md:hidden flex items-center gap-2">
-            <button
-              onClick={onLaunchApp}
-              className="px-3 py-1.5 text-xs font-bold bg-[#5D3FD3] text-white rounded-lg"
-            >
-              App
-            </button>
+            <Show when="signed-out">
+              <SignInButton mode="modal">
+                <button className="px-3 py-1.5 text-xs font-bold bg-[#5D3FD3] text-white rounded-lg">
+                  Sign In
+                </button>
+              </SignInButton>
+            </Show>
+            <Show when="signed-in">
+              <UserButton />
+            </Show>
+
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="p-2 rounded-xl text-slate-600 hover:bg-slate-100 transition-colors"
@@ -119,6 +139,7 @@ export const PublicNavbar: React.FC<PublicNavbarProps> = ({
               {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
           </div>
+
 
         </div>
       </div>

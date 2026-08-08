@@ -12,7 +12,8 @@ import {
   MediaAsset
 } from '../types';
 
-export const SUPER_ADMIN_EMAIL = ((import.meta as any).env || {}).VITE_SUPPORT_EMAIL || 'support@example.com';
+export const SUPER_ADMIN_EMAIL = ((import.meta as any).env || {}).VITE_SUPPORT_EMAIL || 'leadspree24x7@gmail.com';
+
 
 // Global System Settings (Currency: USD $, INR ₹, GBP £, AI Key & Default Credits)
 export const GLOBAL_SYSTEM_SETTINGS: SystemSettings = {

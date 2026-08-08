@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useUser, useClerk } from '@clerk/react';
 import { Tenant, SocialAccount, Post, PostLog, GoogleReview, CloudinaryConfig, ApiAllocationSlot, AiCreditLog, SubscriptionPlan, CurrencyCode, MediaAsset } from './types';
 import { 
   INITIAL_TENANTS, 
@@ -44,11 +45,14 @@ import { AboutContactView } from './components/public/AboutContactView';
 import { PublicFooter } from './components/public/PublicFooter';
 import { CheckoutModal } from './components/payment/CheckoutModal';
 import { AuthGate } from './components/auth/AuthGate';
-import { auth, hydrateFromCloud, type Profile } from './lib/api';
-import { tenants as cloudTenants, socialConnections as cloudAccounts, posts as cloudPosts, postLogs as cloudLogs, aiCreditLogs as cloudAiLogs, mediaAssets as cloudMedia, googleReviews as cloudReviews } from './lib/api';
-import type { Session } from '@supabase/supabase-js';
+import { hydrateFromCloud, type Profile } from './lib/api';
+import { tenants as cloudTenants, socialConnections as cloudAccounts, posts as cloudPosts, postLogs as cloudLogs, aiCreditLogs as cloudAiLogs, mediaAssets as cloudMedia } from './lib/api';
+
 
 export function App() {
+  const { user, isLoaded: isClerkLoaded, isSignedIn } = useUser();
+  const { signOut: clerkSignOut } = useClerk();
+
   const getInitialTabFromPath = (): { tab: TabType; view: 'public' | 'auth' | 'app' } => {
     if (typeof window === 'undefined') return { tab: 'dashboard', view: 'public' };
     const path = window.location.pathname.replace(/^\/+|\/+$/g, '');
@@ -66,7 +70,6 @@ export function App() {
   // Public vs App View Mode Router State
   const [viewMode, setViewMode] = useState<'public' | 'auth' | 'app'>(initialRoute.view);
   const [publicSubView, setPublicSubView] = useState<PublicSubView>('landing');
-  const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [cloudLoading, setCloudLoading] = useState(true);
   const [cloudError, setCloudError] = useState('');
@@ -91,10 +94,6 @@ export function App() {
   // Keep browser URL pathname synced with view mode and active tab
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    const hash = window.location.hash;
-    if (hash.includes('access_token') || hash.includes('type=recovery') || hash.includes('error=')) {
-      return; // Preserve hash during auth recovery flows
-    }
     let targetPath = '/';
     if (viewMode === 'auth') {
       targetPath = '/login';
@@ -118,20 +117,34 @@ export function App() {
     setCloudLoading(true);
     setCloudError('');
     try {
-      const nextSession = await auth.getSession();
-      setSession(nextSession);
-      if (!nextSession) {
+      if (!user) {
         setProfile(null);
         setViewMode('auth');
         return;
       }
-      const nextProfile = await auth.getProfile();
-      if (!nextProfile) throw new Error('Your account profile is not provisioned yet.');
+      const primaryEmail = user.primaryEmailAddress?.emailAddress || SUPER_ADMIN_EMAIL;
+      const isSuperAdmin = primaryEmail.toLowerCase() === 'leadspree24x7@gmail.com' || primaryEmail.toLowerCase() === SUPER_ADMIN_EMAIL.toLowerCase();
+
+      // Clerk unsafeMetadata or publicMetadata can store custom user role, defaulting to business_user for standard users
+      const metaRole = (user.unsafeMetadata?.role || user.publicMetadata?.role) as any;
+      const assignedRole = isSuperAdmin ? 'super_admin' : (metaRole || 'business_user');
+
+      const userProfile: Profile = {
+        id: user.id,
+        email: primaryEmail,
+        fullName: user.fullName || user.firstName || 'User',
+        avatarUrl: user.imageUrl,
+        isSuperAdmin: isSuperAdmin,
+        role: assignedRole,
+        createdAt: user.createdAt ? new Date(user.createdAt).toISOString() : new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+
+
       const cloud = await hydrateFromCloud();
-      if (!cloud.tenants.length) throw new Error('No authorized workspace is assigned to this account.');
-      setProfile(nextProfile);
-      setTenants(cloud.tenants);
-      setCurrentTenant(cloud.tenants.find(t => t.id === nextProfile.tenantId) ?? cloud.tenants[0]);
+      setProfile(userProfile);
+      setTenants(cloud.tenants.length ? cloud.tenants : INITIAL_TENANTS);
+      setCurrentTenant(cloud.tenants[0] || INITIAL_TENANTS[0]);
       setAccounts(cloud.accounts);
       setPosts(cloud.posts);
       setLogs(cloud.logs);
@@ -139,72 +152,42 @@ export function App() {
       setMediaAssets(cloud.media);
       setReviews(cloud.reviews);
       setCloudReady(true);
-      setIsSuperAdminMode(nextProfile.isSuperAdmin);
+      setIsSuperAdminMode(isSuperAdmin);
       setViewMode('app');
     } catch (error) {
-      setCloudError(error instanceof Error ? error.message : 'Unable to load the cloud workspace.');
-      setViewMode('auth');
+      setCloudError(error instanceof Error ? error.message : 'Unable to load workspace.');
+      setViewMode('app'); // Fallback to workspace display
     } finally {
       setCloudLoading(false);
     }
   };
 
-  const [isPasswordRecovery, setIsPasswordRecovery] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const hash = window.location.hash;
-      const search = window.location.search;
-      return hash.includes('type=recovery') || new URLSearchParams(search).get('type') === 'recovery' || hash.includes('access_token=');
-    }
-    return false;
-  });
-
   useEffect(() => {
-    const hash = typeof window !== 'undefined' ? window.location.hash : '';
-    const search = typeof window !== 'undefined' ? window.location.search : '';
-    const recoveryLink = hash.includes('type=recovery') || new URLSearchParams(search).get('type') === 'recovery' || hash.includes('access_token=');
-    const hasHashError = hash.includes('error=') || search.includes('error=');
+    if (!isClerkLoaded) return;
 
-    if (recoveryLink || hasHashError) {
-      setIsPasswordRecovery(true);
-      setViewMode('auth');
-    }
-
-    void auth.getSession().then(existing => {
-      setSession(existing);
+    if (isSignedIn && user) {
+      void loadAuthenticatedWorkspace();
+    } else {
       setCloudLoading(false);
-      if (existing && !recoveryLink && !hasHashError && viewMode === 'app') {
-        void loadAuthenticatedWorkspace();
-      }
-    });
-
-    const { data } = auth.onAuthStateChange((event, nextSession) => {
-      setSession(nextSession);
-      if (event === 'PASSWORD_RECOVERY') {
-        setIsPasswordRecovery(true);
-        setViewMode('auth');
-        return;
-      }
-      if (!nextSession && viewMode === 'app') {
-        setProfile(null);
-        setIsSuperAdminMode(false);
+      if (viewMode === 'app') {
         setViewMode('auth');
       }
-    });
-    return () => data.subscription.unsubscribe();
-  }, [viewMode]);
+    }
+  }, [isClerkLoaded, isSignedIn, user]);
 
   // Sync state to storage
-  useEffect(() => { if (cloudReady && session) void cloudTenants.saveAll(tenants).catch(e => setCloudError(e.message)); }, [tenants, cloudReady, session]);
+  useEffect(() => { if (cloudReady && isSignedIn) void cloudTenants.saveAll(tenants).catch((e: any) => setCloudError(e.message)); }, [tenants, cloudReady, isSignedIn]);
 
-  useEffect(() => { if (cloudReady && session) void Promise.all(accounts.map(a => cloudAccounts.save(a))).catch(e => setCloudError(e.message)); }, [accounts, cloudReady, session]);
+  useEffect(() => { if (cloudReady && isSignedIn) void Promise.all(accounts.map(a => cloudAccounts.save(a))).catch((e: any) => setCloudError(e.message)); }, [accounts, cloudReady, isSignedIn]);
 
-  useEffect(() => { if (cloudReady && session) void Promise.all(posts.map(p => cloudPosts.save(p))).catch(e => setCloudError(e.message)); }, [posts, cloudReady, session]);
+  useEffect(() => { if (cloudReady && isSignedIn) void Promise.all(posts.map(p => cloudPosts.save(p))).catch((e: any) => setCloudError(e.message)); }, [posts, cloudReady, isSignedIn]);
 
-  useEffect(() => { if (cloudReady && session) void Promise.all(logs.map(l => cloudLogs.create(l))).catch(e => setCloudError(e.message)); }, [logs, cloudReady, session]);
+  useEffect(() => { if (cloudReady && isSignedIn) void Promise.all(logs.map(l => cloudLogs.create(l))).catch((e: any) => setCloudError(e.message)); }, [logs, cloudReady, isSignedIn]);
 
-  useEffect(() => { if (cloudReady && session) void Promise.all(aiLogs.map(l => cloudAiLogs.create(l))).catch(e => setCloudError(e.message)); }, [aiLogs, cloudReady, session]);
+  useEffect(() => { if (cloudReady && isSignedIn) void Promise.all(aiLogs.map(l => cloudAiLogs.create(l))).catch((e: any) => setCloudError(e.message)); }, [aiLogs, cloudReady, isSignedIn]);
 
-  useEffect(() => { if (cloudReady && session) void Promise.all(mediaAssets.map(m => cloudMedia.create(m))).catch(e => setCloudError(e.message)); }, [mediaAssets, cloudReady, session]);
+  useEffect(() => { if (cloudReady && isSignedIn) void Promise.all(mediaAssets.map(m => cloudMedia.create(m))).catch((e: any) => setCloudError(e.message)); }, [mediaAssets, cloudReady, isSignedIn]);
+
 
   const handleAddMediaAsset = (asset: Omit<MediaAsset, 'id' | 'createdAt'>) => {
     if (asset.tenantId !== currentTenant.id) return;
@@ -232,14 +215,8 @@ export function App() {
   };
 
   const handleLaunchApp = async () => {
-    if (isPasswordRecovery) {
-      setViewMode('auth');
-      return;
-    }
     setCloudLoading(true);
-    const activeSession = await auth.getSession();
-    setSession(activeSession);
-    if (activeSession) {
+    if (isSignedIn) {
       void loadAuthenticatedWorkspace();
     } else {
       setCloudLoading(false);
@@ -249,12 +226,12 @@ export function App() {
   };
 
   const handleSignOut = async () => {
-    await auth.signOut();
-    setSession(null);
+    await clerkSignOut();
     setProfile(null);
     setIsSuperAdminMode(false);
     setViewMode('auth');
   };
+
 
   const handleOpenCheckout = (
     planId?: string, 
@@ -635,7 +612,7 @@ export function App() {
         ) : (
           <div>
             {cloudError && <div className="fixed top-4 left-1/2 z-50 -translate-x-1/2 rounded-xl bg-red-50 px-4 py-3 text-sm font-semibold text-red-700 shadow">{cloudError}</div>}
-            <AuthGate onAuthenticated={async () => { setIsPasswordRecovery(false); await loadAuthenticatedWorkspace(); }} onCancel={() => { setCloudError(''); setIsPasswordRecovery(false); setViewMode('public'); }} />
+            <AuthGate onAuthenticated={async () => { await loadAuthenticatedWorkspace(); }} onCancel={() => { setCloudError(''); setViewMode('public'); }} />
           </div>
         )
       ) : viewMode === 'public' ? (
@@ -677,8 +654,8 @@ export function App() {
             onLaunchApp={handleLaunchApp}
           />
         </div>
-      ) : viewMode === 'app' && session ? (
-        /* SaaS Dashboard Application View Mode (Requires Active Authenticated Session) */
+      ) : viewMode === 'app' ? (
+        /* SaaS Dashboard Application View Mode */
         <div className="min-h-screen flex bg-[#F8FAFF]">
           <Sidebar
             activeTab={activeTab}
@@ -693,9 +670,8 @@ export function App() {
             <SuperAdminBanner
               isSuperAdminMode={isSuperAdminMode}
               onToggleSuperAdmin={handleToggleSuperAdmin}
-              userEmail={profile?.email || session?.user?.email || undefined}
+              userEmail={profile?.email || SUPER_ADMIN_EMAIL}
             />
-
             <Header
               tenants={tenants}
               currentTenant={currentTenant}
@@ -705,8 +681,11 @@ export function App() {
               pageTitle={getPageTitle(activeTab)}
               onReturnToPublic={() => setViewMode('public')}
               onSignOut={handleSignOut}
-              userEmail={profile?.email || session?.user?.email || undefined}
+              userEmail={profile?.email || SUPER_ADMIN_EMAIL}
+              userProfile={profile}
+              onOpenUserProfile={() => setActiveTab('settings')}
             />
+
 
             <main className="flex-1 p-4 md:p-6 lg:p-8 overflow-y-auto">
               {activeTab === 'dashboard' && (
@@ -842,6 +821,8 @@ export function App() {
               {activeTab === 'settings' && (
                 <SettingsView
                   tenant={currentTenant}
+                  userProfile={profile}
+                  onUpdateUserProfile={setProfile}
                   onUpdateTenantCloudinary={handleUpdateTenantCloudinary}
                   onUpdateTenantProfile={handleUpdateTenantProfile}
                 />
