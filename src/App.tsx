@@ -334,7 +334,11 @@ export function App() {
 
   const handleSelectTab = (tab: TabType) => {
     if (tab === 'admin') {
-      setIsSuperAdminMode(true);
+      const isAuthorized = isSuperAdminMode || profile?.email?.toLowerCase() === 'leadspree24x7@gmail.com' || profile?.role === 'super_admin';
+      if (!isAuthorized) {
+        setActiveTab('dashboard');
+        return;
+      }
       setCurrentTenant(tenants[0] || INITIAL_TENANTS[0]);
     }
     setActiveTab(tab);
@@ -779,6 +783,9 @@ export function App() {
             activeAdminSubTab={adminSubTab}
             onSelectAdminSubTab={setAdminSubTab}
             onReturnToPublic={() => setViewMode('public')}
+            userFullName={profile?.fullName || undefined}
+            userEmail={profile?.email || undefined}
+            userRole={profile?.role || undefined}
           />
 
           <div className="flex-1 flex flex-col md:ml-[260px] min-w-0">

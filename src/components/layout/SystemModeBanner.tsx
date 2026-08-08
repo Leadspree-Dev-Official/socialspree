@@ -34,7 +34,7 @@ export const SystemModeBanner: React.FC = () => {
 
         <div className="hidden sm:flex items-center gap-1 text-[10px] font-mono text-slate-300 bg-white/10 px-2 py-0.5 rounded border border-white/10">
           <ShieldCheck className="w-3 h-3 text-emerald-400" />
-          <span>Super Admin Enforced</span>
+          <span>System Mode Enforced</span>
         </div>
       </div>
     </div>
