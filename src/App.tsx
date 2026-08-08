@@ -49,7 +49,8 @@ import { AboutContactView } from './components/public/AboutContactView';
 import { PublicFooter } from './components/public/PublicFooter';
 import { CheckoutModal } from './components/payment/CheckoutModal';
 import { AuthGate } from './components/auth/AuthGate';
-import { clearAuthenticatedCache, hydrateFromCloud, mapProfile, type Profile } from './lib/api';
+import { RoleOnboardingModal } from './components/auth/RoleOnboardingModal';
+import { clearAuthenticatedCache, hydrateFromCloud, mapProfile, type Profile, type UserRole } from './lib/api';
 import { auth } from './lib/api';
 import { setClerkTokenProvider, supabase } from './lib/supabase';
 import { tenants as cloudTenants, socialConnections as cloudAccounts, posts as cloudPosts, postLogs as cloudLogs, aiCreditLogs as cloudAiLogs, mediaAssets as cloudMedia } from './lib/api';
@@ -79,6 +80,10 @@ export function App() {
     const path = window.location.pathname.replace(/^\/+|\/+$/g, '');
     if (!path) return { tab: 'dashboard', view: 'public' };
     if (path === 'login' || path === 'auth' || path === 'sign-in') return { tab: 'dashboard', view: 'auth' };
+    if (path === 'admin') return { tab: 'admin', view: 'app' };
+    if (path === 'infludash' || path === 'influencer' || path === 'agency' || path === 'dashboard') {
+      return { tab: 'dashboard', view: 'app' };
+    }
     const validTabs: TabType[] = ['dashboard', 'composer', 'calendar', 'agents', 'media', 'autoresponder', 'connections', 'logs', 'reviews', 'analytics', 'admin', 'settings', 'help'];
     if (validTabs.includes(path as TabType)) {
       return { tab: path as TabType, view: 'app' };
@@ -112,19 +117,31 @@ export function App() {
   const [activeTab, setActiveTab] = useState<TabType>(initialRoute.tab);
   const [adminSubTab, setAdminSubTab] = useState<SuperAdminSubTab>('dashboard');
 
-  // Keep browser URL pathname synced with view mode and active tab
+  // Keep browser URL pathname synced with view mode, active tab, and role
   useEffect(() => {
     if (typeof window === 'undefined') return;
     let targetPath = '/';
     if (viewMode === 'auth') {
       targetPath = '/login';
     } else if (viewMode === 'app') {
-      targetPath = `/${activeTab}`;
+      if (activeTab === 'admin' || profile?.isSuperAdmin || profile?.role === 'super_admin') {
+        targetPath = '/admin';
+      } else if (activeTab === 'dashboard') {
+        if (profile?.role === 'influencer') {
+          targetPath = '/infludash';
+        } else if (profile?.role === 'agency') {
+          targetPath = '/agency';
+        } else {
+          targetPath = '/dashboard';
+        }
+      } else {
+        targetPath = `/${activeTab}`;
+      }
     }
     if (window.location.pathname !== targetPath) {
       window.history.pushState({}, '', targetPath);
     }
-  }, [viewMode, activeTab]);
+  }, [viewMode, activeTab, profile?.role, profile?.isSuperAdmin]);
 
   const [accounts, setAccounts] = useState<SocialAccount[]>(() => getStoredAccounts());
   const [posts, setPosts] = useState<Post[]>(() => getStoredPosts());
@@ -237,6 +254,20 @@ export function App() {
       setViewMode('app');
     } finally {
       setCloudLoading(false);
+    }
+  };
+
+  const handleSelectUserRole = async (selectedRole: UserRole) => {
+    try {
+      const updated = await auth.updateProfile({ role: selectedRole });
+      setProfile(updated);
+      if (selectedRole === 'super_admin') {
+        setActiveTab('admin');
+      } else {
+        setActiveTab('dashboard');
+      }
+    } catch {
+      setProfile(prev => prev ? { ...prev, role: selectedRole } : null);
     }
   };
 
@@ -744,6 +775,9 @@ export function App() {
       ) : viewMode === 'app' ? (
         /* SaaS Dashboard Application View Mode */
         <div className="min-h-screen flex bg-[#F8FAFF]">
+          {profile && !profile.isSuperAdmin && profile.role === 'member' && (
+            <RoleOnboardingModal onSelectRole={handleSelectUserRole} />
+          )}
           <Sidebar
             activeTab={activeTab}
             setActiveTab={handleSelectTab}
