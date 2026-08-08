@@ -32,18 +32,26 @@ export function AuthGate({ onCancel, onDemoLogin, onAuthenticated }: AuthGatePro
 
   // Official Clerk OAuth Sign-In (Google & Facebook)
   const handleOAuthLogin = async (strategy: 'oauth_google' | 'oauth_facebook') => {
+    setAuthError(null);
     try {
-      if ((clerk as any).authenticateWithRedirect) {
+      if (signIn && signIn.authenticateWithRedirect) {
+        await signIn.authenticateWithRedirect({
+          strategy,
+          redirectUrl: window.location.origin,
+          redirectUrlComplete: window.location.origin
+        });
+      } else if (clerk && (clerk as any).authenticateWithRedirect) {
         await (clerk as any).authenticateWithRedirect({
           strategy,
-          redirectUrl: window.location.href,
-          redirectUrlComplete: window.location.href
+          redirectUrl: window.location.origin,
+          redirectUrlComplete: window.location.origin
         });
-      } else if ((clerk as any).redirectToSignIn) {
-        await (clerk as any).redirectToSignIn();
+      } else if (clerk && clerk.openSignIn) {
+        clerk.openSignIn();
       }
     } catch (err: any) {
-      setAuthError(err.message || 'Clerk OAuth Redirect Failed');
+      const msg = err?.errors?.[0]?.longMessage || err?.errors?.[0]?.message || err?.message;
+      setAuthError(msg || `OAuth strategy '${strategy}' requires enabling in Clerk Dashboard -> SSO Connections.`);
     }
   };
 
