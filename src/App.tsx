@@ -215,11 +215,11 @@ export function App() {
       void loadAuthenticatedWorkspace();
     } else {
       setCloudLoading(false);
-      if (viewMode === 'app') {
+      if (viewMode === 'app' && !profile) {
         setViewMode('auth');
       }
     }
-  }, [isClerkLoaded, isSignedIn, user]);
+  }, [isClerkLoaded, isSignedIn, user, profile]);
 
   // Sync state to storage
   useEffect(() => { if (cloudReady && isSignedIn) void cloudTenants.saveAll(tenants).catch((e: any) => setCloudError(e.message)); }, [tenants, cloudReady, isSignedIn]);
