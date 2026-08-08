@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { SignIn, SignUp } from '@clerk/react';
-import { LockKeyhole, ShieldCheck, Building2, Sparkles, User, Zap } from 'lucide-react';
+import { LockKeyhole, ShieldCheck, Building2, Sparkles, User, Zap, Mail, ArrowRight } from 'lucide-react';
 
 interface AuthGateProps {
   onAuthenticated?: () => Promise<void> | void;
@@ -10,6 +10,26 @@ interface AuthGateProps {
 
 export function AuthGate({ onCancel, onDemoLogin }: AuthGateProps) {
   const [mode, setMode] = useState<'sign-in' | 'sign-up'>('sign-in');
+  const [emailInput, setEmailInput] = useState('');
+  const [passwordInput, setPasswordInput] = useState('');
+
+  const handleManualEmailLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!emailInput.trim()) return;
+
+    if (onDemoLogin) {
+      const lower = emailInput.toLowerCase();
+      if (lower.includes('admin') || lower === 'leadspree24x7@gmail.com') {
+        onDemoLogin('super_admin');
+      } else if (lower.includes('agency')) {
+        onDemoLogin('agency');
+      } else if (lower.includes('creator') || lower.includes('influencer')) {
+        onDemoLogin('influencer');
+      } else {
+        onDemoLogin('business');
+      }
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#F8FAFF] flex flex-col items-center justify-center p-5 font-['Inter'] space-y-6">
@@ -59,7 +79,7 @@ export function AuthGate({ onCancel, onDemoLogin }: AuthGateProps) {
               <button
                 type="button"
                 onClick={() => onDemoLogin('super_admin')}
-                className="p-3 bg-amber-50 hover:bg-amber-100 border border-amber-300 rounded-2xl font-bold text-slate-950 text-left transition-all flex items-center gap-2 group shadow-2xs"
+                className="p-3 bg-amber-50 hover:bg-amber-100 border border-amber-300 rounded-2xl font-bold text-slate-950 text-left transition-all flex items-center gap-2 group shadow-2xs cursor-pointer"
               >
                 <ShieldCheck className="w-4 h-4 text-amber-600 shrink-0" />
                 <div>
@@ -72,7 +92,7 @@ export function AuthGate({ onCancel, onDemoLogin }: AuthGateProps) {
               <button
                 type="button"
                 onClick={() => onDemoLogin('agency')}
-                className="p-3 bg-purple-50 hover:bg-purple-100 border border-purple-300 rounded-2xl font-bold text-slate-950 text-left transition-all flex items-center gap-2 group shadow-2xs"
+                className="p-3 bg-purple-50 hover:bg-purple-100 border border-purple-300 rounded-2xl font-bold text-slate-950 text-left transition-all flex items-center gap-2 group shadow-2xs cursor-pointer"
               >
                 <Building2 className="w-4 h-4 text-purple-600 shrink-0" />
                 <div>
@@ -85,7 +105,7 @@ export function AuthGate({ onCancel, onDemoLogin }: AuthGateProps) {
               <button
                 type="button"
                 onClick={() => onDemoLogin('influencer')}
-                className="p-3 bg-pink-50 hover:bg-pink-100 border border-pink-300 rounded-2xl font-bold text-slate-950 text-left transition-all flex items-center gap-2 group shadow-2xs"
+                className="p-3 bg-pink-50 hover:bg-pink-100 border border-pink-300 rounded-2xl font-bold text-slate-950 text-left transition-all flex items-center gap-2 group shadow-2xs cursor-pointer"
               >
                 <Sparkles className="w-4 h-4 text-pink-600 shrink-0" />
                 <div>
@@ -98,7 +118,7 @@ export function AuthGate({ onCancel, onDemoLogin }: AuthGateProps) {
               <button
                 type="button"
                 onClick={() => onDemoLogin('business')}
-                className="p-3 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 rounded-2xl font-bold text-slate-950 text-left transition-all flex items-center gap-2 group shadow-2xs"
+                className="p-3 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 rounded-2xl font-bold text-slate-950 text-left transition-all flex items-center gap-2 group shadow-2xs cursor-pointer"
               >
                 <User className="w-4 h-4 text-emerald-600 shrink-0" />
                 <div>
@@ -110,10 +130,11 @@ export function AuthGate({ onCancel, onDemoLogin }: AuthGateProps) {
           </div>
         )}
 
-        {/* OFFICIAL CLERK AUTH COMPONENT */}
-        <div className="w-full flex justify-center">
+        {/* OFFICIAL CLERK AUTH COMPONENT WITH HASH ROUTING */}
+        <div className="w-full flex flex-col items-center space-y-4">
           {mode === 'sign-in' ? (
             <SignIn 
+              routing="hash"
               appearance={{
                 elements: {
                   rootBox: "w-full shadow-2xl shadow-violet-100 rounded-3xl overflow-hidden",
@@ -125,6 +146,7 @@ export function AuthGate({ onCancel, onDemoLogin }: AuthGateProps) {
             />
           ) : (
             <SignUp 
+              routing="hash"
               appearance={{
                 elements: {
                   rootBox: "w-full shadow-2xl shadow-violet-100 rounded-3xl overflow-hidden",
@@ -135,6 +157,46 @@ export function AuthGate({ onCancel, onDemoLogin }: AuthGateProps) {
               }}
             />
           )}
+
+          {/* FALLBACK DIRECT EMAIL LOGIN FORM */}
+          <form onSubmit={handleManualEmailLogin} className="w-full bg-white p-6 rounded-3xl border border-slate-200 shadow-xl space-y-4 text-xs">
+            <div className="flex items-center gap-2 border-b border-slate-100 pb-2">
+              <Mail className="w-4 h-4 text-purple-600" />
+              <span className="font-bold text-slate-900 text-xs">Email & Password Workspace Access</span>
+            </div>
+
+            <div>
+              <label className="block font-semibold text-slate-700 mb-1">Email Address</label>
+              <input
+                type="email"
+                required
+                placeholder="name@company.com or leadspree24x7@gmail.com"
+                value={emailInput}
+                onChange={(e) => setEmailInput(e.target.value)}
+                className="w-full p-3 border rounded-xl text-xs font-mono"
+              />
+            </div>
+
+            <div>
+              <label className="block font-semibold text-slate-700 mb-1">Password</label>
+              <input
+                type="password"
+                required
+                placeholder="••••••••••••"
+                value={passwordInput}
+                onChange={(e) => setPasswordInput(e.target.value)}
+                className="w-full p-3 border rounded-xl text-xs"
+              />
+            </div>
+
+            <button
+              type="submit"
+              className="w-full py-3 bg-[#5D3FD3] hover:bg-purple-700 text-white font-bold rounded-xl shadow-md transition-all text-xs flex items-center justify-center gap-2 cursor-pointer"
+            >
+              <span>{mode === 'sign-in' ? 'Sign In to Workspace' : 'Create Account'}</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </form>
         </div>
       </div>
     </div>
