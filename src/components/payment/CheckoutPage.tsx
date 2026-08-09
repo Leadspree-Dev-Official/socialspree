@@ -96,15 +96,13 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
           </div>
         </div>
 
-        {/* Main 2-Column Responsive Layout */}
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-6 lg:gap-8 items-start">
+        {/* Top 2-Column Grid: Account Verification & Selected Plan SIDE-BY-SIDE */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
           
-          {/* Left Column (5 Cols): Account Verification & Plan Details Summary */}
-          <div className="md:col-span-5 space-y-6">
-            
-            {/* 1. Account Authentication Requirement Card */}
-            <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-md space-y-4 relative overflow-hidden">
-              <div className="flex items-center justify-between">
+          {/* 1. Account Authentication Requirement Card */}
+          <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-md space-y-4 flex flex-col justify-between relative overflow-hidden">
+            <div>
+              <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2 text-xs font-mono font-extrabold uppercase tracking-wider text-slate-500">
                   <UserCheck className="w-4 h-4 text-[#5D3FD3]" />
                   <span>Account Verification</span>
@@ -164,9 +162,15 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
               )}
             </div>
 
-            {/* 2. Selected Plan Order Summary Card */}
-            <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-md space-y-6">
-              
+            <div className="pt-4 border-t border-slate-100 flex items-center gap-2 text-xs text-slate-500 font-medium">
+              <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span>Identity verified via Clerk authentication</span>
+            </div>
+          </div>
+
+          {/* 2. Selected Plan Order Summary Card */}
+          <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-md space-y-4 flex flex-col justify-between">
+            <div>
               <div className="flex items-center justify-between border-b border-slate-100 pb-4">
                 <div>
                   <span className="text-[10px] font-mono font-bold bg-purple-100 text-[#5D3FD3] px-2.5 py-0.5 rounded-full uppercase tracking-wider">
@@ -176,24 +180,24 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                     {selectedPlan.name}
                   </h2>
                 </div>
+
+                <div className="text-right">
                   <div className="text-[#5D3FD3] text-3xl font-black">
-                    {effectiveSymbol}{totalAmount.toLocaleString()}
+                    {effectiveSymbol}{displayMonthly.toLocaleString()}
+                    <span className="text-xs font-bold text-slate-500 ml-1">/ month</span>
                   </div>
-                  <span className="text-[11px] font-mono font-bold text-slate-500 uppercase">
-                    / year
-                  </span>
-                  {selectedPlan.priceMonthly > 0 && (
-                    <div className="mt-1 text-[10px] font-bold text-[#5D3FD3] bg-purple-50 px-2 py-0.5 rounded font-mono">
-                      (equivalent to {effectiveSymbol}{displayMonthly.toLocaleString()}/mo)
+                  {totalAmount > 0 && (
+                    <div className="mt-1 text-[10px] font-bold text-[#5D3FD3] bg-purple-50 px-2 py-0.5 rounded font-mono inline-block">
+                      Billed annually ({effectiveSymbol}{totalAmount.toLocaleString()} / year)
                     </div>
                   )}
                 </div>
               </div>
 
               {/* Feature Checklist */}
-              <div className="space-y-2.5 pt-2">
-                <div className="text-xs font-bold text-slate-900 uppercase font-mono tracking-wider">
-                  Included Tenant Capabilities:
+              <div className="space-y-2 pt-4">
+                <div className="text-xs font-bold text-slate-900 uppercase font-mono tracking-wider mb-1">
+                  Included Capabilities:
                 </div>
                 {selectedPlan.features.map((feature, idx) => (
                   <div key={idx} className="flex items-start gap-2 text-xs text-slate-700 font-medium">
@@ -204,19 +208,18 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                   </div>
                 ))}
               </div>
-
-              {/* SLA Guarantee */}
-              <div className="pt-4 border-t border-slate-100 flex items-center gap-2 text-xs text-slate-500 font-medium">
-                <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
-                <span>Instant automated slot creation upon order confirmation</span>
-              </div>
-
             </div>
 
+            <div className="pt-4 border-t border-slate-100 flex items-center gap-2 text-xs text-slate-500 font-medium">
+              <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span>Instant automated slot creation upon order confirmation</span>
+            </div>
           </div>
 
-          {/* Right Column (7 Cols): Payment Methods Hierarchy */}
-          <div className="md:col-span-7 space-y-6">
+        </div>
+
+        {/* Bottom Section: Payment Methods & Order Channel */}
+        <div className="space-y-6">
             
             {/* Payment Method Selector Tabs */}
             <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-md space-y-6">
