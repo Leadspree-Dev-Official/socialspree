@@ -220,29 +220,39 @@ export function App() {
         media: []
       }));
 
-      let activeTenants = cloud.tenants;
-      if (!activeTenants.length) {
-        const defaultTenant: Tenant = {
+      let allTenants = cloud.tenants.length > 0 ? cloud.tenants : getStoredTenants();
+      let userTenants: Tenant[];
+
+      if (isSuperAdmin) {
+        userTenants = allTenants;
+      } else {
+        // Non-admin users only see tenants owned by their email
+        userTenants = allTenants.filter(t => t.ownerEmail.toLowerCase() === primaryEmail.toLowerCase());
+      }
+
+      if (!userTenants.length) {
+        const newPersonalTenant: Tenant = {
           id: userProfile.tenantId || crypto.randomUUID(),
-          name: `${userProfile.fullName || 'User'}'s Workspace`,
-          ownerEmail: userProfile.email,
+          name: `${userProfile.fullName || primaryEmail.split('@')[0]}'s Workspace`,
+          ownerEmail: primaryEmail,
           apiKey: `spree_${crypto.randomUUID()}`,
-          tierPlan: isSuperAdmin ? 'enterprise' : 'starter',
-          allocatedApiSlots: 5,
-          maxSocialAccounts: 10,
+          tierPlan: 'free',
+          allocatedApiSlots: 1,
+          maxSocialAccounts: 2,
           aiCredits: 1000,
           apiSlotDetails: [],
           cloudinaryConfig: { ...GLOBAL_DEFAULT_CLOUDINARY },
           status: 'active',
           createdAt: new Date().toISOString()
         };
-        activeTenants = [defaultTenant];
-        void cloudTenants.save(defaultTenant).catch(() => {});
+        userTenants = [newPersonalTenant];
+        allTenants = [newPersonalTenant, ...allTenants];
+        void cloudTenants.save(newPersonalTenant).catch(() => {});
       }
 
       setProfile(userProfile);
-      setTenants(activeTenants);
-      setCurrentTenant(activeTenants[0]);
+      setTenants(isSuperAdmin ? allTenants : userTenants);
+      setCurrentTenant(userTenants[0]);
       setAccounts(cloud.accounts);
       setPosts(cloud.posts);
       setLogs(cloud.logs);
