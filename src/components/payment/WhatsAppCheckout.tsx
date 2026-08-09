@@ -112,7 +112,7 @@ Please confirm offline payment instructions & instant key provisioning for our w
           </button>
         </div>
 
-        <div className="p-2.5 rounded-xl bg-slate-900 text-emerald-400 font-mono text-[10px] leading-relaxed whitespace-pre-wrap border border-slate-800 shadow-inner max-h-24 overflow-y-auto">
+        <div className="p-3 rounded-xl bg-slate-900 text-emerald-400 font-mono text-[10.5px] leading-snug whitespace-pre-wrap border border-slate-800 shadow-inner">
           {formattedText}
         </div>
       </div>

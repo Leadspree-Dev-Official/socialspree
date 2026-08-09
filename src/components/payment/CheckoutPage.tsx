@@ -129,14 +129,16 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                     Included Tenant Capabilities:
                   </div>
                   <div className="space-y-1.5">
-                    {selectedPlan.features.map((feature, idx) => (
-                      <div key={idx} className="flex items-center gap-2 text-xs text-slate-700 font-medium p-1.5 rounded-lg bg-slate-50/80 border border-slate-100">
-                        <div className="p-0.5 rounded-full bg-emerald-100 text-emerald-600 shrink-0">
-                          <Check className="w-3.5 h-3.5" />
+                    {selectedPlan.features
+                      .filter(f => !f.toLowerCase().includes('ai content credits') && !f.toLowerCase().includes('slot allocation') && !f.toLowerCase().includes('ledger'))
+                      .map((feature, idx) => (
+                        <div key={idx} className="flex items-center gap-2 text-xs text-slate-700 font-medium p-1.5 rounded-lg bg-slate-50/80 border border-slate-100">
+                          <div className="p-0.5 rounded-full bg-emerald-100 text-emerald-600 shrink-0">
+                            <Check className="w-3.5 h-3.5" />
+                          </div>
+                          <span className="truncate">{feature}</span>
                         </div>
-                        <span className="truncate">{feature}</span>
-                      </div>
-                    ))}
+                      ))}
                   </div>
                 </div>
               </div>
