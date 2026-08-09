@@ -1,13 +1,12 @@
 import React, { useState } from 'react';
 import { useUser, SignInButton, SignUpButton } from '@clerk/react';
 import { SubscriptionPlan, CurrencyCode } from '../../types';
-import { WhatsAppCheckout } from './WhatsAppCheckout';
+import { WhatsAppCheckout, WhatsAppIcon } from './WhatsAppCheckout';
 import { RazorpaySandbox } from './RazorpaySandbox';
 import { 
   Sparkles, 
   CheckCircle2, 
   ShieldCheck, 
-  MessageSquare, 
   CreditCard, 
   ArrowLeft, 
   UserCheck, 
@@ -260,7 +259,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-2xl bg-[#25D366] text-white flex items-center justify-center shadow-md">
-                        <MessageSquare className="w-5 h-5 fill-white" />
+                        <WhatsAppIcon className="w-5 h-5 text-white" />
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
@@ -270,7 +269,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                           </span>
                         </div>
                         <p className="text-xs text-slate-600 font-medium mt-0.5">
-                          Instant offline invoice generation via direct WhatsApp sales desk (`wa.me/919051822558`).
+                          Instant offline invoice generation & direct sales desk provisioning.
                         </p>
                       </div>
                     </div>
