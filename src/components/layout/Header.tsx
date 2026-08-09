@@ -47,11 +47,9 @@ export const Header: React.FC<HeaderProps> = ({
   const clerkEmail = user?.primaryEmailAddress?.emailAddress;
   const clerkName = user?.fullName || (user?.firstName ? `${user.firstName}${user.lastName ? ' ' + user.lastName : ''}` : undefined) || user?.username;
 
-  const activeEmail = clerkEmail || userEmail || (isSuperAdminMode ? SUPER_ADMIN_EMAIL : currentTenant.ownerEmail);
-  const displayName = isSuperAdminMode 
-    ? 'LeadSpree Super Admin' 
-    : (clerkName || userProfile?.fullName || (activeEmail ? activeEmail.split('@')[0] : 'User'));
-  const avatarUrl = userProfile?.avatarUrl;
+  const activeEmail = clerkEmail || userEmail || currentTenant.ownerEmail;
+  const displayName = clerkName || userProfile?.fullName || (activeEmail ? activeEmail.split('@')[0] : 'User');
+  const avatarUrl = user?.imageUrl || userProfile?.avatarUrl;
 
   return (
     <header className="sticky top-0 z-40 bg-[#F8FAFF]/90 backdrop-blur-xl border-b border-slate-200/80 flex justify-between items-center h-16 px-6 w-full">
@@ -119,7 +117,12 @@ export const Header: React.FC<HeaderProps> = ({
             title="Manage User Profile & Settings"
           >
             <div className="hidden sm:flex flex-col text-xs leading-tight">
-              <span className="font-bold text-slate-900 group-hover:text-[#5D3FD3] transition-colors">{displayName}</span>
+              <div className="flex items-center gap-1.5">
+                <span className="font-bold text-slate-900 group-hover:text-[#5D3FD3] transition-colors">{displayName}</span>
+                {isSuperAdminMode && (
+                  <span className="text-[9px] bg-amber-500/20 text-amber-800 font-mono font-bold px-1 py-0.2 rounded border border-amber-500/30">ADMIN</span>
+                )}
+              </div>
               <span className="text-[11px] text-slate-500 font-mono mt-0.5">{activeEmail}</span>
             </div>
           </button>
