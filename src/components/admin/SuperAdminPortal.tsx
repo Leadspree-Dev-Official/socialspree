@@ -591,93 +591,97 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
           </div>
 
           <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
-            <div className="p-5 border-b border-slate-200 flex items-center justify-between bg-slate-50/50">
+            <div className="p-3.5 border-b border-slate-200 flex items-center justify-between bg-slate-50/50">
               <div>
-                <h3 className="font-bold text-slate-900 text-sm">Tenant Organizations & System Overview</h3>
-                <p className="text-xs text-slate-500">Super Admin overview of client tenants, API key slots, and AI credits</p>
+                <h3 className="font-bold text-slate-900 text-xs">Tenant Organizations & System Overview</h3>
+                <p className="text-[11px] text-slate-500">Super Admin overview of client tenants, API key slots, and AI credits</p>
               </div>
               <button
                 onClick={() => setShowAddModal(true)}
-                className="px-3.5 py-2 bg-[#5D3FD3] text-white rounded-xl text-xs font-bold hover:bg-purple-700 transition-colors flex items-center gap-1.5 shadow-sm"
+                className="px-3 py-1.5 bg-[#5D3FD3] text-white rounded-xl text-xs font-bold hover:bg-purple-700 transition-colors flex items-center gap-1.5 shadow-xs"
               >
-                <Plus className="w-4 h-4" />
+                <Plus className="w-3.5 h-3.5" />
                 <span>Provision Tenant</span>
               </button>
             </div>
 
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
-                <thead className="bg-slate-100/70 border-b border-slate-200 text-slate-600 uppercase font-mono text-[10px] tracking-wider">
+                <thead className="bg-slate-100/70 border-b border-slate-200 text-slate-600 uppercase font-mono text-[9px] tracking-wider">
                   <tr>
-                    <th className="px-4 py-3">Tenant / Organization</th>
-                    <th className="px-4 py-3">Owner Email</th>
-                    <th className="px-4 py-3">Allocated API Slots</th>
-                    <th className="px-4 py-3">Dispatch Engine</th>
-                    <th className="px-4 py-3">AI Credits</th>
-                    <th className="px-4 py-3">Tier Plan</th>
-                    <th className="px-4 py-3">Status</th>
-                    <th className="px-4 py-3 text-right">Actions</th>
+                    <th className="px-3 py-2">Tenant / Org</th>
+                    <th className="px-3 py-2">Owner Email</th>
+                    <th className="px-3 py-2">Slots</th>
+                    <th className="px-3 py-2">Dispatch Engine</th>
+                    <th className="px-3 py-2">AI Credits</th>
+                    <th className="px-3 py-2">Tier Plan</th>
+                    <th className="px-3 py-2">Status</th>
+                    <th className="px-3 py-2 text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
                   {tenants.map((tenant) => (
                     <tr key={tenant.id} className="hover:bg-slate-50/80 transition-colors">
-                      <td className="px-4 py-3.5">
-                        <div className="font-bold text-slate-900">{tenant.name}</div>
-                        <div className="text-[11px] text-slate-400 font-mono">{tenant.id}</div>
+                      <td className="px-3 py-2">
+                        <div className="font-bold text-slate-900 text-xs whitespace-nowrap">{tenant.name}</div>
+                        <div className="text-[10px] text-slate-400 font-mono" title={tenant.id}>
+                          {tenant.id.length > 12 ? `${tenant.id.slice(0, 8)}...` : tenant.id}
+                        </div>
                       </td>
-                      <td className="px-4 py-3.5 font-mono text-slate-800">{tenant.ownerEmail}</td>
-                      <td className="px-4 py-3.5 font-mono font-bold text-purple-900">
-                        {tenant.allocatedApiSlots || 2} Slots ({ (tenant.allocatedApiSlots || 2) * 2 } Channels)
+                      <td className="px-3 py-2 font-mono text-slate-800 text-[11px] whitespace-nowrap">{tenant.ownerEmail}</td>
+                      <td className="px-3 py-2 font-mono font-bold text-purple-900 text-[11px] whitespace-nowrap">
+                        {tenant.allocatedApiSlots || 2} Slots ({ (tenant.allocatedApiSlots || 2) * 2 } Ch)
                       </td>
-                      <td className="px-4 py-3.5">
+                      <td className="px-3 py-2">
                         <select
                           value={tenant.dispatchEngine || 'dual'}
                           onChange={(e) => handleUpdateTenantDispatchEngine(tenant.id, e.target.value as any)}
-                          className="px-2 py-1 rounded text-[11px] font-mono font-bold uppercase bg-blue-50 text-blue-900 border border-blue-200 cursor-pointer hover:bg-blue-100 shadow-xs"
+                          className="px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase bg-blue-50 text-blue-900 border border-blue-200 cursor-pointer hover:bg-blue-100 shadow-xs"
                         >
-                          <option value="dual">DUAL ENGINE (Zenith + CoreSync)</option>
-                          <option value="coresync">CORESYNC ENGINE (1 Slot = All Channels)</option>
-                          <option value="zenith">ZENITH ENGINE (1 Slot = 2 Channels)</option>
+                          <option value="dual">Dual Engine (Zenith+CoreSync)</option>
+                          <option value="coresync">CoreSync Engine</option>
+                          <option value="zenith">Zenith Engine</option>
                         </select>
                       </td>
-                      <td className="px-4 py-3.5 font-mono font-bold text-amber-700">
+                      <td className="px-3 py-2 font-mono font-bold text-amber-700 text-[11px] whitespace-nowrap">
                         ⚡ {tenant.aiCredits ?? 1000} Credits
                       </td>
-                      <td className="px-4 py-3.5">
+                      <td className="px-3 py-2">
                         <select
                           value={tenant.tierPlan || 'free'}
                           onChange={(e) => handleUpdateTenantTierPlan(tenant.id, e.target.value)}
-                          className="px-2 py-1 rounded text-[11px] font-mono font-bold uppercase bg-purple-50 text-purple-900 border border-purple-200 cursor-pointer hover:bg-purple-100 shadow-xs"
+                          className="px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase bg-purple-50 text-purple-900 border border-purple-200 cursor-pointer hover:bg-purple-100 shadow-xs"
                         >
-                          <option value="free">FREE PLAN (2 Posts/mo, 2 Channels)</option>
-                          <option value="starter">STARTER (50 Posts/mo, 4 Channels)</option>
-                          <option value="pro">PRO / INFLUENCER (500 Posts/mo, 10 Channels)</option>
-                          <option value="agency">AGENCY TIER (5,000 Posts/mo, 20 Channels)</option>
-                          <option value="enterprise">ENTERPRISE TIER (Unlimited Access)</option>
+                          <option value="free">Free Plan</option>
+                          <option value="starter">Starter</option>
+                          <option value="pro">Pro / Influencer</option>
+                          <option value="agency">Agency Tier</option>
+                          <option value="enterprise">Enterprise</option>
                         </select>
                       </td>
-                      <td className="px-4 py-3.5">
-                        <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase ${
+                      <td className="px-3 py-2">
+                        <span className={`px-1.5 py-0.5 rounded text-[9px] font-mono font-bold uppercase ${
                           tenant.status === 'active' ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'
                         }`}>
                           {tenant.status}
                         </span>
                       </td>
-                      <td className="px-4 py-3.5 text-right">
-                        <div className="flex items-center justify-end gap-2">
+                      <td className="px-3 py-2 text-right">
+                        <div className="flex items-center justify-end gap-1.5">
                           <button
                             onClick={() => handleOpenUserInspector(tenant)}
-                            className="px-2.5 py-1 bg-purple-50 text-purple-900 hover:bg-purple-100 rounded text-[11px] font-bold border border-purple-200 flex items-center gap-1"
+                            title="Inspect Storage & Quotas"
+                            className="px-2 py-0.5 bg-purple-50 text-purple-900 hover:bg-purple-100 rounded text-[10px] font-bold border border-purple-200 flex items-center gap-1 cursor-pointer"
                           >
-                            <Eye className="w-3.5 h-3.5 text-purple-700" />
-                            <span>Inspect Storage & Quotas</span>
+                            <Eye className="w-3 h-3 text-purple-700" />
+                            <span>Inspect</span>
                           </button>
                           <button
                             onClick={() => onSelectSubTab('ai_credits')}
-                            className="px-2.5 py-1 bg-amber-50 text-amber-800 hover:bg-amber-100 rounded text-[11px] font-bold border border-amber-200"
+                            title="Top-Up AI Credits"
+                            className="px-2 py-0.5 bg-amber-50 text-amber-800 hover:bg-amber-100 rounded text-[10px] font-bold border border-amber-200 cursor-pointer"
                           >
-                            Top-Up AI Credits
+                            + Credits
                           </button>
                         </div>
                       </td>
