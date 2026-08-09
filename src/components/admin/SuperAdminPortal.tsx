@@ -940,7 +940,7 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
             <div>
               <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
                 <Key className="w-5 h-5 text-[#5D3FD3]" />
-                <span>Zernio API Slot Provisioning Console</span>
+                <span>Zenith API Slot Provisioning Console</span>
               </h3>
               <p className="text-xs text-slate-500 mt-0.5">Line-by-line allocation of secret API keys. Each API key slot yields 2 connected social channels.</p>
             </div>
@@ -1703,13 +1703,13 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
             {/* Zernio Trigger Rates & Channel Quota */}
             <div className="grid grid-cols-2 gap-3 text-xs">
               <div className="p-3 bg-purple-50 rounded-xl border border-purple-200">
-                <div className="text-[10px] uppercase font-mono text-purple-700 font-bold">Zernio Daily Dispatches</div>
+                <div className="text-[10px] uppercase font-mono text-purple-700 font-bold">Zenith Daily Dispatches</div>
                 <div className="text-lg font-black text-purple-950 mt-1">
                   {inspectingTenant.zernioDailyDispatchCount || 14} / {customDailyZernioInput} Posts
                 </div>
               </div>
               <div className="p-3 bg-amber-50 rounded-xl border border-amber-200">
-                <div className="text-[10px] uppercase font-mono text-amber-800 font-bold">Zernio Monthly Dispatches</div>
+                <div className="text-[10px] uppercase font-mono text-amber-800 font-bold">Zenith Monthly Dispatches</div>
                 <div className="text-lg font-black text-amber-950 mt-1">
                   {inspectingTenant.zernioMonthlyDispatchCount || 142} / {customMonthlyZernioInput} Posts
                 </div>
@@ -1748,7 +1748,7 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
                   />
                 </div>
                 <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Zernio Daily Limit</label>
+                  <label className="block font-semibold text-slate-700 mb-1">Zenith Daily Limit</label>
                   <input
                     type="number"
                     value={customDailyZernioInput}
@@ -1758,7 +1758,7 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
                   />
                 </div>
                 <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Zernio Monthly Limit</label>
+                  <label className="block font-semibold text-slate-700 mb-1">Zenith Monthly Limit</label>
                   <input
                     type="number"
                     value={customMonthlyZernioInput}

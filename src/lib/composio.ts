@@ -198,7 +198,7 @@ export async function executeComposioPublishing(
     log,
     success: true,
     message: isScheduled
-      ? `Queued for Composio scheduled dispatch at ${new Date(postInput.scheduledFor!).toLocaleString()}`
-      : `Dispatched via Composio Managed OAuth Engine across ${postInput.selectedAccountIds.length} channels.`
+      ? `Queued for CoreSync scheduled dispatch at ${new Date(postInput.scheduledFor!).toLocaleString()}`
+      : `Dispatched via CoreSync Managed OAuth Engine across ${postInput.selectedAccountIds.length} channels.`
   };
 }

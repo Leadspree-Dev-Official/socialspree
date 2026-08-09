@@ -33,7 +33,7 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
 
   const platforms = [
     { id: 'instagram', label: 'Instagram', icon: Instagram, color: 'from-pink-500 to-purple-600', handle: '@apexgrowth', caption: '🚀 Scaling multi-tenant social publishing with SocialSpree API engine! ⚡ #SocialSpree #SaaS' },
-    { id: 'linkedin', label: 'LinkedIn', icon: Linkedin, color: 'from-blue-600 to-blue-800', handle: 'Apex Growth Media', caption: 'Excited to announce our multi-channel social deployment powered by 2-channel Zernio API slots.' },
+    { id: 'linkedin', label: 'LinkedIn', icon: Linkedin, color: 'from-blue-600 to-blue-800', handle: 'Apex Growth Media', caption: 'Excited to announce our multi-channel social deployment powered by 2-channel Zenith API slots.' },
     { id: 'x', label: 'X (Twitter)', icon: Twitter, color: 'from-slate-800 to-slate-900', handle: '@ApexGrowth_HQ', caption: 'Parallel firing 15+ social channels in under 2 seconds. Zero API throttling! 🌐' },
     { id: 'youtube', label: 'YouTube Shorts', icon: Youtube, color: 'from-red-600 to-red-700', handle: 'Apex Agency HQ', caption: 'Check out our latest product breakdown! Full HD Cloudflare CDN video delivery.' },
     { id: 'tiktok', label: 'TikTok', icon: Video, color: 'from-teal-400 to-slate-900', handle: '@apex_official', caption: 'Automated video distribution for 30+ client brands effortlessly 🔥 #viral' },

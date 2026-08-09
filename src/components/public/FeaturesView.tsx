@@ -49,7 +49,7 @@ export const FeaturesView: React.FC<FeaturesViewProps> = ({
       icon: Key,
       badge: 'Architecture Core',
       color: 'from-[#5D3FD3] to-purple-600',
-      description: 'Each tenant receives isolated Zernio API slots configured by Super Admin. 1 API Slot allocates exactly 2 social media channels, eliminating rate limit collisions across tenant workloads.',
+      description: 'Each tenant receives isolated Zenith API slots configured by Super Admin. 1 API Slot allocates exactly 2 social media channels, eliminating rate limit collisions across tenant workloads.',
       highlights: [
         'Isolated secret API keys per tenant workspace',
         'Strict 2-channel boundary (1 slot = 2 accounts)',

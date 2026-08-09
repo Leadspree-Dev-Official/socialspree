@@ -246,8 +246,8 @@ export const PostComposer: React.FC<PostComposerProps> = ({
     if (currentDispatches >= dailyLimit) {
       setNotification({
         type: 'error',
-        title: 'Daily Zernio Dispatch Quota Exceeded',
-        message: `Your account has reached the daily limit of ${currentDispatches} / ${dailyLimit} Zernio triggers today. Please upgrade your plan or contact Super Admin to increase your limit.`
+        title: 'Daily Zenith Dispatch Quota Exceeded',
+        message: `Your account has reached the daily limit of ${currentDispatches} / ${dailyLimit} Zenith triggers today. Please upgrade your plan or contact Super Admin to increase your limit.`
       });
       return;
     }

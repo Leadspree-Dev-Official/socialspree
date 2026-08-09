@@ -126,7 +126,7 @@ export const SocialConnectionsView: React.FC<SocialConnectionsViewProps> = ({
         });
       }
     } catch (err: any) {
-      setError(err?.message || 'Unable to generate Composio Connect Link');
+      setError(err?.message || 'Unable to generate CoreSync Connect Link');
     } finally {
       setBusy(undefined);
     }

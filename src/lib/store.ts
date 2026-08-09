@@ -66,8 +66,8 @@ export const INITIAL_PLANS: SubscriptionPlan[] = [
     chatGptConnectorAllowed: false,
     aiCredits: 500,
     features: [
-      '1 Zernio API Key Slot (2 Social Channels)',
-      '50 Zernio Triggers / day (1,000 / mo)',
+      '1 Zenith API Key Slot (2 Social Channels)',
+      '50 Zenith Triggers / day (1,000 / mo)',
       '2 GB Supabase/Cloudinary Storage',
       '500 AI Content & Hashtag Credits/mo',
       'Instant & Scheduled Posting',
@@ -89,8 +89,8 @@ export const INITIAL_PLANS: SubscriptionPlan[] = [
     aiCredits: 2500,
     isPopular: true,
     features: [
-      '3 Zernio API Key Slots (6 Social Channels)',
-      '200 Zernio Triggers / day (5,000 / mo)',
+      '3 Zenith API Key Slots (6 Social Channels)',
+      '200 Zenith Triggers / day (5,000 / mo)',
       '10 GB Media Vault Storage',
       '2,500 AI Content & Hashtag Credits/mo',
       'ChatGPT Scheduling Connector API',
@@ -113,8 +113,8 @@ export const INITIAL_PLANS: SubscriptionPlan[] = [
     chatGptConnectorAllowed: true,
     aiCredits: 10000,
     features: [
-      '10 Zernio API Key Slots (20 Social Channels)',
-      '1,000 Zernio Triggers / day (25,000 / mo)',
+      '10 Zenith API Key Slots (20 Social Channels)',
+      '1,000 Zenith Triggers / day (25,000 / mo)',
       '50 GB Media Vault Storage',
       '10,000 AI Content & Hashtag Credits/mo',
       'ChatGPT Scheduling Connector API',

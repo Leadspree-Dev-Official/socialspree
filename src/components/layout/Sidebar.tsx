@@ -97,7 +97,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </div>
           <div>
             <span className="font-extrabold text-base tracking-tight text-white block">SocialSpree</span>
-            <span className="text-[10px] text-purple-400 font-mono font-bold block -mt-0.5">ZERNIO ENGINE OS</span>
+            <span className="text-[10px] text-purple-400 font-mono font-bold block -mt-0.5">ZENITH ENGINE OS</span>
           </div>
         </div>
       </div>

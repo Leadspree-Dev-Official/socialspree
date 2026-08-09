@@ -121,13 +121,13 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
         <div>
           <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
             <BarChart3 className="w-5 h-5 text-[#5D3FD3]" />
-            <span>Zernio Cross-Platform Analytics Engine</span>
+            <span>Zenith Cross-Platform Analytics Engine</span>
             <span className="text-[10px] bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full font-mono font-bold uppercase">
               Live API
             </span>
           </h2>
           <p className="text-xs text-slate-500 mt-1">
-            Real-time multi-channel engagement breakdown, post reach metrics, and performance analytics powered by Zernio API.
+            Real-time multi-channel engagement breakdown, post reach metrics, and performance analytics powered by Zenith API.
           </p>
         </div>
 
@@ -137,7 +137,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
           className="bg-[#5D3FD3] hover:bg-purple-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-2 self-start md:self-auto cursor-pointer"
         >
           <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-          <span>{loading ? 'Syncing Zernio...' : 'Sync Zernio Analytics'}</span>
+          <span>{loading ? 'Syncing Zenith...' : 'Sync Zenith Analytics'}</span>
         </button>
       </div>
 
