@@ -345,10 +345,12 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
           </div>
         </div>
 
-        {/* Live Zernio Analytics Snapshots List */}
+        {/* Live Engine Analytics Snapshots List */}
         <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="font-bold text-slate-900 text-sm">Zernio API Post Snapshots</h3>
+            <h3 className="font-bold text-slate-900 text-sm">
+              {tenant.dispatchEngine === 'coresync' ? 'CoreSync API Post Snapshots' : tenant.dispatchEngine === 'dual' ? 'CoreSync & Zenith API Snapshots' : 'Zenith API Post Snapshots'}
+            </h3>
             <span className="text-[10px] font-mono bg-slate-100 text-slate-600 px-2 py-0.5 rounded">
               {snapshots.length} Snapshots
             </span>
@@ -357,7 +359,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
           <div className="space-y-2.5 max-h-56 overflow-y-auto pr-1">
             {snapshots.length === 0 ? (
               <div className="text-xs text-slate-400 py-8 text-center italic">
-                No Zernio API snapshots recorded yet. Click &quot;Sync Zernio Analytics&quot; to fetch live metrics.
+                No analytics snapshots recorded yet. Click &quot;Sync Analytics&quot; to fetch live metrics.
               </div>
             ) : (
               snapshots.map((s, idx) => (
