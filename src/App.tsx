@@ -847,13 +847,13 @@ export function App() {
                 />
               )}
 
-              {activeTab === 'grid_planner' && (
+              {/* {activeTab === 'grid_planner' && (
                 <InstagramGridPlanner
                   mediaAssets={mediaAssets}
                   posts={posts}
                   onScheduleFromGrid={() => setActiveTab('composer')}
                 />
-              )}
+              )} */}
 
               {activeTab === 'composer' && (
                 <PostComposer

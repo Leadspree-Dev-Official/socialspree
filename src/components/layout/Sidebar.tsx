@@ -262,25 +262,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 </button>
               )}
 
-              {/* Influencer Grid Feed Planner Tab */}
-              {isInfluencerMode && (
-                <button
-                  onClick={() => handleNavClick('grid_planner')}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${
-                    activeTab === 'grid_planner'
-                      ? 'bg-[#5D3FD3] text-white shadow-md shadow-purple-900/30'
-                      : 'text-pink-300 hover:text-white hover:bg-pink-950/40'
-                  }`}
-                >
-                  <Instagram className="w-4 h-4 text-pink-400" />
-                  <div className="flex items-center justify-between w-full">
-                    <span>Feed Grid Planner</span>
-                    <span className="text-[9px] bg-pink-500/20 text-pink-300 px-1.5 py-0.5 rounded font-mono font-bold">
-                      FEED
-                    </span>
-                  </div>
-                </button>
-              )}
+              {/* Influencer Grid Feed Planner Tab (Disabled for now) */}
 
               <button
                 onClick={() => handleNavClick('composer')}
