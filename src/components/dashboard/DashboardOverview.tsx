@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { Tenant, Post, SocialAccount, PostLog, GoogleReview } from '../../types';
+import { fetchComposioAnalyticsSnapshots } from '../../lib/composio';
 import { TabType } from '../layout/Sidebar';
 import { 
   Clock, 
@@ -69,15 +70,25 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
 
   const [snapshots, setSnapshots] = useState<AnalyticsRecord[]>([]);
 
-  // Once-per-session auto-sync of Zenith Analytics
+  // Once-per-session auto-sync of assigned Analytics Engine
   useEffect(() => {
-    const sessionKey = `zenith_analytics_synced_${tenant.id}`;
+    const sessionKey = `engine_analytics_synced_${tenant.id}`;
     const alreadySynced = typeof window !== 'undefined' ? sessionStorage.getItem(sessionKey) : null;
 
     const syncAndFetch = async () => {
       if (!alreadySynced) {
         try {
-          await supabase.functions.invoke('zernio-analytics', { body: { tenantId: tenant.id } });
+          const engine = tenant.dispatchEngine || 'dual';
+          if (engine === 'coresync') {
+            await fetchComposioAnalyticsSnapshots(tenant);
+          } else if (engine === 'zenith') {
+            await supabase.functions.invoke('zernio-analytics', { body: { tenantId: tenant.id } });
+          } else {
+            await Promise.all([
+              fetchComposioAnalyticsSnapshots(tenant),
+              supabase.functions.invoke('zernio-analytics', { body: { tenantId: tenant.id } })
+            ]);
+          }
           if (typeof window !== 'undefined') sessionStorage.setItem(sessionKey, 'true');
         } catch { /* ignored */ }
       }
@@ -91,7 +102,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
     };
 
     void syncAndFetch();
-  }, [tenant.id]);
+  }, [tenant.id, tenant.dispatchEngine]);
 
   const totalReach = snapshots.reduce((acc, s) => acc + (s.views || 0), 0) || (publishedCount * 450 + 12800);
   const totalLikes = snapshots.reduce((acc, s) => acc + (s.likes || 0), 0) || (publishedCount * 32 + 1420);

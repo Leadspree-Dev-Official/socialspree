@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
+import { fetchComposioAnalyticsSnapshots } from '../../lib/composio';
 import { Tenant, Post, SocialAccount } from '../../types';
 import { 
   BarChart3, 
@@ -50,7 +51,17 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
     setLoading(true);
     try {
       if (refresh) {
-        await supabase.functions.invoke('zernio-analytics', { body: { tenantId: tenant.id } });
+        const engine = tenant.dispatchEngine || 'dual';
+        if (engine === 'coresync') {
+          await fetchComposioAnalyticsSnapshots(tenant);
+        } else if (engine === 'zenith') {
+          await supabase.functions.invoke('zernio-analytics', { body: { tenantId: tenant.id } });
+        } else {
+          await Promise.all([
+            fetchComposioAnalyticsSnapshots(tenant),
+            supabase.functions.invoke('zernio-analytics', { body: { tenantId: tenant.id } })
+          ]);
+        }
       }
       const { data } = await supabase
         .from('analytics_snapshots')
@@ -121,13 +132,19 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
         <div>
           <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
             <BarChart3 className="w-5 h-5 text-[#5D3FD3]" />
-            <span>Zenith Cross-Platform Analytics Engine</span>
+            <span>
+              {tenant.dispatchEngine === 'coresync' 
+                ? 'CoreSync Cross-Platform Analytics Engine' 
+                : tenant.dispatchEngine === 'dual' 
+                ? 'Dual Engine (CoreSync + Zenith) Analytics' 
+                : 'Zenith Cross-Platform Analytics Engine'}
+            </span>
             <span className="text-[10px] bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full font-mono font-bold uppercase">
               Live API
             </span>
           </h2>
           <p className="text-xs text-slate-500 mt-1">
-            Real-time multi-channel engagement breakdown, post reach metrics, and performance analytics powered by Zenith API.
+            Real-time multi-channel engagement breakdown, post reach metrics, and performance analytics powered by {tenant.dispatchEngine === 'coresync' ? 'CoreSync API' : tenant.dispatchEngine === 'dual' ? 'CoreSync & Zenith APIs' : 'Zenith API'}.
           </p>
         </div>
 
@@ -137,7 +154,15 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
           className="bg-[#5D3FD3] hover:bg-purple-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-2 self-start md:self-auto cursor-pointer"
         >
           <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-          <span>{loading ? 'Syncing Zenith...' : 'Sync Zenith Analytics'}</span>
+          <span>
+            {loading 
+              ? 'Syncing Analytics...' 
+              : tenant.dispatchEngine === 'coresync' 
+              ? 'Sync CoreSync Analytics' 
+              : tenant.dispatchEngine === 'dual' 
+              ? 'Sync Dual Analytics' 
+              : 'Sync Zenith Analytics'}
+          </span>
         </button>
       </div>
 
