@@ -49,7 +49,7 @@ import { TestimonialsView } from './components/public/TestimonialsView';
 import { AboutContactView } from './components/public/AboutContactView';
 import { DocsView } from './components/public/DocsView';
 import { PublicFooter } from './components/public/PublicFooter';
-import { CheckoutModal } from './components/payment/CheckoutModal';
+import { CheckoutPage } from './components/payment/CheckoutPage';
 import { AuthGate } from './components/auth/AuthGate';
 import { clearAuthenticatedCache, hydrateFromCloud, mapProfile, type Profile } from './lib/api';
 import { auth } from './lib/api';
@@ -81,7 +81,7 @@ export function App() {
   const getInitialTabFromPath = (): { tab: TabType; view: 'public' | 'auth' | 'app' } => {
     if (typeof window === 'undefined') return { tab: 'dashboard', view: 'public' };
     const path = window.location.pathname.replace(/^\/+|\/+$/g, '');
-    if (!path || path === 'features' || path === 'pricing' || path === 'testimonials' || path === 'about' || path === 'docs') return { tab: 'dashboard', view: 'public' };
+    if (!path || path === 'features' || path === 'pricing' || path === 'testimonials' || path === 'about' || path === 'docs' || path === 'checkout' || path === 'cart') return { tab: 'dashboard', view: 'public' };
     if (path === 'login' || path === 'auth' || path === 'sign-in') return { tab: 'dashboard', view: 'auth' };
     if (path === 'admin') return { tab: 'admin', view: 'app' };
     if (path === 'infludash' || path === 'influencer' || path === 'agency' || path === 'dashboard') {
@@ -103,8 +103,7 @@ export function App() {
   const [cloudError, setCloudError] = useState('');
   const [cloudReady, setCloudReady] = useState(false);
 
-  // Checkout Modal State
-  const [checkoutOpen, setCheckoutOpen] = useState<boolean>(false);
+  // Checkout Page State
   const [selectedPlanForCheckout, setSelectedPlanForCheckout] = useState<SubscriptionPlan | null>(null);
   const [checkoutBillingCycle, setCheckoutBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
   const [checkoutCurrency, setCheckoutCurrency] = useState<CurrencyCode>('USD');
@@ -346,7 +345,8 @@ export function App() {
     const sym = currencySymbol || target.currencySymbol || '$';
     setCheckoutCurrency(curr);
     setCheckoutCurrencySymbol(sym);
-    setCheckoutOpen(true);
+    setViewMode('public');
+    navigate('/checkout');
   };
 
   const getPageTitle = (tab: TabType): string => {
@@ -752,6 +752,24 @@ export function App() {
               <Route path="/testimonials" element={<TestimonialsView />} />
               <Route path="/docs" element={<DocsView />} />
               <Route path="/about" element={<AboutContactView />} />
+              <Route path="/checkout" element={
+                <CheckoutPage
+                  selectedPlan={selectedPlanForCheckout || (getStoredPlans().find(p => p.isPopular) || getStoredPlans()[0])}
+                  billingCycle={checkoutBillingCycle}
+                  selectedCurrency={checkoutCurrency}
+                  currencySymbol={checkoutCurrencySymbol}
+                  onLaunchApp={handleLaunchApp}
+                />
+              } />
+              <Route path="/cart" element={
+                <CheckoutPage
+                  selectedPlan={selectedPlanForCheckout || (getStoredPlans().find(p => p.isPopular) || getStoredPlans()[0])}
+                  billingCycle={checkoutBillingCycle}
+                  selectedCurrency={checkoutCurrency}
+                  currencySymbol={checkoutCurrencySymbol}
+                  onLaunchApp={handleLaunchApp}
+                />
+              } />
             </Routes>
           </main>
 
@@ -979,18 +997,6 @@ export function App() {
         </div>
       ) : (
         <AuthGate onCancel={() => { setCloudError(''); setViewMode('public'); navigate('/'); }} />
-      )}
-
-      {/* Dual Payment Modal */}
-      {checkoutOpen && selectedPlanForCheckout && (
-        <CheckoutModal
-          isOpen={checkoutOpen}
-          onClose={() => setCheckoutOpen(false)}
-          selectedPlan={selectedPlanForCheckout}
-          initialBillingCycle={checkoutBillingCycle}
-          selectedCurrency={checkoutCurrency}
-          currencySymbol={checkoutCurrencySymbol}
-        />
       )}
     </div>
   );
