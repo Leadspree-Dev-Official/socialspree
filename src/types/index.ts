@@ -46,13 +46,16 @@ export interface CloudinaryConfig {
   accounts?: CloudinaryAccountItem[]; // Array of multiple Cloudinary accounts
 }
 
-// 2-Channel API Allocation Slot (Each API key provided by Super Admin yields 2 social channels)
+export type EngineProvider = 'zernio' | 'composio';
+
+// API Allocation Slot (Zernio 2-channel or Composio multi-channel engine key slot)
 export interface ApiAllocationSlot {
   id: string;
   slotNumber: number; // e.g. 1, 2, 3
   slotName?: string; // e.g. "API 1", "API 2", "API 3"
+  provider?: EngineProvider; // 'zernio' | 'composio'
   apiKey: string; // Secret API Key provided by Super Admin
-  maxChannels: number; // Always 2 channels per API key slot
+  maxChannels: number; // 2 channels per Zernio slot, or 5/multi per Composio slot
   connectedAccountIds: string[]; // Connected channel IDs in this slot
 }
 

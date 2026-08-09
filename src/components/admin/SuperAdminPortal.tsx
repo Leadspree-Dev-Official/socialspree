@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Tenant, CloudinaryConfig, CloudinaryAccountItem, SubscriptionPlan, CurrencyCode, SystemSettings, ApiAllocationSlot, AiCreditLog } from '../../types';
+import { Tenant, CloudinaryConfig, CloudinaryAccountItem, SubscriptionPlan, CurrencyCode, SystemSettings, ApiAllocationSlot, AiCreditLog, EngineProvider } from '../../types';
 import { 
   SUPER_ADMIN_EMAIL, 
   GLOBAL_DEFAULT_CLOUDINARY, 
@@ -23,6 +23,7 @@ import {
   Check, 
   X,
   Cloud,
+  Search,
   Settings,
   Star,
   Edit2,
@@ -151,11 +152,13 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
   const [tier, setTier] = useState<'free' | 'pro' | 'agency'>('free');
   const [allocatedSlots, setAllocatedSlots] = useState(2);
 
-  // API Slot Provisioning Modal State (Line-by-Line)
+  // API Slot Provisioning Modal State (Line-by-Line & Per-Provider)
   const [showAddApiModal, setShowAddApiModal] = useState(false);
   const [targetTenantId, setTargetTenantId] = useState<string>(tenants[0]?.id || '');
+  const [tenantSearchQuery, setTenantSearchQuery] = useState<string>('');
   const [apiCount, setApiCount] = useState<number>(3);
   const [apiKeysInput, setApiKeysInput] = useState<string[]>(['', '', '']);
+  const [apiProvidersInput, setApiProvidersInput] = useState<EngineProvider[]>(['zernio', 'zernio', 'zernio']);
 
   // Zernio Key Editing State
   const [editingKeySlotId, setEditingKeySlotId] = useState<string | null>(null);
@@ -171,6 +174,13 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
       const next = [...prev];
       while (next.length < validCount) {
         next.push('');
+      }
+      return next.slice(0, validCount);
+    });
+    setApiProvidersInput(prev => {
+      const next = [...prev];
+      while (next.length < validCount) {
+        next.push('zernio');
       }
       return next.slice(0, validCount);
     });
@@ -410,27 +420,43 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
     const targetTenant = tenants.find(t => t.id === targetTenantId);
     if (!targetTenant) return;
 
-    const newSlots: ApiAllocationSlot[] = apiKeysInput.map((keyVal, idx) => ({
-      id: crypto.randomUUID(),
-      slotNumber: idx + 1,
-      slotName: `API ${idx + 1}`,
-      apiKey: '',
-      maxChannels: 2,
-      connectedAccountIds: []
-    }));
+    const newSlots: ApiAllocationSlot[] = apiKeysInput.map((keyVal, idx) => {
+      const prov = apiProvidersInput[idx] || 'zernio';
+      return {
+        id: crypto.randomUUID(),
+        slotNumber: idx + 1,
+        slotName: `API ${idx + 1} (${prov.toUpperCase()})`,
+        provider: prov,
+        apiKey: keyVal.trim(),
+        maxChannels: prov === 'composio' ? 5 : 2,
+        connectedAccountIds: []
+      };
+    });
 
     for (let index = 0; index < apiKeysInput.length; index++) {
       const secret = apiKeysInput[index].trim();
+      const prov = apiProvidersInput[index] || 'zernio';
       if (!secret) continue;
-      const { error } = await supabase.functions.invoke('manage-credentials', { body: { tenantId: targetTenantId, provider: 'zernio', label: `slot-${index + 1}`, secret } });
+      const { error } = await supabase.functions.invoke('manage-credentials', { 
+        body: { 
+          tenantId: targetTenantId, 
+          provider: prov, 
+          label: `slot-${index + 1}`, 
+          secret 
+        } 
+      });
       if (error) { setSettingsNotification(`Credential save failed: ${error.message}`); return; }
     }
+
     setApiKeysInput(Array(apiCount).fill(''));
+    setApiProvidersInput(Array(apiCount).fill('zernio'));
     if (onUpdateTenantApiSlotDetails) {
       onUpdateTenantApiSlotDetails(targetTenantId, newSlots);
     }
 
     setShowAddApiModal(false);
+    setSettingsNotification(`Provisioned ${newSlots.length} API Slot(s) for ${targetTenant.name}!`);
+    setTimeout(() => setSettingsNotification(null), 3500);
   };
 
   const handleTopupSubmit = (e: React.FormEvent) => {
@@ -993,6 +1019,7 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
                     id: `slot-${t.id}-${idx + 1}`,
                     slotNumber: idx + 1,
                     slotName: `API ${idx + 1}`,
+                    provider: 'zernio' as EngineProvider,
                     apiKey: '',
                     maxChannels: 2,
                     connectedAccountIds: []
@@ -1024,9 +1051,18 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
                       return (
                         <div key={slot.id} className="p-3.5 bg-white border border-slate-200 rounded-xl space-y-2 text-xs shadow-2xs">
                           <div className="flex items-center justify-between">
-                            <span className="font-bold text-slate-800 font-mono text-[11px] bg-slate-100 px-2 py-0.5 rounded">
-                              {slot.slotName || `API Slot #${slot.slotNumber}`} (2 Channels)
-                            </span>
+                            <div className="flex items-center gap-1.5 font-bold font-mono text-[11px]">
+                              <span className="bg-slate-100 px-2 py-0.5 rounded text-slate-800">
+                                {slot.slotName || `API Slot #${slot.slotNumber}`}
+                              </span>
+                              <span className={`text-[9px] px-1.5 py-0.2 rounded font-mono font-bold uppercase ${
+                                slot.provider === 'composio' 
+                                  ? 'bg-indigo-100 text-indigo-800 border border-indigo-200' 
+                                  : 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                              }`}>
+                                {slot.provider === 'composio' ? '🧩 COMPOSIO' : '⚡ ZERNIO (2 CH)'}
+                              </span>
+                            </div>
                             <div className="flex items-center gap-1.5">
                               <button
                                 type="button"
@@ -1557,65 +1593,118 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
         </div>
       )}
 
-      {/* LINE-BY-LINE API SLOT MODAL */}
+      {/* LINE-BY-LINE API SLOT MODAL WITH ENGINE PROVIDER SELECTION & USER SEARCH */}
       {showAddApiModal && (
         <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in">
-          <div className="bg-white rounded-2xl max-w-xl w-full p-6 border border-slate-200 shadow-2xl space-y-4">
+          <div className="bg-white rounded-2xl max-w-xl w-full p-6 border border-slate-200 shadow-2xl space-y-4 font-['Inter']">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h3 className="font-bold text-slate-900 text-base">Provision API Slots</h3>
+              <div>
+                <h3 className="font-bold text-slate-900 text-base">Provision API Slots & Engines</h3>
+                <p className="text-[11px] text-slate-500 mt-0.5">Allocate Zernio (2 Channels max) or Composio (Multi-Channel AI) API slots to any user workspace.</p>
+              </div>
               <button onClick={() => setShowAddApiModal(false)} className="text-slate-400 hover:text-slate-700">✕</button>
             </div>
 
             <form onSubmit={handleSaveApiSlotsModal} className="space-y-4 text-xs">
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">Select User / Tenant</label>
+                <label className="block font-semibold text-slate-700 mb-1">Select User / Tenant Workspace</label>
+                
+                {/* Search Bar for Tenant Filter */}
+                <div className="relative mb-2">
+                  <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
+                  <input
+                    type="text"
+                    placeholder="Search user name, email, or workspace..."
+                    value={tenantSearchQuery}
+                    onChange={(e) => setTenantSearchQuery(e.target.value)}
+                    className="w-full pl-8 pr-3 py-1.5 border border-slate-200 rounded-lg text-xs bg-slate-50 focus:bg-white focus:ring-2 focus:ring-[#5D3FD3] transition-all"
+                  />
+                </div>
+
                 <select
                   value={targetTenantId}
                   onChange={(e) => setTargetTenantId(e.target.value)}
-                  className="w-full p-2.5 border rounded-lg bg-white font-bold"
+                  className="w-full p-2.5 border rounded-lg bg-white font-bold text-xs focus:ring-2 focus:ring-[#5D3FD3]"
                 >
-                  {tenants.map(t => (
-                    <option key={t.id} value={t.id}>{t.name} ({t.ownerEmail})</option>
-                  ))}
+                  {tenants
+                    .filter(t => 
+                      t.name.toLowerCase().includes(tenantSearchQuery.toLowerCase()) || 
+                      t.ownerEmail.toLowerCase().includes(tenantSearchQuery.toLowerCase())
+                    )
+                    .map(t => (
+                      <option key={t.id} value={t.id}>
+                        {t.name} ({t.ownerEmail}) — [{t.tierPlan.toUpperCase()}]
+                      </option>
+                    ))
+                  }
                 </select>
+                {tenants.filter(t => t.name.toLowerCase().includes(tenantSearchQuery.toLowerCase()) || t.ownerEmail.toLowerCase().includes(tenantSearchQuery.toLowerCase())).length === 0 && (
+                  <p className="text-[11px] text-amber-600 font-semibold mt-1">No matching users found for "{tenantSearchQuery}"</p>
+                )}
               </div>
 
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">Number of API Slots</label>
+                <label className="block font-semibold text-slate-700 mb-1">Number of API Slots to Provision</label>
                 <input
                   type="number"
                   value={apiCount}
                   onChange={(e) => handleApiCountChange(Number(e.target.value))}
-                  className="w-full p-2.5 border rounded-lg font-mono text-xs"
+                  className="w-full p-2.5 border rounded-lg font-mono text-xs focus:ring-2 focus:ring-[#5D3FD3]"
                   min={1}
                   max={20}
                 />
               </div>
 
-              <div className="space-y-2 pt-2">
-                {apiKeysInput.map((keyVal, idx) => (
-                  <div key={idx} className="p-2 bg-slate-50 border rounded space-y-1">
-                    <span className="font-bold text-purple-900 text-[11px]">API {idx + 1} String:</span>
-                    <input
-                      type="text"
-                      value={keyVal}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        setApiKeysInput(prev => {
-                          const next = [...prev];
-                          next[idx] = val;
-                          return next;
-                        });
-                      }}
-                      className="w-full p-1.5 border rounded text-xs font-mono bg-white"
-                    />
-                  </div>
-                ))}
+              <div className="space-y-3 pt-2 max-h-72 overflow-y-auto custom-scrollbar pr-1">
+                {apiKeysInput.map((keyVal, idx) => {
+                  const currentProv = apiProvidersInput[idx] || 'zernio';
+                  return (
+                    <div key={idx} className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-purple-900 text-xs flex items-center gap-1.5">
+                          <span>API {idx + 1} Slot String:</span>
+                        </span>
+
+                        {/* Engine Provider Selection Dropdown */}
+                        <select
+                          value={currentProv}
+                          onChange={(e) => {
+                            const val = e.target.value as EngineProvider;
+                            setApiProvidersInput(prev => {
+                              const next = [...prev];
+                              next[idx] = val;
+                              return next;
+                            });
+                          }}
+                          className="p-1.5 text-[11px] font-bold border border-purple-200 rounded-lg bg-white text-purple-950 focus:ring-2 focus:ring-[#5D3FD3]"
+                        >
+                          <option value="zernio">⚡ Zernio Engine (2 Channels Max)</option>
+                          <option value="composio">🧩 Composio Engine (Multi-Channel AI)</option>
+                        </select>
+                      </div>
+
+                      <input
+                        type="text"
+                        value={keyVal}
+                        placeholder={currentProv === 'composio' ? 'Enter Composio Secret Key (e.g. comp_live_key_99182...)' : 'Enter Zernio Secret Key (e.g. zernio_live_key_88192...)'}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setApiKeysInput(prev => {
+                            const next = [...prev];
+                            next[idx] = val;
+                            return next;
+                          });
+                        }}
+                        className="w-full p-2 border rounded-lg text-xs font-mono bg-white focus:ring-2 focus:ring-[#5D3FD3]"
+                      />
+                    </div>
+                  );
+                })}
               </div>
 
-              <div className="pt-2 flex justify-end gap-2">
-                <button type="button" onClick={() => setShowAddApiModal(false)} className="px-4 py-2 bg-slate-100 text-slate-700 rounded-lg">Cancel</button>
-                <button type="submit" className="px-5 py-2 bg-[#5D3FD3] text-white font-bold rounded-lg">Save API Slots</button>
+              <div className="pt-2 flex justify-end gap-2 border-t border-slate-100">
+                <button type="button" onClick={() => setShowAddApiModal(false)} className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-bold">Cancel</button>
+                <button type="submit" className="px-5 py-2 bg-[#5D3FD3] hover:bg-purple-700 text-white font-bold rounded-lg shadow-md transition-colors">Save API Slots</button>
               </div>
             </form>
           </div>
