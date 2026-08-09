@@ -803,6 +803,7 @@ export function App() {
             userFullName={user?.fullName || profile?.fullName || undefined}
             userEmail={user?.primaryEmailAddress?.emailAddress || profile?.email || undefined}
             userRole={profile?.role || undefined}
+            avatarUrl={profile?.avatarUrl || user?.imageUrl || undefined}
           />
 
           <div className="flex-1 flex flex-col md:ml-[260px] min-w-0">

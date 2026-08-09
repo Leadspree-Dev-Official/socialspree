@@ -57,6 +57,7 @@ interface SidebarProps {
   userFullName?: string;
   userEmail?: string;
   userRole?: string;
+  avatarUrl?: string;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -71,7 +72,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onSignOut,
   userFullName,
   userEmail,
-  userRole
+  userRole,
+  avatarUrl
 }) => {
   const { user } = useUser();
   const clerkEmail = user?.primaryEmailAddress?.emailAddress;
@@ -79,6 +81,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const displayName = clerkName || userFullName || (isSuperAdmin ? 'Super Admin' : 'Workspace User');
   const displayEmail = clerkEmail || userEmail || (isSuperAdmin ? 'admin@leadspree.io' : 'user@socialspree.io');
+  const effectiveAvatar = avatarUrl || user?.imageUrl;
 
   const getRoleLabel = () => {
     if (isSuperAdmin || userRole === 'super_admin') return 'Super Admin Governance';
@@ -438,8 +441,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
           title="Open Workspace Settings & Profile"
         >
           <div className="w-8 h-8 rounded-full border border-purple-500/40 bg-purple-950/60 overflow-hidden flex items-center justify-center shrink-0">
-            {user?.imageUrl ? (
-              <img src={user.imageUrl} alt={displayName} className="w-full h-full object-cover" />
+            {effectiveAvatar ? (
+              <img src={effectiveAvatar} alt={displayName} className="w-full h-full object-cover" />
             ) : (
               <span className="font-bold text-xs text-purple-300">
                 {displayName.slice(0, 2).toUpperCase()}
