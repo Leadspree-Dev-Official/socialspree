@@ -43,9 +43,11 @@ export const PublicNavbar: React.FC<PublicNavbarProps> = ({
             className="flex items-center gap-3 cursor-pointer group"
             onClick={() => onNavigate('landing')}
           >
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-[#5D3FD3] via-[#0066FF] to-purple-400 text-white flex items-center justify-center font-black text-xl shadow-lg shadow-purple-500/25 group-hover:scale-105 transition-transform">
-              SS
-            </div>
+            <img 
+              src="/logo.png" 
+              alt="SocialSpree Logo" 
+              className="w-10 h-10 rounded-2xl object-cover shadow-lg shadow-purple-500/25 border border-purple-200 group-hover:scale-105 transition-transform" 
+            />
             <div>
               <div className="flex items-center gap-2">
                 <span className="font-black text-xl text-slate-900 tracking-tight">SocialSpree</span>
