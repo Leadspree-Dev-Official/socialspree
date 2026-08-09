@@ -27,103 +27,33 @@ export const PricingView: React.FC<PricingViewProps> = ({
     GBP: { symbol: '£', label: 'GBP (£)' },
   };
 
-  // Helper to compute price based on currency & billing cycle (20% discount for annual)
+  // Helper to compute price based on selected currency with Math.ceil ceiling conversion
   const getCalculatedPrice = (plan: SubscriptionPlan) => {
-    let baseMonthlyPrice = plan?.priceMonthly ?? 19;
+    const inrMonthly = plan.priceMonthly ?? 49;
+    const inrYearly = plan.priceYearly ?? (inrMonthly * 12);
 
-    const conversionMatrix: Record<string, Record<CurrencyCode, number>> = {
-      'plan-starter': { USD: 19, INR: 1499, GBP: 15 },
-      'plan-pro': { USD: 29, INR: 1499, GBP: 24 },
-      'plan-enterprise': { USD: 149, INR: 11999, GBP: 119 },
-    };
+    const currSym = currencyConfigs[selectedCurrency]?.symbol || '₹';
 
-    if (plan?.id && conversionMatrix[plan.id]?.[selectedCurrency]) {
-      baseMonthlyPrice = conversionMatrix[plan.id][selectedCurrency];
-    } else if (plan?.currency && plan.currency !== selectedCurrency) {
-      const p = plan.priceMonthly;
-      const srcCurr = plan.currency;
-      if (srcCurr === 'USD' && selectedCurrency === 'INR') baseMonthlyPrice = Math.round(p * 80);
-      else if (srcCurr === 'USD' && selectedCurrency === 'GBP') baseMonthlyPrice = Math.round(p * 0.8);
-      else if (srcCurr === 'INR' && selectedCurrency === 'USD') baseMonthlyPrice = Math.round(p / 80);
-      else if (srcCurr === 'INR' && selectedCurrency === 'GBP') baseMonthlyPrice = Math.round(p / 100);
-      else if (srcCurr === 'GBP' && selectedCurrency === 'USD') baseMonthlyPrice = Math.round(p * 1.25);
-      else if (srcCurr === 'GBP' && selectedCurrency === 'INR') baseMonthlyPrice = Math.round(p * 100);
-    }
+    let displayMonthly = inrMonthly;
+    let displayYearly = inrYearly;
 
-    if (billingCycle === 'yearly') {
-      // 20% discount
-      const discountedMonthly = Math.round(baseMonthlyPrice * 0.8);
-      return {
-        monthlyFormatted: discountedMonthly,
-        totalYearly: discountedMonthly * 12,
-        savings: (baseMonthlyPrice - discountedMonthly) * 12
-      };
+    if (selectedCurrency === 'USD') {
+      displayMonthly = Math.ceil(inrMonthly / 80);
+      displayYearly = plan.priceYearly ? Math.ceil(plan.priceYearly / 80) : (displayMonthly * 12);
+    } else if (selectedCurrency === 'GBP') {
+      displayMonthly = Math.ceil(inrMonthly / 100);
+      displayYearly = plan.priceYearly ? Math.ceil(plan.priceYearly / 100) : (displayMonthly * 12);
     }
 
     return {
-      monthlyFormatted: baseMonthlyPrice,
-      totalYearly: baseMonthlyPrice * 12,
-      savings: 0
+      currSym,
+      displayMonthly,
+      displayYearly,
+      chargedAnnualTotal: displayMonthly * 12
     };
   };
 
-  const currSymbol = currencyConfigs[selectedCurrency]?.symbol ?? '$';
-
-  const defaultPlans: SubscriptionPlan[] = [
-    {
-      id: 'plan-starter',
-      name: 'Starter Plan (US/Global)',
-      priceMonthly: 19,
-      currency: 'USD',
-      currencySymbol: '$',
-      allocatedApiSlots: 1,
-      maxSocialAccounts: 2,
-      aiCredits: 500,
-      features: [
-        '1 Zernio API Key Slot (2 Social Channels)',
-        '500 AI Content & Hashtag Credits/mo',
-        'Instant & Scheduled Posting',
-        'Cloudflare & Cloudinary CDN Integration',
-        'Basic Activity Audit Logs'
-      ]
-    },
-    {
-      id: 'plan-pro',
-      name: 'Pro Agency Plan (India Region)',
-      priceMonthly: 1499,
-      currency: 'INR',
-      currencySymbol: '₹',
-      allocatedApiSlots: 3,
-      maxSocialAccounts: 6,
-      aiCredits: 2500,
-      isPopular: true,
-      features: [
-        '3 Zernio API Key Slots (6 Social Channels)',
-        '2,500 AI Content & Hashtag Credits/mo',
-        'Parallel Key Firing Engine',
-        'Cloud Native Execution & Webhooks',
-        'Google Review Auto-AI Responder',
-        'Priority Super Admin Support'
-      ]
-    },
-    {
-      id: 'plan-enterprise',
-      name: 'Enterprise Agency Tier (UK/EU)',
-      priceMonthly: 119,
-      currency: 'GBP',
-      currencySymbol: '£',
-      allocatedApiSlots: 10,
-      maxSocialAccounts: 20,
-      aiCredits: 10000,
-      features: [
-        '10 Zernio API Key Slots (20 Social Channels)',
-        '10,000 AI Content & Hashtag Credits/mo',
-        'Unlimited Parallel Dispatch Engine',
-        'Custom Storage Buckets & CDN',
-        'Dedicated Account Manager & SLA'
-      ]
-    }
-  ];
+  const defaultPlans: SubscriptionPlan[] = INITIAL_PLANS;
 
   const [selectedRoleTab, setSelectedRoleTab] = useState<'all' | 'business_user' | 'influencer' | 'agency'>('business_user');
 
@@ -141,7 +71,7 @@ export const PricingView: React.FC<PricingViewProps> = ({
     ...p,
     id: p?.id || 'plan-custom',
     name: p?.name || 'Subscription Plan',
-    priceMonthly: p?.priceMonthly ?? 19,
+    priceMonthly: p?.priceMonthly ?? 49,
     priceYearly: p?.priceYearly,
     billingCycle: p?.billingCycle || 'monthly',
     currency: p?.currency || 'INR',
@@ -199,7 +129,7 @@ export const PricingView: React.FC<PricingViewProps> = ({
                 : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'
             }`}
           >
-            🏢 Business Users (Monthly Plans)
+            🏢 Business Users
           </button>
 
           <button
@@ -240,11 +170,10 @@ export const PricingView: React.FC<PricingViewProps> = ({
         <div className="mt-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 items-stretch">
           {displayPlans.map((plan: any) => {
             const priceInfo = getCalculatedPrice(plan);
-            const isPro = plan.isPopular || plan.id === 'plan-pro';
-            const monthlyVal = priceInfo?.monthlyFormatted ?? 0;
-            const yearlyVal = priceInfo?.totalYearly ?? 0;
-            const savingsVal = priceInfo?.savings ?? 0;
+            const isPro = plan.isPopular || plan.id === 'plan-pro' || plan.id === 'plan-biz-pro';
             const creditsVal = plan?.aiCredits ?? 0;
+
+            const isYearlyTier = plan.targetRole === 'influencer' || plan.targetRole === 'agency' || plan.priceYearly !== undefined;
 
             return (
               <div
@@ -277,22 +206,24 @@ export const PricingView: React.FC<PricingViewProps> = ({
                   {/* Price Header */}
                   <div className="mt-6 flex items-baseline gap-1">
                     <span className="text-4xl sm:text-5xl font-black text-slate-900">
-                      {plan.currencySymbol || currSymbol}
-                      {plan.priceYearly ? plan.priceYearly.toLocaleString() : plan.priceMonthly.toLocaleString()}
+                      {priceInfo.currSym}
+                      {isYearlyTier ? priceInfo.displayYearly.toLocaleString() : priceInfo.displayMonthly.toLocaleString()}
                     </span>
                     <span className="text-sm font-bold text-slate-500">
-                      {plan.priceYearly || plan.billingCycle === 'yearly' ? '/ year' : '/ month'}
+                      {isYearlyTier ? '/ year' : '/ month'}
                     </span>
                   </div>
 
-                  {billingCycle === 'yearly' && (
-                    <div className="mt-1 text-xs text-purple-600 font-bold flex items-center gap-1">
-                      <span>Billed annually ({currSymbol}{yearlyVal.toLocaleString()}/yr)</span>
-                      {savingsVal > 0 && (
-                        <span className="bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded text-[10px]">
-                          Save {currSymbol}{savingsVal.toLocaleString()}
-                        </span>
-                      )}
+                  {/* Annual Charge Subnote */}
+                  {plan.targetRole === 'business_user' && plan.priceMonthly > 0 && (
+                    <div className="mt-2 text-xs font-bold text-[#5D3FD3] bg-purple-50 px-2.5 py-1 rounded-lg inline-block font-mono">
+                      Billed annually ({priceInfo.currSym}{priceInfo.chargedAnnualTotal.toLocaleString()}/yr)
+                    </div>
+                  )}
+
+                  {isYearlyTier && (
+                    <div className="mt-2 text-xs font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-lg inline-block font-mono">
+                      Billed annually ({priceInfo.currSym}{priceInfo.displayYearly.toLocaleString()}/yr)
                     </div>
                   )}
 
@@ -327,7 +258,7 @@ export const PricingView: React.FC<PricingViewProps> = ({
                 {/* CTA Button */}
                 <div className="mt-8 pt-6 border-t border-slate-100">
                   <button
-                    onClick={() => onOpenCheckout(plan.id, billingCycle, selectedCurrency, currSymbol)}
+                    onClick={() => onOpenCheckout(plan.id, 'yearly', selectedCurrency, priceInfo.currSym)}
                     className={`w-full py-4 rounded-2xl font-bold text-xs shadow-lg transition-all flex items-center justify-center gap-2 ${
                       isPro
                         ? 'bg-gradient-to-r from-[#5D3FD3] to-[#0066FF] text-white hover:shadow-purple-500/30 hover:scale-[1.02] active:scale-[0.98]'
