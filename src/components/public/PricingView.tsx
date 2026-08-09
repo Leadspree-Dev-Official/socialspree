@@ -18,12 +18,12 @@ export const PricingView: React.FC<PricingViewProps> = ({
   onOpenCheckout,
 }) => {
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
-  const [selectedCurrency, setSelectedCurrency] = useState<CurrencyCode>('USD');
+  const [selectedCurrency, setSelectedCurrency] = useState<CurrencyCode>('INR');
 
   // Currency Symbols & Rates mapping for dynamic display
   const currencyConfigs: Record<CurrencyCode, { symbol: string; label: string }> = {
-    USD: { symbol: '$', label: 'USD ($)' },
     INR: { symbol: '₹', label: 'INR (₹)' },
+    USD: { symbol: '$', label: 'USD ($)' },
     GBP: { symbol: '£', label: 'GBP (£)' },
   };
 
@@ -169,8 +169,27 @@ export const PricingView: React.FC<PricingViewProps> = ({
           </p>
         </div>
 
+        {/* Currency Switcher (INR First) */}
+        <div className="mt-8 flex items-center justify-center">
+          <div className="flex items-center gap-1 bg-white p-1.5 rounded-2xl border border-slate-200 shadow-xs">
+            {(['INR', 'USD', 'GBP'] as CurrencyCode[]).map((curr) => (
+              <button
+                key={curr}
+                onClick={() => setSelectedCurrency(curr)}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  selectedCurrency === curr
+                    ? 'bg-slate-900 text-white shadow-sm'
+                    : 'text-slate-600 hover:bg-slate-100'
+                }`}
+              >
+                {currencyConfigs[curr]?.label ?? curr}
+              </button>
+            ))}
+          </div>
+        </div>
+
         {/* Category Tabs: Business Users vs Influencers vs Agencies */}
-        <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
+        <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
           <button
             onClick={() => setSelectedRoleTab('business_user')}
             className={`px-5 py-2.5 rounded-2xl text-xs font-bold transition-all ${
