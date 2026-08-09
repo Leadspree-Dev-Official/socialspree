@@ -623,9 +623,8 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
                   {tenants.map((tenant) => (
                     <tr key={tenant.id} className="hover:bg-slate-50/80 transition-colors">
                       <td className="px-3 py-2">
-                        <div className="font-bold text-slate-900 text-xs whitespace-nowrap">{tenant.name}</div>
-                        <div className="text-[10px] text-slate-400 font-mono" title={tenant.id}>
-                          {tenant.id.length > 12 ? `${tenant.id.slice(0, 8)}...` : tenant.id}
+                        <div className="font-bold text-slate-900 text-xs whitespace-nowrap" title={`Tenant ID: ${tenant.id}`}>
+                          {tenant.name}
                         </div>
                       </td>
                       <td className="px-3 py-2 font-mono text-slate-800 text-[11px] whitespace-nowrap">{tenant.ownerEmail}</td>
