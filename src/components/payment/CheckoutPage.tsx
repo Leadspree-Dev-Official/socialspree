@@ -56,12 +56,12 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
     convertedMonthly = Math.ceil(baseMonthly / 100);
   }
 
-  const isYearlyPlan = billingCycle === 'yearly' || selectedPlan.targetRole === 'influencer' || selectedPlan.targetRole === 'agency';
-  const displayPrice = isYearlyPlan 
-    ? (selectedPlan.priceYearly ? (effectiveCurrency === 'USD' ? Math.ceil(selectedPlan.priceYearly / 80) : effectiveCurrency === 'GBP' ? Math.ceil(selectedPlan.priceYearly / 100) : selectedPlan.priceYearly) : convertedMonthly * 12)
-    : convertedMonthly;
+  const displayMonthly = convertedMonthly;
+  const totalYearlyAmount = selectedPlan.priceYearly 
+    ? (effectiveCurrency === 'USD' ? Math.ceil(selectedPlan.priceYearly / 80) : effectiveCurrency === 'GBP' ? Math.ceil(selectedPlan.priceYearly / 100) : selectedPlan.priceYearly)
+    : (displayMonthly * 12);
 
-  const totalAmount = isYearlyPlan ? displayPrice : convertedMonthly;
+  const totalAmount = totalYearlyAmount;
 
   return (
     <div className="min-h-screen bg-slate-50 font-['Inter'] text-slate-900 py-12 px-4 sm:px-6 lg:px-8">
@@ -176,13 +176,17 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                     {selectedPlan.name}
                   </h2>
                 </div>
-                <div className="text-right">
-                  <div className="text-3xl font-black text-[#5D3FD3]">
+                  <div className="text-[#5D3FD3] text-3xl font-black">
                     {effectiveSymbol}{totalAmount.toLocaleString()}
                   </div>
                   <span className="text-[11px] font-mono font-bold text-slate-500 uppercase">
-                    {isYearlyPlan ? '/ year' : '/ month'}
+                    / year
                   </span>
+                  {selectedPlan.priceMonthly > 0 && (
+                    <div className="mt-1 text-[10px] font-bold text-[#5D3FD3] bg-purple-50 px-2 py-0.5 rounded font-mono">
+                      (equivalent to {effectiveSymbol}{displayMonthly.toLocaleString()}/mo)
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -304,7 +308,6 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                         </p>
                       </div>
                     </div>
-                  </div>
 
                   <div className="mt-3 p-3 rounded-xl bg-amber-50 border border-amber-200/60 text-[11px] text-amber-800 font-medium flex items-center gap-2">
                     <HelpCircle className="w-4 h-4 text-amber-600 shrink-0" />
@@ -319,7 +322,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                 {activeChannel === 'whatsapp' ? (
                   <WhatsAppCheckout
                     plan={selectedPlan}
-                    billingCycle={billingCycle}
+                    billingCycle="yearly"
                     onClose={() => {}}
                   />
                 ) : (

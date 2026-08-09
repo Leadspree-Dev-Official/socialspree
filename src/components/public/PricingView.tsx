@@ -214,27 +214,25 @@ export const PricingView: React.FC<PricingViewProps> = ({
                     </span>
                   </div>
 
-                  {/* Price Header */}
+                  {/* Price Header - Yearly Payment */}
                   <div className="mt-6 flex items-baseline gap-1">
                     <span className="text-4xl sm:text-5xl font-black text-slate-900">
                       {priceInfo.currSym}
-                      {isYearlyTier ? priceInfo.displayYearly.toLocaleString() : priceInfo.displayMonthly.toLocaleString()}
+                      {priceInfo.displayYearly.toLocaleString()}
                     </span>
                     <span className="text-sm font-bold text-slate-500">
-                      {isYearlyTier ? '/ year' : '/ month'}
+                      / year
                     </span>
                   </div>
 
-                  {/* Annual Charge Subnote */}
-                  {plan.targetRole === 'business_user' && plan.priceMonthly > 0 && (
+                  {/* Monthly Equivalent & Annual Billing Badge */}
+                  {plan.priceMonthly > 0 ? (
                     <div className="mt-2 text-xs font-bold text-[#5D3FD3] bg-purple-50 px-2.5 py-1 rounded-lg inline-block font-mono">
-                      Billed annually ({priceInfo.currSym}{priceInfo.chargedAnnualTotal.toLocaleString()}/yr)
+                      Billed annually (equivalent to {priceInfo.currSym}{priceInfo.displayMonthly.toLocaleString()}/mo)
                     </div>
-                  )}
-
-                  {isYearlyTier && (
+                  ) : (
                     <div className="mt-2 text-xs font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-lg inline-block font-mono">
-                      Billed annually ({priceInfo.currSym}{priceInfo.displayYearly.toLocaleString()}/yr)
+                      Free Forever (₹0)
                     </div>
                   )}
 

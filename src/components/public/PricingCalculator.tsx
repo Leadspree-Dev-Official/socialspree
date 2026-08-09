@@ -75,6 +75,7 @@ export const PricingCalculator: React.FC<PricingCalculatorProps> = ({
   const { plan, isExactMatch } = recommendedPlan;
   const currencySymbol = currencyConfigs[selectedCurrency].symbol;
   const priceMonthly = plan ? convertPrice(plan.priceMonthly, selectedCurrency) : 0;
+  const priceYearly = plan ? (plan.priceYearly ? convertPrice(plan.priceYearly, selectedCurrency) : priceMonthly * 12) : 0;
   
   const planMaxPosts = plan ? getPlanMaxPosts(plan) : 0;
   const planMaxAccounts = plan ? plan.maxSocialAccounts : 0;
@@ -143,15 +144,14 @@ export const PricingCalculator: React.FC<PricingCalculatorProps> = ({
               </div>
             </div>
 
-            {/* Social Accounts Slider */}
             <div>
               <div className="flex justify-between items-center mb-2">
                 <label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
-                  <Users className="w-4 h-4 text-slate-500" />
+                  <Sliders className="w-4 h-4 text-[#5D3FD3]" />
                   Social Accounts Needed
                 </label>
-                <span className="bg-white px-3 py-1 rounded-full text-sm font-bold text-[#5D3FD3] border border-purple-100 shadow-sm">
-                  {socialAccounts}
+                <span className="text-sm font-bold text-[#5D3FD3] bg-purple-50 px-3 py-1 rounded-full border border-purple-100 font-mono">
+                  {socialAccounts} {socialAccounts === 1 ? 'Account' : 'Accounts'}
                 </span>
               </div>
               <input
@@ -164,15 +164,14 @@ export const PricingCalculator: React.FC<PricingCalculatorProps> = ({
               />
             </div>
 
-            {/* Posts Slider */}
             <div>
               <div className="flex justify-between items-center mb-2">
                 <label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
-                  <Zap className="w-4 h-4 text-slate-500" />
-                  Posts Per Month
+                  <Zap className="w-4 h-4 text-[#5D3FD3]" />
+                  Monthly Posts Needed
                 </label>
-                <span className="bg-white px-3 py-1 rounded-full text-sm font-bold text-[#5D3FD3] border border-purple-100 shadow-sm">
-                  {posts}
+                <span className="text-sm font-bold text-[#5D3FD3] bg-purple-50 px-3 py-1 rounded-full border border-purple-100 font-mono">
+                  {posts} Posts/mo
                 </span>
               </div>
               <input
@@ -185,10 +184,8 @@ export const PricingCalculator: React.FC<PricingCalculatorProps> = ({
               />
             </div>
 
-            {/* Premium Toggles */}
             <div className="space-y-4 pt-4 border-t border-slate-200">
               <label className="block text-sm font-semibold text-slate-700">Premium Add-ons</label>
-              
               <div className="flex items-center justify-between p-3 bg-white rounded-xl border border-slate-200">
                 <div className="flex items-center gap-3">
                   <div className={`p-2 rounded-lg ${autoresponder ? 'bg-purple-100 text-[#5D3FD3]' : 'bg-slate-100 text-slate-500'}`}>
@@ -228,11 +225,9 @@ export const PricingCalculator: React.FC<PricingCalculatorProps> = ({
           </div>
         </div>
 
-        {/* Right Panel: Result */}
-        <div className="relative p-[2px] rounded-3xl bg-gradient-to-br from-[#5D3FD3] to-[#0066FF] shadow-xl overflow-hidden h-full">
+        <div className="lg:col-span-5 relative p-[2px] rounded-3xl bg-gradient-to-br from-[#5D3FD3] to-[#0066FF] shadow-xl overflow-hidden h-full">
           <div className="absolute inset-0 bg-white/10 backdrop-blur-3xl z-0"></div>
           <div className="relative z-10 bg-white/95 h-full rounded-[23px] p-6 md:p-8 flex flex-col justify-between">
-            
             <div>
               <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-purple-100 to-blue-100 border border-purple-200/50 mb-6">
                 <Sparkles className="w-4 h-4 text-[#5D3FD3]" />
@@ -244,10 +239,15 @@ export const PricingCalculator: React.FC<PricingCalculatorProps> = ({
               {plan ? (
                 <>
                   <h4 className="text-3xl font-black text-slate-900 mb-2">{plan.name}</h4>
-                  <div className="flex items-baseline gap-1 mb-2">
-                    <span className="text-4xl font-bold text-[#5D3FD3]">{currencySymbol}{priceMonthly}</span>
-                    <span className="text-slate-500 font-medium">/month</span>
+                  <div className="flex items-baseline gap-1 mb-1">
+                    <span className="text-4xl font-black text-[#5D3FD3]">{currencySymbol}{priceYearly.toLocaleString()}</span>
+                    <span className="text-slate-500 font-bold text-sm">/ year</span>
                   </div>
+                  {priceMonthly > 0 && (
+                    <p className="text-xs font-bold text-[#5D3FD3] bg-purple-50 px-2.5 py-1 rounded-lg inline-block font-mono mb-4">
+                      Billed annually (equivalent to {currencySymbol}{priceMonthly.toLocaleString()}/mo)
+                    </p>
+                  )}
                   {!isExactMatch && (
                     <p className="text-sm text-amber-600 bg-amber-50 p-3 rounded-lg border border-amber-200 mb-6">
                       We've suggested our most premium plan, as your requirements exceed our standard tiers.
@@ -315,7 +315,7 @@ export const PricingCalculator: React.FC<PricingCalculatorProps> = ({
             {plan && (
               <div className="mt-8 pt-6 border-t border-slate-100">
                 <button
-                  onClick={() => onOpenCheckout(plan.id, 'monthly', selectedCurrency, currencySymbol)}
+                  onClick={() => onOpenCheckout(plan.id, 'yearly', selectedCurrency, currencySymbol)}
                   className="w-full py-4 px-6 bg-slate-900 hover:bg-[#5D3FD3] text-white rounded-xl font-bold text-lg transition-all duration-300 flex items-center justify-center gap-2 group shadow-lg shadow-slate-900/20 hover:shadow-[#5D3FD3]/30"
                 >
                   Subscribe Now

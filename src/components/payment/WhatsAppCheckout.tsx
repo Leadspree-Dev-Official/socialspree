@@ -36,10 +36,9 @@ export const WhatsAppCheckout: React.FC<WhatsAppCheckoutProps> = ({
     }
   }, [isSignedIn, user]);
 
-  // Compute final amounts
-  const baseMonthly = plan.priceMonthly;
-  const finalMonthly = billingCycle === 'yearly' ? Math.round(baseMonthly * 0.8) : baseMonthly;
-  const totalAmount = billingCycle === 'yearly' ? finalMonthly * 12 : finalMonthly;
+  // Compute final yearly amounts
+  const baseMonthly = plan.priceMonthly ?? 49;
+  const totalYearlyAmount = plan.priceYearly ?? (baseMonthly * 12);
 
   const sanitizeWhatsAppText = (text: string): string => {
     if (!text) return '';
@@ -56,8 +55,8 @@ export const WhatsAppCheckout: React.FC<WhatsAppCheckoutProps> = ({
   const formattedText = `🛒 *SOCIALSPREE SAAS ORDER INVOICE*
 ----------------------------------
 📋 *Plan:* ${plan.name}
-💳 *Billing Cycle:* ${billingCycle === 'yearly' ? 'Yearly (20% OFF)' : 'Monthly'}
-💰 *Amount Due:* ${plan.currencySymbol}${totalAmount.toLocaleString()} / ${billingCycle === 'yearly' ? 'year' : 'month'}
+💳 *Billing Cycle:* Billed Annually (Yearly Payment)
+💰 *Amount Due:* ${plan.currencySymbol}${totalYearlyAmount.toLocaleString()} / year
 🔑 *API Key Slots:* ${plan.allocatedApiSlots} Slots (${plan.maxSocialAccounts} Social Channels)
 🤖 *Monthly AI Credits:* ${plan.aiCredits.toLocaleString()} Credits
 🏢 *Organization:* ${sanitizedOrgName || 'N/A'}
