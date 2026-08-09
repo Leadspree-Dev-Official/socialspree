@@ -1,4 +1,5 @@
 import React from 'react';
+import { useUser } from '@clerk/react';
 import { 
   LayoutDashboard, 
   Edit, 
@@ -69,6 +70,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
   userEmail,
   userRole
 }) => {
+  const { user } = useUser();
+  const clerkEmail = user?.primaryEmailAddress?.emailAddress;
+  const clerkName = user?.fullName || (user?.firstName ? `${user.firstName}${user.lastName ? ' ' + user.lastName : ''}` : undefined);
+
+  const getRoleLabel = () => {
+    if (isSuperAdmin || userRole === 'super_admin') return 'Super Admin Governance';
+    if (userRole === 'agency' || isAgencyMode) return 'Agency Owner';
+    if (userRole === 'influencer' || isInfluencerMode) return 'Influencer Creator';
+    return 'Business User';
+  };
+
+  const displayUserFullName = clerkName || userFullName || (isSuperAdmin ? 'Super Admin' : 'Workspace User');
+  const displayUserEmail = clerkEmail || userEmail || getRoleLabel();
+
   const handleNavClick = (tab: TabType) => {
     setActiveTab(tab);
   };
@@ -78,13 +93,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
     if (onSelectAdminSubTab) {
       onSelectAdminSubTab(subTab);
     }
-  };
-
-  const getRoleLabel = () => {
-    if (isSuperAdmin || userRole === 'super_admin') return 'Super Admin Governance';
-    if (userRole === 'agency' || isAgencyMode) return 'Agency Owner';
-    if (userRole === 'influencer' || isInfluencerMode) return 'Influencer Creator';
-    return 'Business User';
   };
 
   return (
@@ -423,14 +431,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
       <div className="p-4 border-t border-slate-800 bg-slate-950/50">
         <div className="flex items-center gap-3">
           <div className={`w-8 h-8 rounded-full ${isSuperAdmin ? 'bg-amber-500/20 text-amber-400 border-amber-500/30' : 'bg-purple-500/20 text-purple-400 border-purple-500/30'} border font-bold flex items-center justify-center text-xs`}>
-            {userFullName ? userFullName.slice(0, 2).toUpperCase() : (isSuperAdmin ? 'SA' : 'US')}
+            {displayUserFullName ? displayUserFullName.slice(0, 2).toUpperCase() : (isSuperAdmin ? 'SA' : 'US')}
           </div>
           <div className="min-w-0 flex-1">
             <div className="text-xs font-bold text-white truncate">
-              {userFullName || (isSuperAdmin ? 'Super Admin' : 'Workspace User')}
+              {displayUserFullName}
             </div>
             <div className="text-[10px] text-slate-400 truncate font-mono">
-              {userEmail || getRoleLabel()}
+              {displayUserEmail}
             </div>
           </div>
         </div>

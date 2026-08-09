@@ -789,8 +789,8 @@ export function App() {
             activeAdminSubTab={adminSubTab}
             onSelectAdminSubTab={setAdminSubTab}
             onReturnToPublic={() => { setViewMode('public'); navigate('/'); }}
-            userFullName={profile?.fullName || undefined}
-            userEmail={profile?.email || undefined}
+            userFullName={user?.fullName || profile?.fullName || undefined}
+            userEmail={user?.primaryEmailAddress?.emailAddress || profile?.email || undefined}
             userRole={profile?.role || undefined}
           />
 
@@ -798,7 +798,7 @@ export function App() {
             <SuperAdminBanner
               isSuperAdminMode={isSuperAdminMode}
               onToggleSuperAdmin={handleToggleSuperAdmin}
-              userEmail={profile?.email || SUPER_ADMIN_EMAIL}
+              userEmail={user?.primaryEmailAddress?.emailAddress || profile?.email || SUPER_ADMIN_EMAIL}
             />
             <SystemModeBanner />
             <Header
@@ -810,8 +810,8 @@ export function App() {
               pageTitle={getPageTitle(activeTab)}
               onReturnToPublic={() => { setViewMode('public'); navigate('/'); }}
               onSignOut={handleSignOut}
-              userEmail={profile?.email || SUPER_ADMIN_EMAIL}
-              userProfile={profile}
+              userEmail={user?.primaryEmailAddress?.emailAddress || profile?.email || SUPER_ADMIN_EMAIL}
+              userProfile={profile ? { ...profile, fullName: user?.fullName || profile.fullName } : null}
               onOpenUserProfile={() => setActiveTab('settings')}
               isAgencyMode={GLOBAL_SYSTEM_SETTINGS.agencyModeEnabled || currentTenant.tierPlan === 'agency'}
               brands={brands}

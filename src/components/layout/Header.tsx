@@ -1,5 +1,5 @@
 import React from 'react';
-import { UserButton } from '@clerk/react';
+import { UserButton, useUser } from '@clerk/react';
 import { Tenant, AgencyBrand } from '../../types';
 import { SUPER_ADMIN_EMAIL } from '../../lib/store';
 import { Search, Bell, ShieldCheck, Building2, Globe, LogOut, User } from 'lucide-react';
@@ -43,10 +43,14 @@ export const Header: React.FC<HeaderProps> = ({
   onSelectBrand,
   onOpenBrandManager
 }) => {
-  const activeEmail = userEmail || (isSuperAdminMode ? SUPER_ADMIN_EMAIL : currentTenant.ownerEmail);
+  const { user } = useUser();
+  const clerkEmail = user?.primaryEmailAddress?.emailAddress;
+  const clerkName = user?.fullName || (user?.firstName ? `${user.firstName}${user.lastName ? ' ' + user.lastName : ''}` : undefined) || user?.username;
+
+  const activeEmail = clerkEmail || userEmail || (isSuperAdminMode ? SUPER_ADMIN_EMAIL : currentTenant.ownerEmail);
   const displayName = isSuperAdminMode 
     ? 'LeadSpree Super Admin' 
-    : (userProfile?.fullName || activeEmail.split('@')[0] || 'User');
+    : (clerkName || userProfile?.fullName || (activeEmail ? activeEmail.split('@')[0] : 'User'));
   const avatarUrl = userProfile?.avatarUrl;
 
   return (
