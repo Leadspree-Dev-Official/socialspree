@@ -202,7 +202,7 @@ export const INITIAL_PLANS: SubscriptionPlan[] = [
     targetRole: 'premium_business',
     features: [
       '₹36,000 / year (Billed Annually)',
-      'Pro Dedicated Cloud Infrastructure ($25/mo Tier + Upgraded Compute)',
+      'Pro Dedicated Cloud Infrastructure (Upgraded Compute)',
       '8 GB Database Storage & 100 GB High-Speed Media Vault',
       '250,000 Monthly Active Sessions & High-Volume Parallel Engines',
       'Point-in-Time Recovery & 99.9% Cloud Uptime SLA',
@@ -253,7 +253,7 @@ export const INITIAL_PLANS: SubscriptionPlan[] = [
     targetRole: 'influencer',
     features: [
       '₹36,000 / year (Billed Annually)',
-      'Pro Dedicated Cloud Infrastructure ($25/mo Tier + Upgraded Compute)',
+      'Pro Dedicated Cloud Infrastructure (Upgraded Compute)',
       '8 GB Database Storage & 100 GB High-Speed CDN Media Vault',
       '250,000 Monthly Active User Sessions & High-Volume Execution',
       'Point-in-Time Recovery & 99.9% Cloud Uptime SLA',
@@ -303,7 +303,7 @@ export const INITIAL_PLANS: SubscriptionPlan[] = [
     targetRole: 'agency',
     features: [
       '₹40,000 / year (Billed Annually)',
-      'Pro Dedicated Cloud Infrastructure ($25/mo Tier + Upgraded Compute Cluster)',
+      'Pro Dedicated Cloud Infrastructure (Upgraded Compute Cluster)',
       '8 GB Database Storage & 100 GB High-Speed Media Vault',
       '250,000 Monthly Active User Sessions & Multi-Tenant Databases',
       'Point-in-Time Recovery & 99.9% High Availability SLA',
