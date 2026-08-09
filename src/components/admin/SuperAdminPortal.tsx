@@ -420,12 +420,16 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
     const targetTenant = tenants.find(t => t.id === targetTenantId);
     if (!targetTenant) return;
 
-    const newSlots: ApiAllocationSlot[] = apiKeysInput.map((keyVal, idx) => {
+    const existingSlots: ApiAllocationSlot[] = targetTenant.apiSlotDetails || [];
+    const startIdx = existingSlots.length;
+
+    const newlyAddedSlots: ApiAllocationSlot[] = apiKeysInput.map((keyVal, idx) => {
+      const slotNum = startIdx + idx + 1;
       const prov = apiProvidersInput[idx] || 'zernio';
       return {
         id: crypto.randomUUID(),
-        slotNumber: idx + 1,
-        slotName: `API ${idx + 1} (${prov.toUpperCase()})`,
+        slotNumber: slotNum,
+        slotName: `API ${slotNum} (${prov.toUpperCase()})`,
         provider: prov,
         apiKey: keyVal.trim(),
         maxChannels: prov === 'composio' ? 5 : 2,
@@ -433,15 +437,18 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
       };
     });
 
+    const mergedSlots = [...existingSlots, ...newlyAddedSlots];
+
     for (let index = 0; index < apiKeysInput.length; index++) {
       const secret = apiKeysInput[index].trim();
       const prov = apiProvidersInput[index] || 'zernio';
+      const slotNum = startIdx + index + 1;
       if (!secret) continue;
       const { error } = await supabase.functions.invoke('manage-credentials', { 
         body: { 
           tenantId: targetTenantId, 
           provider: prov, 
-          label: `slot-${index + 1}`, 
+          label: `slot-${slotNum}`, 
           secret 
         } 
       });
@@ -451,11 +458,11 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
     setApiKeysInput(Array(apiCount).fill(''));
     setApiProvidersInput(Array(apiCount).fill('zernio'));
     if (onUpdateTenantApiSlotDetails) {
-      onUpdateTenantApiSlotDetails(targetTenantId, newSlots);
+      onUpdateTenantApiSlotDetails(targetTenantId, mergedSlots);
     }
 
     setShowAddApiModal(false);
-    setSettingsNotification(`Provisioned ${newSlots.length} API Slot(s) for ${targetTenant.name}!`);
+    setSettingsNotification(`Added +${newlyAddedSlots.length} Additional API Slot(s) to ${targetTenant.name}! Total: ${mergedSlots.length} Slots.`);
     setTimeout(() => setSettingsNotification(null), 3500);
   };
 
@@ -1112,7 +1119,10 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
                           ) : (
                             <div className="flex items-center justify-between bg-slate-50 p-2 rounded-lg border border-slate-100 font-mono text-xs">
                               <span className="text-slate-800 font-semibold truncate max-w-[220px]">
-                                {isKeyVisible ? slot.apiKey : '••••••••••••••••••••••••'}
+                                {slot.apiKey && slot.apiKey.trim().length > 0 
+                                  ? (isKeyVisible ? slot.apiKey : '••••••••••••••••••••••••')
+                                  : <span className="text-slate-400 font-normal italic text-[11px]">Blank (No Key Configured)</span>
+                                }
                               </span>
                               <button
                                 type="button"
