@@ -44,7 +44,7 @@ export async function executePublishing(
   postInput: Omit<Post, 'id' | 'createdAt' | 'status'>,
   tenant: Tenant
 ): Promise<PublishResult> {
-  if (tenant.dispatchEngine === 'composio') {
+  if (tenant.dispatchEngine === 'coresync' || (tenant.dispatchEngine as string) === 'composio') {
     return executeComposioPublishing(postInput, tenant);
   }
 

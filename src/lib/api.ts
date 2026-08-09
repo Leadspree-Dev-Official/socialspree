@@ -228,6 +228,10 @@ function mapTenant(r: any, slots: ApiAllocationSlot[] = []): Tenant {
     apiKey: '', // stripped — secrets never persist in browser
     tierPlan: r.tier_plan ?? 'free',
     planId: r.plan_id ?? undefined,
+    dispatchEngine: (r.dispatch_engine ?? 'dual') as any,
+    enabledEngines: Array.isArray(r.enabled_engines) ? r.enabled_engines : ['zenith', 'coresync'],
+    agencySlotBundleLimit: r.agency_slot_bundle_limit ?? 10,
+    agencyMaxBrands: r.agency_max_brands ?? 10,
     allocatedApiSlots: r.allocated_api_slots ?? 2,
     maxSocialAccounts: r.max_social_accounts ?? 4,
     aiCredits: r.ai_credits ?? 0,
@@ -245,7 +249,11 @@ function mapTenant(r: any, slots: ApiAllocationSlot[] = []): Tenant {
 function tenantToRow(t: Tenant): any {
   return {
     name: t.name, owner_email: t.ownerEmail, tier_plan: t.tierPlan,
-    plan_id: t.planId, allocated_api_slots: t.allocatedApiSlots,
+    plan_id: t.planId, dispatch_engine: t.dispatchEngine ?? 'dual',
+    enabled_engines: t.enabledEngines ?? ['zenith', 'coresync'],
+    agency_slot_bundle_limit: t.agencySlotBundleLimit ?? 10,
+    agency_max_brands: t.agencyMaxBrands ?? 10,
+    allocated_api_slots: t.allocatedApiSlots,
     max_social_accounts: t.maxSocialAccounts, ai_credits: t.aiCredits,
     cloudinary_config: t.cloudinaryConfig, status: t.status,
     payment_status: t.paymentStatus, renewal_date: t.renewalDate,

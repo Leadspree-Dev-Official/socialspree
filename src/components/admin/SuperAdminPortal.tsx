@@ -388,6 +388,23 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
     }
   };
 
+  const handleUpdateTenantDispatchEngine = async (tenantId: string, engine: 'zenith' | 'coresync' | 'dual') => {
+    const target = tenants.find(t => t.id === tenantId);
+    if (target) {
+      target.dispatchEngine = engine;
+      target.enabledEngines = engine === 'dual' ? ['zenith', 'coresync'] : [engine];
+    }
+
+    try {
+      await supabase.from('tenants').update({
+        dispatch_engine: engine,
+        enabled_engines: engine === 'dual' ? ['zenith', 'coresync'] : [engine]
+      }).eq('id', tenantId);
+    } catch {
+      /* ignore offline update errors */
+    }
+  };
+
   const handleSaveApiSlotsModal = async (e: React.FormEvent) => {
     e.preventDefault();
     const targetTenant = tenants.find(t => t.id === targetTenantId);
@@ -595,6 +612,7 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
                     <th className="px-4 py-3">Tenant / Organization</th>
                     <th className="px-4 py-3">Owner Email</th>
                     <th className="px-4 py-3">Allocated API Slots</th>
+                    <th className="px-4 py-3">Dispatch Engine</th>
                     <th className="px-4 py-3">AI Credits</th>
                     <th className="px-4 py-3">Tier Plan</th>
                     <th className="px-4 py-3">Status</th>
@@ -611,6 +629,17 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
                       <td className="px-4 py-3.5 font-mono text-slate-800">{tenant.ownerEmail}</td>
                       <td className="px-4 py-3.5 font-mono font-bold text-purple-900">
                         {tenant.allocatedApiSlots || 2} Slots ({ (tenant.allocatedApiSlots || 2) * 2 } Channels)
+                      </td>
+                      <td className="px-4 py-3.5">
+                        <select
+                          value={tenant.dispatchEngine || 'dual'}
+                          onChange={(e) => handleUpdateTenantDispatchEngine(tenant.id, e.target.value as any)}
+                          className="px-2 py-1 rounded text-[11px] font-mono font-bold uppercase bg-blue-50 text-blue-900 border border-blue-200 cursor-pointer hover:bg-blue-100 shadow-xs"
+                        >
+                          <option value="dual">DUAL ENGINE (Zenith + CoreSync)</option>
+                          <option value="coresync">CORESYNC ENGINE (1 Slot = All Channels)</option>
+                          <option value="zenith">ZENITH ENGINE (1 Slot = 2 Channels)</option>
+                        </select>
                       </td>
                       <td className="px-4 py-3.5 font-mono font-bold text-amber-700">
                         ⚡ {tenant.aiCredits ?? 1000} Credits

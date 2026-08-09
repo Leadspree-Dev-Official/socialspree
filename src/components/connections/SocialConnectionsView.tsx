@@ -147,10 +147,18 @@ export const SocialConnectionsView: React.FC<SocialConnectionsViewProps> = ({
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
-          <div className="px-3.5 py-1.5 rounded-xl border border-purple-200 bg-purple-50 text-xs font-bold text-purple-900">
-            <span>Active Slots: <strong>{allocatedSlotCount} API Keys</strong> ({tenantAccounts.length} / {allocatedSlotCount * 2} Channels Connected)</span>
-          </div>
+        <div className="flex flex-wrap items-center gap-3">
+          {(!tenant.dispatchEngine || tenant.dispatchEngine === 'dual' || tenant.dispatchEngine === 'coresync') && (
+            <div className="px-3 py-1.5 rounded-xl border border-blue-200 bg-blue-50 text-xs font-bold text-blue-900 flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5 text-blue-600" />
+              <span>CoreSync Engine: <strong>1 Session = All Channels Included</strong></span>
+            </div>
+          )}
+          {(!tenant.dispatchEngine || tenant.dispatchEngine === 'dual' || tenant.dispatchEngine === 'zenith') && (
+            <div className="px-3.5 py-1.5 rounded-xl border border-purple-200 bg-purple-50 text-xs font-bold text-purple-900">
+              <span>Zenith Engine: <strong>{allocatedSlotCount} API Slots</strong> ({tenantAccounts.length} / {allocatedSlotCount * 2} Channels)</span>
+            </div>
+          )}
         </div>
       </div>
 

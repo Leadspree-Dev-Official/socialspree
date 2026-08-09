@@ -103,6 +103,8 @@ export interface SubscriptionPlan {
   isPopular?: boolean;
 }
 
+export type EngineChoice = 'zenith' | 'coresync' | 'dual';
+
 export interface SystemSettings {
   currency: CurrencyCode;
   currencySymbol: string; // '$', '₹', '£'
@@ -110,7 +112,8 @@ export interface SystemSettings {
   supportEmail: string;
   aiApiKey?: string;
   composioApiKey?: string;
-  dispatchEngine?: 'zernio' | 'composio';
+  dispatchEngine?: EngineChoice;
+  defaultDispatchEngine?: EngineChoice;
   defaultAiCredits?: number;
   websiteEnabled?: boolean;
   agencyModeEnabled?: boolean;
@@ -125,7 +128,10 @@ export interface Tenant {
   apiKey: string; // Master Primary API Key
   tierPlan: 'free' | 'pro' | 'agency' | string;
   planId?: string;
-  dispatchEngine?: 'zernio' | 'composio';
+  dispatchEngine?: EngineChoice;
+  enabledEngines?: ('zenith' | 'coresync')[];
+  agencySlotBundleLimit?: number;
+  agencyMaxBrands?: number;
   composioApiKey?: string;
   allocatedApiSlots: number; // Number of 2-channel API keys allocated by Super Admin
   maxSocialAccounts: number; // allocatedApiSlots * 2
