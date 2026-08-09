@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useClerk } from '@clerk/react';
+import React, { useState, useEffect } from 'react';
+import { useClerk, useUser } from '@clerk/react';
 import { Tenant, CloudinaryConfig, CloudinaryAccountItem } from '../../types';
 import { auth, type Profile } from '../../lib/api';
 import { 
@@ -50,7 +50,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   initialTab = 'user'
 }) => {
   const clerk = useClerk();
+  const { user: clerkUser } = useUser();
   const [activeTab, setActiveTab] = useState<'user' | 'storage' | 'api' | 'social_keys' | 'org' | 'chatgpt'>(initialTab);
+
+  const clerkEmail = clerkUser?.primaryEmailAddress?.emailAddress;
+  const clerkName = clerkUser?.fullName || (clerkUser?.firstName ? `${clerkUser.firstName}${clerkUser.lastName ? ' ' + clerkUser.lastName : ''}` : undefined) || clerkUser?.username;
+  const clerkAvatar = clerkUser?.imageUrl;
 
   // Cloudinary Local State (Multiple Accounts with 3 Fields: Cloud Name, Upload Preset, Bucket Name)
   const cldConfig = tenant.cloudinaryConfig || GLOBAL_DEFAULT_CLOUDINARY;
@@ -72,9 +77,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   const [ownerEmail, setOwnerEmail] = useState(tenant.ownerEmail);
 
   // User Profile Local State
-  const [fullName, setFullName] = useState(userProfile?.fullName || tenant.ownerEmail.split('@')[0] || 'User');
-  const [userEmail] = useState(userProfile?.email || tenant.ownerEmail);
-  const [avatarUrl, setAvatarUrl] = useState(userProfile?.avatarUrl || '');
+  const [fullName, setFullName] = useState(clerkName || userProfile?.fullName || tenant.ownerEmail.split('@')[0] || 'User');
+  const [userEmail, setUserEmail] = useState(clerkEmail || userProfile?.email || tenant.ownerEmail);
+  const [avatarUrl, setAvatarUrl] = useState(userProfile?.avatarUrl || clerkAvatar || '');
   const [jobTitle, setJobTitle] = useState(userProfile?.jobTitle || 'Social Media Manager');
   const [timezone, setTimezone] = useState(userProfile?.timezone || 'UTC');
   const [notifications, setNotifications] = useState(userProfile?.notifications || {
@@ -82,6 +87,19 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     postFailureAlerts: true,
     securityAlerts: true,
   });
+
+  // Sync state when Clerk user loads
+  useEffect(() => {
+    if (clerkName && (!fullName || fullName === 'leadspree24x7' || fullName === 'User')) {
+      setFullName(clerkName);
+    }
+    if (clerkEmail && (!userEmail || userEmail === 'leadspree24x7@gmail.com')) {
+      setUserEmail(clerkEmail);
+    }
+    if (clerkAvatar && !avatarUrl) {
+      setAvatarUrl(clerkAvatar);
+    }
+  }, [clerkName, clerkEmail, clerkAvatar]);
 
   // Profile Save State
   const [profileSaving, setProfileSaving] = useState(false);
