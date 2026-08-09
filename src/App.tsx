@@ -10,6 +10,7 @@ import {
   GLOBAL_DEFAULT_CLOUDINARY,
   GLOBAL_SYSTEM_SETTINGS,
   getStoredTenants,
+  saveStoredTenants,
   getStoredAccounts,
   getStoredPosts,
   getStoredPlans,
@@ -221,6 +222,12 @@ export function App() {
       }));
 
       let allTenants = cloud.tenants.length > 0 ? cloud.tenants : getStoredTenants();
+
+      // Ensure Master Super Admin tenant is always included in allTenants
+      if (!allTenants.some(t => t.ownerEmail === SUPER_ADMIN_EMAIL)) {
+        allTenants = [INITIAL_TENANTS[0], ...allTenants];
+      }
+
       let userTenants: Tenant[];
 
       if (isSuperAdmin) {
@@ -240,18 +247,25 @@ export function App() {
           allocatedApiSlots: 1,
           maxSocialAccounts: 2,
           aiCredits: 1000,
-          apiSlotDetails: [],
+          apiSlotDetails: [
+            { id: `slot-${crypto.randomUUID().slice(0, 8)}`, slotNumber: 1, slotName: 'API 1', provider: 'zernio', apiKey: '', maxChannels: 2, connectedAccountIds: [] }
+          ],
           cloudinaryConfig: { ...GLOBAL_DEFAULT_CLOUDINARY },
           status: 'active',
+          paymentStatus: 'paid',
+          billingCycle: 'monthly',
           createdAt: new Date().toISOString()
         };
         userTenants = [newPersonalTenant];
-        allTenants = [newPersonalTenant, ...allTenants];
+        allTenants = [...allTenants, newPersonalTenant];
+        saveStoredTenants(allTenants);
         void cloudTenants.save(newPersonalTenant).catch(() => {});
+      } else {
+        saveStoredTenants(allTenants);
       }
 
       setProfile(userProfile);
-      setTenants(isSuperAdmin ? allTenants : userTenants);
+      setTenants(allTenants);
       setCurrentTenant(userTenants[0]);
       setAccounts(cloud.accounts);
       setPosts(cloud.posts);
