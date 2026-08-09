@@ -221,7 +221,61 @@ export function App() {
         media: []
       }));
 
-      let allTenants = cloud.tenants.length > 0 ? cloud.tenants : getStoredTenants();
+      const cloudList = cloud.tenants || [];
+      const localList = getStoredTenants() || [];
+
+      // Merge by tenant ID and ownerEmail so no registered tenant is ever missed
+      const mergedMap = new Map<string, Tenant>();
+      for (const t of INITIAL_TENANTS) {
+        mergedMap.set(t.id, t);
+        if (t.ownerEmail) mergedMap.set(t.ownerEmail.toLowerCase(), t);
+      }
+      for (const t of localList) {
+        mergedMap.set(t.id, t);
+        if (t.ownerEmail) mergedMap.set(t.ownerEmail.toLowerCase(), t);
+      }
+      for (const t of cloudList) {
+        mergedMap.set(t.id, t);
+        if (t.ownerEmail) mergedMap.set(t.ownerEmail.toLowerCase(), t);
+      }
+
+      let allTenants = Array.from(new Set(mergedMap.values()));
+
+      // Also check Supabase profiles table for any signed-up users lacking a tenant entry
+      try {
+        const { data: dbProfiles } = await supabase.from('profiles').select('*');
+        if (dbProfiles && dbProfiles.length > 0) {
+          for (const p of dbProfiles) {
+            if (!p.email) continue;
+            const emailLower = p.email.toLowerCase();
+            const existing = allTenants.find(t => t.ownerEmail.toLowerCase() === emailLower);
+            if (!existing) {
+              const generatedTenant: Tenant = {
+                id: p.tenant_id || crypto.randomUUID(),
+                name: `${p.full_name || emailLower.split('@')[0]}'s Workspace`,
+                ownerEmail: emailLower,
+                apiKey: `spree_${crypto.randomUUID()}`,
+                tierPlan: 'free',
+                allocatedApiSlots: 1,
+                maxSocialAccounts: 2,
+                aiCredits: 1000,
+                apiSlotDetails: [
+                  { id: `slot-${crypto.randomUUID().slice(0, 8)}`, slotNumber: 1, slotName: 'API 1', provider: 'zernio', apiKey: '', maxChannels: 2, connectedAccountIds: [] }
+                ],
+                cloudinaryConfig: { ...GLOBAL_DEFAULT_CLOUDINARY },
+                status: 'active',
+                paymentStatus: 'paid',
+                billingCycle: 'monthly',
+                createdAt: p.created_at || new Date().toISOString()
+              };
+              allTenants.push(generatedTenant);
+              void cloudTenants.save(generatedTenant).catch(() => {});
+            }
+          }
+        }
+      } catch {
+        /* ignore network failures */
+      }
 
       // Ensure Master Super Admin tenant is always included in allTenants
       if (!allTenants.some(t => t.ownerEmail === SUPER_ADMIN_EMAIL)) {
