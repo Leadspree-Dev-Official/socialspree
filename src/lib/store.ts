@@ -408,7 +408,10 @@ export const saveStoredTenants = (tenants: Tenant[]) => {
 export const getStoredPlans = (): SubscriptionPlan[] => {
   try {
     const raw = localStorage.getItem(STORAGE_KEYS.PLANS);
-    return raw ? JSON.parse(raw) : INITIAL_PLANS;
+    if (!raw) return INITIAL_PLANS;
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed) || !parsed.some((p: any) => p.targetRole)) return INITIAL_PLANS;
+    return parsed;
   } catch {
     return INITIAL_PLANS;
   }

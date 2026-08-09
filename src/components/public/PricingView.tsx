@@ -127,13 +127,14 @@ export const PricingView: React.FC<PricingViewProps> = ({
 
   const [selectedRoleTab, setSelectedRoleTab] = useState<'all' | 'business_user' | 'influencer' | 'agency'>('business_user');
 
-  const rawPlans = Array.isArray(plans) && plans.length > 0 ? plans : INITIAL_PLANS;
+  const rawPlans = (Array.isArray(plans) && plans.length > 0 && plans.some(p => p.targetRole)) ? plans : INITIAL_PLANS;
   
   // Filter plans based on category tab
   const filteredPlans = rawPlans.filter((p: SubscriptionPlan) => {
+    const role = p.targetRole || (p.priceMonthly === 0 ? 'free' : p.priceMonthly < 300 ? 'business_user' : 'agency');
     if (selectedRoleTab === 'all') return true;
-    if (selectedRoleTab === 'business_user') return p.targetRole === 'business_user' || p.targetRole === 'free';
-    return p.targetRole === selectedRoleTab;
+    if (selectedRoleTab === 'business_user') return role === 'business_user' || role === 'free';
+    return role === selectedRoleTab;
   });
 
   const displayPlans = filteredPlans.map((p: SubscriptionPlan) => ({
