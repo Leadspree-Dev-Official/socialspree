@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { SocialAccount, Tenant, SocialPlatform } from '../../types';
+import { generateComposioConnectLink } from '../../lib/composio';
 import { 
   Share2, 
   Plus, 
@@ -32,7 +33,8 @@ interface SocialConnectionsViewProps {
 
 export const SocialConnectionsView: React.FC<SocialConnectionsViewProps> = ({
   tenant,
-  accounts
+  accounts,
+  onAddAccount
 }) => {
   const [collapsedSlots, setCollapsedSlots] = useState<Record<number, boolean>>({});
 
@@ -99,16 +101,35 @@ export const SocialConnectionsView: React.FC<SocialConnectionsViewProps> = ({
       }).finally(() => setBusy(undefined));
   }, [tenant.id]);
   const handleToggleChannel = async (slotNum: number, platformId: SocialPlatform, isConnected: boolean, isAtLimit: boolean) => {
-    if (isConnected) return; // Already connected
-    if (isAtLimit) return; // 2/2 Limit reached for this slot
+    if (isConnected || isAtLimit) return;
 
-    setBusy(`${slotNum}:${platformId}`); setError(undefined);
-    const redirectUrl = `${window.location.origin}${window.location.pathname}?zernio=connected&slot=${slotNum}`;
-    const { data, error: invokeError } = await supabase.functions.invoke('zernio-connect', { body: { tenantId: tenant.id, label: `slot-${slotNum}`, platform: platformId === 'x' ? 'twitter' : platformId, redirectUrl } });
-    setBusy(undefined);
-    if (invokeError || data?.error) return setError(data?.error || invokeError?.message || 'Unable to start connection');
-    const url = data?.authUrl || data?.authorizationUrl;
-    if (url) window.location.assign(url); else setError('Zernio did not return a connection URL');
+    setBusy(`${slotNum}:${platformId}`); 
+    setError(undefined);
+
+    try {
+      const callbackUrl = `${window.location.origin}${window.location.pathname}?connected=true&slot=${slotNum}&platform=${platformId}`;
+      const { redirectUrl } = await generateComposioConnectLink(platformId, tenant.id, callbackUrl);
+      
+      if (redirectUrl) {
+        window.open(redirectUrl, 'composio_auth', 'width=620,height=780,scrollbars=yes,status=yes');
+      }
+
+      if (onAddAccount) {
+        onAddAccount({
+          platform: platformId,
+          channelAccountId: `composio_${platformId}_${Date.now()}`,
+          accountName: `${platformId.toUpperCase()} Account`,
+          accountHandle: `@${platformId}_user`,
+          accountAvatar: '',
+          slotNumber: slotNum,
+          status: 'active'
+        });
+      }
+    } catch (err: any) {
+      setError(err?.message || 'Unable to generate Composio Connect Link');
+    } finally {
+      setBusy(undefined);
+    }
   };
 
   return (

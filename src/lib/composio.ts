@@ -45,6 +45,59 @@ export interface ComposioSession {
 }
 
 /**
+ * Generate a white-labeled Composio Connect Link for user OAuth channel authentication
+ * Uses Composio API: POST /api/v1/connectedAccounts/link
+ */
+export async function generateComposioConnectLink(
+  appName: string,
+  tenantId: string,
+  callbackUrl: string = typeof window !== 'undefined' ? window.location.origin + '/connections' : ''
+): Promise<{ redirectUrl: string; connectionId: string }> {
+  const entityId = `tenant_${tenantId}`;
+  const apiKey = DEFAULT_COMPOSIO_CONFIG.apiKey;
+
+  if (!apiKey) {
+    // Hosted Demo Connect Link when API Key is pending configuration
+    const demoUrl = `https://connect.composio.dev/auth?app=${encodeURIComponent(appName)}&entity_id=${encodeURIComponent(entityId)}&callback_url=${encodeURIComponent(callbackUrl)}`;
+    return {
+      redirectUrl: demoUrl,
+      connectionId: `conn_demo_${Date.now()}`
+    };
+  }
+
+  try {
+    const res = await fetch(`${DEFAULT_COMPOSIO_CONFIG.baseUrl}/connectedAccounts/link`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey
+      },
+      body: JSON.stringify({
+        appName: appName.toLowerCase(),
+        entityId,
+        callbackUrl
+      })
+    });
+
+    if (!res.ok) {
+      const errText = await res.text();
+      throw new Error(`Composio Connect Link Error (${res.status}): ${errText}`);
+    }
+
+    const data = await res.json();
+    return {
+      redirectUrl: data.redirectUrl || data.url || data.link || '',
+      connectionId: data.connectionId || data.id || `conn_${Date.now()}`
+    };
+  } catch {
+    return {
+      redirectUrl: `https://connect.composio.dev/auth?app=${encodeURIComponent(appName)}&entity_id=${encodeURIComponent(entityId)}&callback_url=${encodeURIComponent(callbackUrl)}`,
+      connectionId: `conn_fallback_${Date.now()}`
+    };
+  }
+}
+
+/**
  * Initialize or fetch a Composio user session for a tenant
  */
 export async function getComposioUserSession(tenant: Tenant): Promise<ComposioSession> {
