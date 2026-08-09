@@ -97,10 +97,10 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
         </div>
 
         {/* Main 2-Column Responsive Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-6 lg:gap-8 items-start">
           
           {/* Left Column (5 Cols): Account Verification & Plan Details Summary */}
-          <div className="lg:col-span-5 space-y-6">
+          <div className="md:col-span-5 space-y-6">
             
             {/* 1. Account Authentication Requirement Card */}
             <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-md space-y-4 relative overflow-hidden">
@@ -216,7 +216,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
           </div>
 
           {/* Right Column (7 Cols): Payment Methods Hierarchy */}
-          <div className="lg:col-span-7 space-y-6">
+          <div className="md:col-span-7 space-y-6">
             
             {/* Payment Method Selector Tabs */}
             <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-md space-y-6">
