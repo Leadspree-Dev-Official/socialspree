@@ -95,8 +95,8 @@ export const PricingCalculator: React.FC<PricingCalculatorProps> = ({
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
-        {/* Left Panel: Inputs */}
+      <div className="flex flex-col gap-8 max-w-4xl mx-auto">
+        {/* Top Panel: Inputs */}
         <div className="bg-slate-50 p-6 md:p-8 rounded-3xl border border-slate-200 shadow-sm transition-all duration-300 hover:shadow-md">
           <h3 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2">
             <Sliders className="w-5 h-5 text-[#5D3FD3]" />
@@ -225,7 +225,8 @@ export const PricingCalculator: React.FC<PricingCalculatorProps> = ({
           </div>
         </div>
 
-        <div className="lg:col-span-5 relative p-[2px] rounded-3xl bg-gradient-to-br from-[#5D3FD3] to-[#0066FF] shadow-xl overflow-hidden h-full">
+        {/* Bottom Panel: Recommended Result */}
+        <div className="w-full relative p-[2px] rounded-3xl bg-gradient-to-br from-[#5D3FD3] to-[#0066FF] shadow-xl overflow-hidden">
           <div className="absolute inset-0 bg-white/10 backdrop-blur-3xl z-0"></div>
           <div className="relative z-10 bg-white/95 h-full rounded-[23px] p-6 md:p-8 flex flex-col justify-between">
             <div>
