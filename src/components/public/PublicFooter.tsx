@@ -1,15 +1,13 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { Sparkles, ShieldCheck, Heart, LayoutDashboard, Instagram, Linkedin, Twitter, Youtube, Video, Facebook } from 'lucide-react';
-import { PublicSubView } from './PublicNavbar';
 import { SUPER_ADMIN_EMAIL } from '../../lib/store';
 
 interface PublicFooterProps {
-  onNavigate: (view: PublicSubView) => void;
   onLaunchApp: () => void;
 }
 
 export const PublicFooter: React.FC<PublicFooterProps> = ({
-  onNavigate,
   onLaunchApp,
 }) => {
   return (
@@ -21,7 +19,7 @@ export const PublicFooter: React.FC<PublicFooterProps> = ({
           
           {/* Brand Info (5 Cols) */}
           <div className="md:col-span-5 space-y-4">
-            <div className="flex items-center gap-3 cursor-pointer" onClick={() => onNavigate('landing')}>
+            <Link to="/" className="flex items-center gap-3 cursor-pointer no-underline">
               <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-[#5D3FD3] via-[#0066FF] to-purple-400 text-white flex items-center justify-center font-black text-xl shadow-lg">
                 SS
               </div>
@@ -34,7 +32,7 @@ export const PublicFooter: React.FC<PublicFooterProps> = ({
                 </div>
                 <p className="text-xs text-slate-400 font-medium">Multi-Channel SaaS Publishing Engine</p>
               </div>
-            </div>
+            </Link>
 
             <p className="text-xs text-slate-400 leading-relaxed max-w-sm">
               Empowering agencies and multi-brand managers with isolated 2-channel API slots, Cloudflare R2 media distribution, and AI-driven social automation.
@@ -69,31 +67,36 @@ export const PublicFooter: React.FC<PublicFooterProps> = ({
             <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-slate-200">
               Platform Navigation
             </h4>
-            <ul className="space-y-2 text-xs">
+            <ul className="space-y-2 text-xs list-none p-0 m-0">
               <li>
-                <button onClick={() => onNavigate('landing')} className="hover:text-purple-400 transition-colors">
+                <Link to="/" className="hover:text-purple-400 transition-colors no-underline text-slate-400">
                   Home Overview
-                </button>
+                </Link>
               </li>
               <li>
-                <button onClick={() => onNavigate('features')} className="hover:text-purple-400 transition-colors">
+                <Link to="/features" className="hover:text-purple-400 transition-colors no-underline text-slate-400">
                   6 Core Feature Pillars
-                </button>
+                </Link>
               </li>
               <li>
-                <button onClick={() => onNavigate('pricing')} className="hover:text-purple-400 transition-colors">
+                <Link to="/pricing" className="hover:text-purple-400 transition-colors no-underline text-slate-400">
                   Interactive Plans & Pricing
-                </button>
+                </Link>
               </li>
               <li>
-                <button onClick={() => onNavigate('testimonials')} className="hover:text-purple-400 transition-colors">
+                <Link to="/testimonials" className="hover:text-purple-400 transition-colors no-underline text-slate-400">
                   Agency Reviews & FAQ
-                </button>
+                </Link>
               </li>
               <li>
-                <button onClick={() => onNavigate('about')} className="hover:text-purple-400 transition-colors">
+                <Link to="/docs" className="hover:text-purple-400 transition-colors no-underline text-slate-400">
+                  Documentation Hub
+                </Link>
+              </li>
+              <li>
+                <Link to="/about" className="hover:text-purple-400 transition-colors no-underline text-slate-400">
                   About & Contact Support
-                </button>
+                </Link>
               </li>
             </ul>
           </div>

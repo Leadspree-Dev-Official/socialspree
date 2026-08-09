@@ -137,7 +137,7 @@ export const FeaturesView: React.FC<FeaturesViewProps> = ({
   const currentFeature = featurePillars[selectedFeatureIndex];
 
   return (
-    <div className="py-16 sm:py-24 bg-gradient-to-b from-slate-50 to-white font-['Inter']" id="features">
+    <div className="py-16 sm:py-24 bg-gradient-to-b from-slate-50 to-white font-['Inter']">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Section Title */}

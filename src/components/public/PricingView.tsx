@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { SubscriptionPlan, CurrencyCode } from '../../types';
 import { INITIAL_PLANS } from '../../lib/store';
 import { Check, Sparkles, Zap, ShieldCheck, ArrowRight, HelpCircle } from 'lucide-react';
+import { PricingCalculator } from './PricingCalculator';
 
 interface PricingViewProps {
   plans: SubscriptionPlan[];
@@ -83,7 +84,7 @@ export const PricingView: React.FC<PricingViewProps> = ({
   }));
 
   return (
-    <section className="py-16 sm:py-24 bg-gradient-to-b from-white via-purple-50/30 to-slate-50 font-['Inter']" id="pricing">
+    <section className="py-16 sm:py-24 bg-gradient-to-b from-white via-purple-50/30 to-slate-50 font-['Inter']">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Title Header */}
@@ -96,8 +97,18 @@ export const PricingView: React.FC<PricingViewProps> = ({
             Plans Built for Business Users, Influencers & Agencies
           </h2>
           <p className="text-slate-600 font-medium text-base sm:text-lg">
-            Select your account role below to explore tailored monthly & annual pricing plans.
+            Use the calculator below to find your perfect plan, or browse all plans by role.
           </p>
+        </div>
+
+        {/* Pricing Calculator */}
+        <div className="mt-12">
+          <PricingCalculator
+            plans={rawPlans}
+            selectedCurrency={selectedCurrency}
+            currencyConfigs={currencyConfigs}
+            onOpenCheckout={onOpenCheckout}
+          />
         </div>
 
         {/* Currency Switcher (INR First) */}

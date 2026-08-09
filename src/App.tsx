@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Routes, Route, useNavigate } from 'react-router-dom';
 import { useUser, useClerk, useSession } from '@clerk/react';
 import { Tenant, SocialAccount, Post, PostLog, GoogleReview, CloudinaryConfig, ApiAllocationSlot, AiCreditLog, SubscriptionPlan, CurrencyCode, MediaAsset, AgencyBrand } from './types';
 import { 
@@ -40,12 +41,13 @@ import { SuperAdminPortal, SuperAdminSubTab } from './components/admin/SuperAdmi
 import { SettingsView } from './components/settings/SettingsView';
 import { HelpCenterView } from './components/help/HelpCenterView';
 
-import { PublicNavbar, PublicSubView } from './components/public/PublicNavbar';
+import { PublicNavbar } from './components/public/PublicNavbar';
 import { LandingHero } from './components/public/LandingHero';
 import { FeaturesView } from './components/public/FeaturesView';
 import { PricingView } from './components/public/PricingView';
 import { TestimonialsView } from './components/public/TestimonialsView';
 import { AboutContactView } from './components/public/AboutContactView';
+import { DocsView } from './components/public/DocsView';
 import { PublicFooter } from './components/public/PublicFooter';
 import { CheckoutModal } from './components/payment/CheckoutModal';
 import { AuthGate } from './components/auth/AuthGate';
@@ -74,10 +76,12 @@ export function App() {
     return () => setClerkTokenProvider(null);
   }, [session]);
 
+  const navigate = useNavigate();
+
   const getInitialTabFromPath = (): { tab: TabType; view: 'public' | 'auth' | 'app' } => {
     if (typeof window === 'undefined') return { tab: 'dashboard', view: 'public' };
     const path = window.location.pathname.replace(/^\/+|\/+$/g, '');
-    if (!path) return { tab: 'dashboard', view: 'public' };
+    if (!path || path === 'features' || path === 'pricing' || path === 'testimonials' || path === 'about' || path === 'docs') return { tab: 'dashboard', view: 'public' };
     if (path === 'login' || path === 'auth' || path === 'sign-in') return { tab: 'dashboard', view: 'auth' };
     if (path === 'admin') return { tab: 'admin', view: 'app' };
     if (path === 'infludash' || path === 'influencer' || path === 'agency' || path === 'dashboard') {
@@ -94,7 +98,6 @@ export function App() {
 
   // Public vs App View Mode Router State
   const [viewMode, setViewMode] = useState<'public' | 'auth' | 'app'>(initialRoute.view);
-  const [publicSubView, setPublicSubView] = useState<PublicSubView>('landing');
   const [profile, setProfile] = useState<Profile | null>(null);
   const [cloudLoading, setCloudLoading] = useState(false);
   const [cloudError, setCloudError] = useState('');
@@ -116,13 +119,17 @@ export function App() {
   const [activeTab, setActiveTab] = useState<TabType>(initialRoute.tab);
   const [adminSubTab, setAdminSubTab] = useState<SuperAdminSubTab>('dashboard');
 
-  // Keep browser URL pathname synced with view mode, active tab, and role
+  // Keep browser URL pathname synced with view mode, active tab, and role (app mode only)
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    let targetPath = '/';
+    // Only sync URL for auth and app modes — public mode uses react-router
     if (viewMode === 'auth') {
-      targetPath = '/login';
+      const targetPath = '/login';
+      if (window.location.pathname !== targetPath) {
+        window.history.pushState({}, '', targetPath);
+      }
     } else if (viewMode === 'app') {
+      let targetPath: string;
       if (activeTab === 'admin' || profile?.isSuperAdmin || profile?.role === 'super_admin') {
         targetPath = '/admin';
       } else if (activeTab === 'dashboard') {
@@ -136,9 +143,9 @@ export function App() {
       } else {
         targetPath = `/${activeTab}`;
       }
-    }
-    if (window.location.pathname !== targetPath) {
-      window.history.pushState({}, '', targetPath);
+      if (window.location.pathname !== targetPath) {
+        window.history.pushState({}, '', targetPath);
+      }
     }
   }, [viewMode, activeTab, profile?.role, profile?.isSuperAdmin]);
 
@@ -301,23 +308,7 @@ export function App() {
     setMediaAssets(updated);
   };
 
-  // Public Navigation Handlers
-  const handleNavigatePublic = (view: PublicSubView) => {
-    setViewMode('public');
-    setPublicSubView(view);
-    setTimeout(() => {
-      if (view === 'landing') {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      } else {
-        const elem = document.getElementById(view);
-        if (elem) {
-          elem.scrollIntoView({ behavior: 'smooth' });
-        } else {
-          window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-      }
-    }, 50);
-  };
+  // Public Navigation — no longer needed, react-router handles it
 
   const handleLaunchApp = async () => {
     setCloudLoading(true);
@@ -725,40 +716,46 @@ export function App() {
           <div>
             {cloudError && <div className="fixed top-4 left-1/2 z-50 -translate-x-1/2 rounded-xl bg-red-50 px-4 py-3 text-sm font-semibold text-red-700 shadow">{cloudError}</div>}
             <AuthGate
-              onCancel={() => { setCloudError(''); setViewMode('public'); }}
+              onCancel={() => { setCloudError(''); setViewMode('public'); navigate('/'); }}
             />
           </div>
         )
       ) : viewMode === 'public' ? (
-        /* Public Marketing Landing View Mode */
+        /* Public Marketing Pages — React Router */
         <div className="min-h-screen flex flex-col">
           <PublicNavbar
-            currentPublicView={publicSubView}
-            onNavigate={handleNavigatePublic}
             onLaunchApp={handleLaunchApp}
             onOpenCheckout={(planId) => handleOpenCheckout(planId)}
           />
 
           <main className="flex-1">
-            <LandingHero
-              onNavigate={handleNavigatePublic}
-              onLaunchApp={handleLaunchApp}
-              onOpenCheckout={(planId) => handleOpenCheckout(planId)}
-            />
-            <FeaturesView
-              onOpenCheckout={(planId) => handleOpenCheckout(planId)}
-              onLaunchApp={handleLaunchApp}
-            />
-            <PricingView
-              plans={getStoredPlans()}
-              onOpenCheckout={(planId, cycle, curr, sym) => handleOpenCheckout(planId, cycle, curr, sym)}
-            />
-            <TestimonialsView />
-            <AboutContactView />
+            <Routes>
+              <Route path="/" element={
+                <LandingHero
+                  onNavigate={(view) => navigate(`/${view === 'landing' ? '' : view}`)}
+                  onLaunchApp={handleLaunchApp}
+                  onOpenCheckout={(planId) => handleOpenCheckout(planId)}
+                />
+              } />
+              <Route path="/features" element={
+                <FeaturesView
+                  onOpenCheckout={(planId) => handleOpenCheckout(planId)}
+                  onLaunchApp={handleLaunchApp}
+                />
+              } />
+              <Route path="/pricing" element={
+                <PricingView
+                  plans={getStoredPlans()}
+                  onOpenCheckout={(planId, cycle, curr, sym) => handleOpenCheckout(planId, cycle, curr, sym)}
+                />
+              } />
+              <Route path="/testimonials" element={<TestimonialsView />} />
+              <Route path="/docs" element={<DocsView />} />
+              <Route path="/about" element={<AboutContactView />} />
+            </Routes>
           </main>
 
           <PublicFooter
-            onNavigate={handleNavigatePublic}
             onLaunchApp={handleLaunchApp}
           />
         </div>
@@ -773,7 +770,7 @@ export function App() {
             isInfluencerMode={GLOBAL_SYSTEM_SETTINGS.influencerModeEnabled || currentTenant.tierPlan === 'pro'}
             activeAdminSubTab={adminSubTab}
             onSelectAdminSubTab={setAdminSubTab}
-            onReturnToPublic={() => setViewMode('public')}
+            onReturnToPublic={() => { setViewMode('public'); navigate('/'); }}
             userFullName={profile?.fullName || undefined}
             userEmail={profile?.email || undefined}
             userRole={profile?.role || undefined}
@@ -793,7 +790,7 @@ export function App() {
               isSuperAdminMode={isSuperAdminMode}
               onToggleSuperAdmin={handleToggleSuperAdmin}
               pageTitle={getPageTitle(activeTab)}
-              onReturnToPublic={() => setViewMode('public')}
+              onReturnToPublic={() => { setViewMode('public'); navigate('/'); }}
               onSignOut={handleSignOut}
               userEmail={profile?.email || SUPER_ADMIN_EMAIL}
               userProfile={profile}
@@ -981,7 +978,7 @@ export function App() {
           </div>
         </div>
       ) : (
-        <AuthGate onCancel={() => { setCloudError(''); setViewMode('public'); }} />
+        <AuthGate onCancel={() => { setCloudError(''); setViewMode('public'); navigate('/'); }} />
       )}
 
       {/* Dual Payment Modal */}

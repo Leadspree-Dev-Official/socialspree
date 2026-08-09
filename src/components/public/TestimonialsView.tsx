@@ -65,7 +65,7 @@ export const TestimonialsView: React.FC = () => {
   ];
 
   return (
-    <div className="py-16 sm:py-24 bg-gradient-to-b from-slate-50 via-white to-purple-50/20 font-['Inter']" id="testimonials">
+    <div className="py-16 sm:py-24 bg-gradient-to-b from-slate-50 via-white to-purple-50/20 font-['Inter']">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Header */}

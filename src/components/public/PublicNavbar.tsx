@@ -1,37 +1,30 @@
 import React, { useState } from 'react';
+import { NavLink, Link } from 'react-router-dom';
 import { Show, SignInButton, SignUpButton, UserButton } from '@clerk/react';
-import { Sparkles, Menu, X, ArrowRight, LayoutDashboard, ShieldCheck } from 'lucide-react';
+import { Sparkles, Menu, X, ArrowRight, LayoutDashboard, BookOpen } from 'lucide-react';
 
 
-export type PublicSubView = 'landing' | 'features' | 'pricing' | 'testimonials' | 'about';
+export type PublicSubView = 'landing' | 'features' | 'pricing' | 'testimonials' | 'about' | 'docs';
 
 interface PublicNavbarProps {
-  currentPublicView: PublicSubView;
-  onNavigate: (view: PublicSubView) => void;
   onLaunchApp: () => void;
   onOpenCheckout: (planId?: string) => void;
 }
 
+const navItems: { path: string; label: string }[] = [
+  { path: '/', label: 'Home' },
+  { path: '/features', label: 'Features' },
+  { path: '/pricing', label: 'Pricing' },
+  { path: '/testimonials', label: 'Testimonials' },
+  { path: '/docs', label: 'Docs' },
+  { path: '/about', label: 'About & Contact' },
+];
+
 export const PublicNavbar: React.FC<PublicNavbarProps> = ({
-  currentPublicView,
-  onNavigate,
   onLaunchApp,
   onOpenCheckout,
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
-  const navItems: { id: PublicSubView; label: string }[] = [
-    { id: 'landing', label: 'Home' },
-    { id: 'features', label: 'Features' },
-    { id: 'pricing', label: 'Pricing' },
-    { id: 'testimonials', label: 'Testimonials' },
-    { id: 'about', label: 'About & Contact' },
-  ];
-
-  const handleNavClick = (view: PublicSubView) => {
-    onNavigate(view);
-    setMobileMenuOpen(false);
-  };
 
   return (
     <header className="sticky top-0 z-50 bg-white/85 backdrop-blur-xl border-b border-slate-200/80 font-['Inter'] transition-all">
@@ -39,9 +32,9 @@ export const PublicNavbar: React.FC<PublicNavbarProps> = ({
         <div className="flex items-center justify-between h-20">
           
           {/* Logo & Brand Badge */}
-          <div 
-            className="flex items-center gap-3 cursor-pointer group"
-            onClick={() => onNavigate('landing')}
+          <Link 
+            to="/"
+            className="flex items-center gap-3 cursor-pointer group no-underline"
           >
             <img 
               src="/logo.png" 
@@ -62,26 +55,26 @@ export const PublicNavbar: React.FC<PublicNavbarProps> = ({
                 </span>
               </div>
             </div>
-          </div>
+          </Link>
 
           {/* Desktop Navigation Links */}
           <nav className="hidden md:flex items-center gap-1 bg-slate-100/70 p-1.5 rounded-2xl border border-slate-200/60">
-            {navItems.map((item) => {
-              const isActive = currentPublicView === item.id;
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => handleNavClick(item.id)}
-                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+            {navItems.map((item) => (
+              <NavLink
+                key={item.path}
+                to={item.path}
+                end={item.path === '/'}
+                className={({ isActive }) =>
+                  `px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer no-underline ${
                     isActive
                       ? 'bg-white text-[#5D3FD3] shadow-sm border border-purple-200 font-extrabold'
                       : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
-                  }`}
-                >
-                  {item.label}
-                </button>
-              );
-            })}
+                  }`
+                }
+              >
+                {item.label}
+              </NavLink>
+            ))}
           </nav>
 
           {/* Desktop Right CTAs */}
@@ -148,17 +141,21 @@ export const PublicNavbar: React.FC<PublicNavbarProps> = ({
         <div className="md:hidden bg-white border-b border-slate-200 px-4 py-6 space-y-4 shadow-xl">
           <div className="flex flex-col gap-2">
             {navItems.map((item) => (
-              <button
-                key={item.id}
-                onClick={() => handleNavClick(item.id)}
-                className={`text-left px-4 py-3 rounded-xl text-sm font-bold transition-all ${
-                  currentPublicView === item.id
-                    ? 'bg-purple-50 text-[#5D3FD3] border border-purple-100'
-                    : 'text-slate-700 hover:bg-slate-50'
-                }`}
+              <NavLink
+                key={item.path}
+                to={item.path}
+                end={item.path === '/'}
+                onClick={() => setMobileMenuOpen(false)}
+                className={({ isActive }) =>
+                  `text-left px-4 py-3 rounded-xl text-sm font-bold transition-all no-underline ${
+                    isActive
+                      ? 'bg-purple-50 text-[#5D3FD3] border border-purple-100'
+                      : 'text-slate-700 hover:bg-slate-50'
+                  }`
+                }
               >
                 {item.label}
-              </button>
+              </NavLink>
             ))}
           </div>
 

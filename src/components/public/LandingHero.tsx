@@ -16,10 +16,9 @@ import {
   Layers,
   Smartphone
 } from 'lucide-react';
-import { PublicSubView } from './PublicNavbar';
 
 interface LandingHeroProps {
-  onNavigate: (view: PublicSubView) => void;
+  onNavigate: (view: string) => void;
   onLaunchApp: () => void;
   onOpenCheckout: (planId?: string) => void;
 }
@@ -43,7 +42,7 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
   const currentPlatform = platforms.find(p => p.id === activePreviewTab) || platforms[0];
 
   return (
-    <section id="landing" className="relative overflow-hidden pt-12 pb-24 lg:pt-20 lg:pb-32 bg-gradient-to-b from-purple-50/60 via-slate-50/40 to-white font-['Inter']">
+    <section className="relative overflow-hidden pt-12 pb-24 lg:pt-20 lg:pb-32 bg-gradient-to-b from-purple-50/60 via-slate-50/40 to-white font-['Inter']">
       
       {/* Background Radial Glow Decorations */}
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[500px] bg-gradient-to-tr from-purple-300/30 to-blue-300/30 rounded-full blur-3xl -z-10 pointer-events-none" />
