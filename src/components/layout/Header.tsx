@@ -101,8 +101,8 @@ export const Header: React.FC<HeaderProps> = ({
 
         <div className="h-6 w-px bg-slate-200 mx-1 hidden sm:block"></div>
 
-        {/* User Profile Avatar & Details Button with Clerk UserButton */}
-        <div className="flex items-center gap-2.5">
+        {/* User Account Quick Switcher */}
+        <div className="flex items-center gap-2">
           <UserButton 
             appearance={{
               elements: {
@@ -110,32 +110,6 @@ export const Header: React.FC<HeaderProps> = ({
               }
             }}
           />
-
-          <button
-            onClick={onOpenUserProfile}
-            className="flex items-center gap-2 group p-1 hover:bg-purple-50 rounded-xl transition-all text-left"
-            title="Manage User Profile & Settings"
-          >
-            <div className="hidden sm:flex flex-col text-xs leading-tight">
-              <div className="flex items-center gap-1.5">
-                <span className="font-bold text-slate-900 group-hover:text-[#5D3FD3] transition-colors">{displayName}</span>
-                {isSuperAdminMode && (
-                  <span className="text-[9px] bg-amber-500/20 text-amber-800 font-mono font-bold px-1 py-0.2 rounded border border-amber-500/30">ADMIN</span>
-                )}
-              </div>
-              <span className="text-[11px] text-slate-500 font-mono mt-0.5">{activeEmail}</span>
-            </div>
-          </button>
-
-          {onSignOut && (
-            <button
-              onClick={onSignOut}
-              className="ml-1 p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
-              title="Sign Out of SocialSpree"
-            >
-              <LogOut className="w-4 h-4" />
-            </button>
-          )}
         </div>
 
       </div>

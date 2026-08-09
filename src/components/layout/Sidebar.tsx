@@ -1,4 +1,5 @@
 import React from 'react';
+import { useUser } from '@clerk/react';
 import { 
   LayoutDashboard, 
   Edit, 
@@ -21,7 +22,8 @@ import {
   Key,
   HardDrive,
   Sparkles,
-  Lock
+  Lock,
+  LogOut
 } from 'lucide-react';
 import { SuperAdminSubTab } from '../admin/SuperAdminPortal';
 
@@ -51,6 +53,7 @@ interface SidebarProps {
   activeAdminSubTab?: SuperAdminSubTab;
   onSelectAdminSubTab?: (subTab: SuperAdminSubTab) => void;
   onReturnToPublic?: () => void;
+  onSignOut?: () => void;
   userFullName?: string;
   userEmail?: string;
   userRole?: string;
@@ -65,10 +68,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
   activeAdminSubTab = 'dashboard',
   onSelectAdminSubTab,
   onReturnToPublic,
+  onSignOut,
   userFullName,
   userEmail,
   userRole
 }) => {
+  const { user } = useUser();
+  const clerkEmail = user?.primaryEmailAddress?.emailAddress;
+  const clerkName = user?.fullName || (user?.firstName ? `${user.firstName}${user.lastName ? ' ' + user.lastName : ''}` : undefined) || user?.username;
+
+  const displayName = clerkName || userFullName || (isSuperAdmin ? 'Super Admin' : 'Workspace User');
+  const displayEmail = clerkEmail || userEmail || (isSuperAdmin ? 'admin@leadspree.io' : 'user@socialspree.io');
+
   const getRoleLabel = () => {
     if (isSuperAdmin || userRole === 'super_admin') return 'Super Admin Governance';
     if (userRole === 'agency' || isAgencyMode) return 'Agency Owner';
@@ -417,6 +428,43 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </button>
           )}
         </div>
+      </div>
+
+      {/* Footer Profile Status with Logout Button */}
+      <div className="p-3 border-t border-slate-800 bg-slate-950/70 flex items-center justify-between gap-2.5">
+        <div 
+          onClick={() => handleNavClick('settings')}
+          className="flex items-center gap-2.5 min-w-0 cursor-pointer group flex-1"
+          title="Open Workspace Settings & Profile"
+        >
+          <div className="w-8 h-8 rounded-full border border-purple-500/40 bg-purple-950/60 overflow-hidden flex items-center justify-center shrink-0">
+            {user?.imageUrl ? (
+              <img src={user.imageUrl} alt={displayName} className="w-full h-full object-cover" />
+            ) : (
+              <span className="font-bold text-xs text-purple-300">
+                {displayName.slice(0, 2).toUpperCase()}
+              </span>
+            )}
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="text-xs font-bold text-slate-200 group-hover:text-purple-300 transition-colors truncate">
+              {displayName}
+            </div>
+            <div className="text-[10px] text-slate-400 font-mono truncate">
+              {displayEmail}
+            </div>
+          </div>
+        </div>
+
+        {onSignOut && (
+          <button
+            onClick={onSignOut}
+            className="p-2 text-slate-400 hover:text-red-400 hover:bg-slate-800/80 rounded-xl transition-all shrink-0"
+            title="Sign Out of SocialSpree"
+          >
+            <LogOut className="w-4 h-4" />
+          </button>
+        )}
       </div>
     </aside>
   );

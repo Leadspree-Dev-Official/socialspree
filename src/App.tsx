@@ -799,6 +799,7 @@ export function App() {
             activeAdminSubTab={adminSubTab}
             onSelectAdminSubTab={setAdminSubTab}
             onReturnToPublic={() => { setViewMode('public'); navigate('/'); }}
+            onSignOut={handleSignOut}
             userFullName={user?.fullName || profile?.fullName || undefined}
             userEmail={user?.primaryEmailAddress?.emailAddress || profile?.email || undefined}
             userRole={profile?.role || undefined}
