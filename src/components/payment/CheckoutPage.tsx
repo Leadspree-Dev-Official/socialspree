@@ -96,7 +96,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
           </div>
         </div>
 
-        {/* Top 2-Column Grid: Account Verification & Selected Plan SIDE-BY-SIDE */}
+        {/* Top 2-Column Grid: Account Verification & Payment Channel Selection SIDE-BY-SIDE */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
           
           {/* 1. Account Authentication Requirement Card */}
@@ -168,63 +168,10 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
             </div>
           </div>
 
-          {/* 2. Selected Plan Order Summary Card */}
+          {/* 2. SELECT PROVISIONING PAYMENT CHANNEL Card */}
           <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-md space-y-4 flex flex-col justify-between">
             <div>
-              <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-                <div>
-                  <span className="text-[10px] font-mono font-bold bg-purple-100 text-[#5D3FD3] px-2.5 py-0.5 rounded-full uppercase tracking-wider">
-                    Selected Plan
-                  </span>
-                  <h2 className="text-2xl font-black text-slate-900 tracking-tight mt-1">
-                    {selectedPlan.name}
-                  </h2>
-                </div>
-
-                <div className="text-right">
-                  <div className="text-[#5D3FD3] text-3xl font-black">
-                    {effectiveSymbol}{displayMonthly.toLocaleString()}
-                    <span className="text-xs font-bold text-slate-500 ml-1">/ month</span>
-                  </div>
-                  {totalAmount > 0 && (
-                    <div className="mt-1 text-[10px] font-bold text-[#5D3FD3] bg-purple-50 px-2 py-0.5 rounded font-mono inline-block">
-                      Billed annually ({effectiveSymbol}{totalAmount.toLocaleString()} / year)
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Feature Checklist */}
-              <div className="space-y-2 pt-4">
-                <div className="text-xs font-bold text-slate-900 uppercase font-mono tracking-wider mb-1">
-                  Included Capabilities:
-                </div>
-                {selectedPlan.features.map((feature, idx) => (
-                  <div key={idx} className="flex items-start gap-2 text-xs text-slate-700 font-medium">
-                    <div className="p-0.5 rounded-full bg-emerald-100 text-emerald-600 mt-0.5 shrink-0">
-                      <Check className="w-3.5 h-3.5" />
-                    </div>
-                    <span>{feature}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="pt-4 border-t border-slate-100 flex items-center gap-2 text-xs text-slate-500 font-medium">
-              <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
-              <span>Instant automated slot creation upon order confirmation</span>
-            </div>
-          </div>
-
-        </div>
-
-        {/* Bottom Section: Payment Methods & Order Channel */}
-        <div className="space-y-6">
-            
-            {/* Payment Method Selector Tabs */}
-            <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-md space-y-6">
-              
-              <div className="space-y-1">
+              <div className="space-y-1 mb-4">
                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold font-mono">
                   <Zap className="w-3.5 h-3.5" />
                   <span>SELECT PROVISIONING PAYMENT CHANNEL</span>
@@ -235,12 +182,11 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
               </div>
 
               {/* Payment Method Hierarchy Options */}
-              <div className="grid grid-cols-1 gap-4">
-                
-                {/* 1ST METHOD: WHATSAPP DIRECT ORDER (ACTIVE & DEFAULT) */}
+              <div className="grid grid-cols-1 gap-3">
+                {/* 1ST METHOD: WHATSAPP DIRECT ORDER */}
                 <div 
                   onClick={() => setActiveChannel('whatsapp')}
-                  className={`p-5 rounded-2xl border-2 transition-all cursor-pointer relative ${
+                  className={`p-4 rounded-2xl border-2 transition-all cursor-pointer relative ${
                     activeChannel === 'whatsapp'
                       ? 'border-[#25D366] bg-emerald-50/30 shadow-md'
                       : 'border-slate-200 hover:border-emerald-300 bg-white'
@@ -248,82 +194,122 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-2xl bg-[#25D366] text-white flex items-center justify-center shadow-md">
+                      <div className="w-9 h-9 rounded-xl bg-[#25D366] text-white flex items-center justify-center shadow-md">
                         <WhatsAppIcon className="w-5 h-5 text-white" />
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
-                          <span className="text-sm font-bold text-slate-900">WhatsApp Direct Order</span>
-                          <span className="text-[10px] font-extrabold bg-emerald-100 text-emerald-800 px-2.5 py-0.5 rounded-full uppercase font-mono">
+                          <span className="text-xs font-bold text-slate-900">WhatsApp Direct Order</span>
+                          <span className="text-[9px] font-extrabold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-mono">
                             1ST CHOICE (ACTIVE)
                           </span>
                         </div>
-                        <p className="text-xs text-slate-600 font-medium mt-0.5">
+                        <p className="text-[11px] text-slate-600 font-medium mt-0.5">
                           Instant offline invoice generation & direct sales desk provisioning.
                         </p>
                       </div>
                     </div>
-
-                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${
-                      activeChannel === 'whatsapp' ? 'border-[#25D366] bg-[#25D366]' : 'border-slate-300'
-                    }`}>
-                      {activeChannel === 'whatsapp' && <Check className="w-3.5 h-3.5 text-white" />}
-                    </div>
+                    {activeChannel === 'whatsapp' && (
+                      <CheckCircle2 className="w-5 h-5 text-[#25D366] shrink-0" />
+                    )}
                   </div>
                 </div>
 
-                {/* 2ND METHOD: RAZORPAY SECURE CHECKOUT (COMING SOON BADGE) */}
+                {/* 2ND METHOD: RAZORPAY AUTOMATED CHECKOUT (COMING SOON) */}
                 <div 
-                  className="p-5 rounded-2xl border border-slate-200 bg-slate-50/80 opacity-90 relative overflow-hidden"
+                  className="p-4 rounded-2xl border-2 border-slate-200 bg-slate-50/70 opacity-80 relative cursor-not-allowed"
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-2xl bg-blue-100 text-blue-600 flex items-center justify-center">
-                        <CreditCard className="w-5 h-5" />
+                      <div className="w-9 h-9 rounded-xl bg-blue-500 text-white flex items-center justify-center shadow-sm">
+                        <CreditCard className="w-4 h-4 text-white" />
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
-                          <span className="text-sm font-bold text-slate-800">Razorpay Secure Automated Checkout</span>
-                          {/* BRIGHT COMING SOON BADGE */}
-                          <span className="text-[10px] font-black bg-gradient-to-r from-amber-500 to-purple-600 text-white px-2.5 py-0.5 rounded-full uppercase tracking-wider font-mono shadow-xs flex items-center gap-1">
+                          <span className="text-xs font-bold text-slate-700">Razorpay Secure Automated Checkout</span>
+                          <span className="text-[9px] font-bold bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full font-mono flex items-center gap-1">
                             <Clock className="w-3 h-3" /> COMING SOON
                           </span>
                         </div>
-                        <p className="text-xs text-slate-500 font-medium mt-0.5">
-                          Automated online credit card & UPI gateway integration is in sandbox testing and coming soon.
+                        <p className="text-[11px] text-slate-500 mt-0.5">
+                          Automated online credit card & UPI gateway integration coming soon.
                         </p>
                       </div>
                     </div>
-
-                  <div className="mt-3 p-3 rounded-xl bg-amber-50 border border-amber-200/60 text-[11px] text-amber-800 font-medium flex items-center gap-2">
-                    <HelpCircle className="w-4 h-4 text-amber-600 shrink-0" />
-                    <span>Please use WhatsApp Direct Order above for instant manual tenant activation & invoice delivery.</span>
                   </div>
                 </div>
-
               </div>
-
-              {/* Active Channel Component Display */}
-              <div className="pt-4 border-t border-slate-100">
-                {activeChannel === 'whatsapp' ? (
-                  <WhatsAppCheckout
-                    plan={selectedPlan}
-                    billingCycle="yearly"
-                    onClose={() => {}}
-                  />
-                ) : (
-                  <RazorpaySandbox
-                    plan={selectedPlan}
-                    billingCycle={billingCycle}
-                    onCancel={() => {}}
-                  />
-                )}
-              </div>
-
             </div>
 
+            <div className="pt-3 border-t border-slate-100 text-[11px] text-amber-800 font-medium bg-amber-50/80 p-2.5 rounded-xl border border-amber-200/80">
+              💡 Please use WhatsApp Direct Order above for instant manual tenant activation & invoice delivery.
+            </div>
           </div>
 
+        </div>
+
+        {/* Selected Plan Order Summary & Active Channel Form */}
+        <div className="space-y-6">
+          
+          {/* Selected Plan Summary Card */}
+          <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-md space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+              <div>
+                <span className="text-[10px] font-mono font-bold bg-purple-100 text-[#5D3FD3] px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+                  Selected Plan Summary
+                </span>
+                <h2 className="text-2xl font-black text-slate-900 tracking-tight mt-1">
+                  {selectedPlan.name}
+                </h2>
+              </div>
+
+              <div className="text-left sm:text-right">
+                <div className="text-[#5D3FD3] text-3xl font-black">
+                  {effectiveSymbol}{displayMonthly.toLocaleString()}
+                  <span className="text-xs font-bold text-slate-500 ml-1">/ month</span>
+                </div>
+                {totalAmount > 0 && (
+                  <div className="mt-1 text-[10px] font-bold text-[#5D3FD3] bg-purple-50 px-2.5 py-0.5 rounded font-mono inline-block">
+                    Billed annually ({effectiveSymbol}{totalAmount.toLocaleString()} / year)
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Feature Checklist */}
+            <div className="space-y-2">
+              <div className="text-xs font-bold text-slate-900 uppercase font-mono tracking-wider mb-2">
+                Included Tenant Capabilities:
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {selectedPlan.features.map((feature, idx) => (
+                  <div key={idx} className="flex items-start gap-2 text-xs text-slate-700 font-medium">
+                    <div className="p-0.5 rounded-full bg-emerald-100 text-emerald-600 mt-0.5 shrink-0">
+                      <Check className="w-3.5 h-3.5" />
+                    </div>
+                    <span>{feature}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Active Channel Form Display */}
+          <div className="pt-2">
+            {activeChannel === 'whatsapp' ? (
+              <WhatsAppCheckout
+                plan={selectedPlan}
+                billingCycle="yearly"
+                onClose={() => {}}
+              />
+            ) : (
+              <RazorpaySandbox
+                plan={selectedPlan}
+                billingCycle={billingCycle}
+                onCancel={() => {}}
+              />
+            )}
+          </div>
         </div>
 
       </div>
