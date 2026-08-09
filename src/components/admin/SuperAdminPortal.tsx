@@ -1008,7 +1008,7 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
                           {t.tierPlan}
                         </span>
                       </div>
-                      <div className="text-xs font-mono text-slate-500">{t.ownerEmail} &bull; ID: {t.id}</div>
+                      <div className="text-xs font-mono text-slate-500" title={`Tenant Workspace ID: ${t.id}`}>{t.ownerEmail}</div>
                     </div>
 
                     <div className="text-xs font-mono font-bold text-purple-900 bg-white px-3 py-1.5 rounded-xl border border-purple-200 shadow-2xs">
