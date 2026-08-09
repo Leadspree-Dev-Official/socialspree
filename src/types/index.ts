@@ -92,7 +92,7 @@ export interface SubscriptionPlan {
   priceMonthly: number;
   priceYearly?: number;
   billingCycle?: 'monthly' | 'yearly';
-  targetRole?: 'free' | 'business_user' | 'influencer' | 'agency' | 'all';
+  targetRole?: 'free' | 'business_user' | 'premium_business' | 'influencer' | 'agency' | 'all';
   currency: CurrencyCode;
   currencySymbol: string; // '$', '₹', '£'
   allocatedApiSlots: number; // Number of 2-channel API slots (e.g. 1 slot = 2 accounts, 3 slots = 6 accounts)

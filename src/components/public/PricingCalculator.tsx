@@ -15,11 +15,21 @@ export const PricingCalculator: React.FC<PricingCalculatorProps> = ({
   currencyConfigs,
   onOpenCheckout
 }) => {
-  const [role, setRole] = useState<'business_user' | 'influencer' | 'agency'>('business_user');
+  const [role, setRole] = useState<'business_user' | 'premium_business' | 'influencer' | 'agency'>('business_user');
   const [socialAccounts, setSocialAccounts] = useState<number>(3);
   const [posts, setPosts] = useState<number>(10);
   const [autoresponder, setAutoresponder] = useState<boolean>(false);
   const [privateCloud, setPrivateCloud] = useState<boolean>(false);
+
+  // Linked Toggle Handler: If any one premium toggle is turned ON/OFF, the other also turns ON/OFF
+  const handleTogglePremiumAddons = () => {
+    const nextVal = !(autoresponder || privateCloud);
+    setAutoresponder(nextVal);
+    setPrivateCloud(nextVal);
+    if (nextVal && role === 'business_user') {
+      setRole('premium_business');
+    }
+  };
 
   // Conversion logic matching the app
   const convertPrice = (priceInr: number, currency: CurrencyCode): number => {
@@ -36,7 +46,7 @@ export const PricingCalculator: React.FC<PricingCalculatorProps> = ({
       if (plan.priceMonthly === 149) return 20;
       if (plan.priceMonthly === 199 || plan.priceMonthly === 249) return 30;
     }
-    return 999; // Unlimited for influencer/agency
+    return 999; // Unlimited for premium_business / influencer / agency
   };
 
   const recommendedPlan = useMemo(() => {
@@ -48,7 +58,7 @@ export const PricingCalculator: React.FC<PricingCalculatorProps> = ({
       const meetsAccounts = p.maxSocialAccounts >= socialAccounts;
       const meetsPosts = maxPosts >= posts;
       
-      const isPremiumFeat = (p.priceYearly || p.priceMonthly * 12) >= 5000 && (p.targetRole === 'influencer' || p.targetRole === 'agency');
+      const isPremiumFeat = (p.priceYearly || p.priceMonthly * 12) >= 5000 && (p.targetRole === 'premium_business' || p.targetRole === 'influencer' || p.targetRole === 'agency');
       const meetsAutoresponder = autoresponder ? isPremiumFeat : true;
       const meetsPrivateCloud = privateCloud ? isPremiumFeat : true;
 
@@ -107,39 +117,50 @@ export const PricingCalculator: React.FC<PricingCalculatorProps> = ({
             {/* Role Selection */}
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-3">I am a...</label>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 <button
                   onClick={() => setRole('business_user')}
                   className={`flex flex-col items-center justify-center p-3 rounded-2xl border-2 transition-all duration-200 ${
                     role === 'business_user' 
-                      ? 'border-[#5D3FD3] bg-white text-[#5D3FD3] shadow-md scale-105' 
-                      : 'border-slate-200 bg-white text-slate-500 hover:border-[#5D3FD3]/50 hover:bg-purple-50'
+                      ? 'border-[#5D3FD3] bg-white text-[#5D3FD3] shadow-md scale-105 font-bold' 
+                      : 'border-slate-200 bg-white text-slate-600 hover:border-[#5D3FD3]/50'
                   }`}
                 >
-                  <Building2 className="w-6 h-6 mb-2" />
-                  <span className="text-sm font-medium">Business</span>
+                  <Building2 className="w-5 h-5 mb-1" />
+                  <span className="text-xs font-bold">Business</span>
+                </button>
+                <button
+                  onClick={() => setRole('premium_business')}
+                  className={`flex flex-col items-center justify-center p-3 rounded-2xl border-2 transition-all duration-200 ${
+                    role === 'premium_business' 
+                      ? 'border-purple-600 bg-purple-50 text-purple-700 shadow-md scale-105 font-bold' 
+                      : 'border-slate-200 bg-white text-slate-600 hover:border-purple-300'
+                  }`}
+                >
+                  <Sparkles className="w-5 h-5 mb-1 text-purple-600" />
+                  <span className="text-xs font-bold">Prem Biz</span>
                 </button>
                 <button
                   onClick={() => setRole('influencer')}
                   className={`flex flex-col items-center justify-center p-3 rounded-2xl border-2 transition-all duration-200 ${
                     role === 'influencer' 
-                      ? 'border-[#5D3FD3] bg-white text-[#5D3FD3] shadow-md scale-105' 
-                      : 'border-slate-200 bg-white text-slate-500 hover:border-[#5D3FD3]/50 hover:bg-purple-50'
+                      ? 'border-pink-600 bg-white text-pink-600 shadow-md scale-105 font-bold' 
+                      : 'border-slate-200 bg-white text-slate-600 hover:border-pink-300'
                   }`}
                 >
-                  <Star className="w-6 h-6 mb-2" />
-                  <span className="text-sm font-medium">Influencer</span>
+                  <Star className="w-5 h-5 mb-1 text-pink-500" />
+                  <span className="text-xs font-bold">Influencer</span>
                 </button>
                 <button
                   onClick={() => setRole('agency')}
                   className={`flex flex-col items-center justify-center p-3 rounded-2xl border-2 transition-all duration-200 ${
                     role === 'agency' 
-                      ? 'border-[#5D3FD3] bg-white text-[#5D3FD3] shadow-md scale-105' 
-                      : 'border-slate-200 bg-white text-slate-500 hover:border-[#5D3FD3]/50 hover:bg-purple-50'
+                      ? 'border-amber-600 bg-white text-amber-600 shadow-md scale-105 font-bold' 
+                      : 'border-slate-200 bg-white text-slate-600 hover:border-amber-300'
                   }`}
                 >
-                  <Briefcase className="w-6 h-6 mb-2" />
-                  <span className="text-sm font-medium">Agency</span>
+                  <Briefcase className="w-5 h-5 mb-1 text-amber-600" />
+                  <span className="text-xs font-bold">Agency</span>
                 </button>
               </div>
             </div>
@@ -184,8 +205,15 @@ export const PricingCalculator: React.FC<PricingCalculatorProps> = ({
               />
             </div>
 
+            {/* Linked Add-ons: Turning one on/off toggles both */}
             <div className="space-y-4 pt-4 border-t border-slate-200">
-              <label className="block text-sm font-semibold text-slate-700">Premium Add-ons</label>
+              <div className="flex items-center justify-between">
+                <label className="block text-sm font-semibold text-slate-700">Premium Add-ons</label>
+                <span className="text-[10px] font-bold font-mono text-purple-600 bg-purple-50 px-2 py-0.5 rounded border border-purple-100">
+                  LINKED PREVIEW
+                </span>
+              </div>
+
               <div className="flex items-center justify-between p-3 bg-white rounded-xl border border-slate-200">
                 <div className="flex items-center gap-3">
                   <div className={`p-2 rounded-lg ${autoresponder ? 'bg-purple-100 text-[#5D3FD3]' : 'bg-slate-100 text-slate-500'}`}>
@@ -193,12 +221,12 @@ export const PricingCalculator: React.FC<PricingCalculatorProps> = ({
                   </div>
                   <div>
                     <p className="text-sm font-bold text-slate-900">Comment Autoresponder</p>
-                    <p className="text-xs text-slate-500">AI replies to comments</p>
+                    <p className="text-xs text-slate-500">AI replies to Insta & FB comments</p>
                   </div>
                 </div>
                 <button
-                  onClick={() => setAutoresponder(!autoresponder)}
-                  className={`w-12 h-6 rounded-full transition-colors duration-300 relative ${autoresponder ? 'bg-[#5D3FD3]' : 'bg-slate-300'}`}
+                  onClick={handleTogglePremiumAddons}
+                  className={`w-12 h-6 rounded-full transition-colors duration-300 relative cursor-pointer ${autoresponder ? 'bg-[#5D3FD3]' : 'bg-slate-300'}`}
                 >
                   <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-transform duration-300 ${autoresponder ? 'left-7' : 'left-1'}`} />
                 </button>
@@ -211,12 +239,12 @@ export const PricingCalculator: React.FC<PricingCalculatorProps> = ({
                   </div>
                   <div>
                     <p className="text-sm font-bold text-slate-900">Private Cloud</p>
-                    <p className="text-xs text-slate-500">Dedicated instance</p>
+                    <p className="text-xs text-slate-500">Dedicated isolated cloud instance</p>
                   </div>
                 </div>
                 <button
-                  onClick={() => setPrivateCloud(!privateCloud)}
-                  className={`w-12 h-6 rounded-full transition-colors duration-300 relative ${privateCloud ? 'bg-[#0066FF]' : 'bg-slate-300'}`}
+                  onClick={handleTogglePremiumAddons}
+                  className={`w-12 h-6 rounded-full transition-colors duration-300 relative cursor-pointer ${privateCloud ? 'bg-[#0066FF]' : 'bg-slate-300'}`}
                 >
                   <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-transform duration-300 ${privateCloud ? 'left-7' : 'left-1'}`} />
                 </button>

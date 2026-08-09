@@ -56,7 +56,7 @@ export const PricingView: React.FC<PricingViewProps> = ({
 
   const defaultPlans: SubscriptionPlan[] = INITIAL_PLANS;
 
-  const [selectedRoleTab, setSelectedRoleTab] = useState<'all' | 'business_user' | 'influencer' | 'agency'>('business_user');
+  const [selectedRoleTab, setSelectedRoleTab] = useState<'all' | 'business_user' | 'premium_business' | 'influencer' | 'agency'>('business_user');
 
   const rawPlans = (Array.isArray(plans) && plans.length > 0 && plans.some(p => p.targetRole)) ? plans : INITIAL_PLANS;
   
@@ -141,6 +141,17 @@ export const PricingView: React.FC<PricingViewProps> = ({
             }`}
           >
             🏢 Business Users
+          </button>
+
+          <button
+            onClick={() => setSelectedRoleTab('premium_business')}
+            className={`px-5 py-2.5 rounded-2xl text-xs font-bold transition-all ${
+              selectedRoleTab === 'premium_business'
+                ? 'bg-purple-700 text-white shadow-md shadow-purple-700/20'
+                : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'
+            }`}
+          >
+            👑 Premium Business
           </button>
 
           <button

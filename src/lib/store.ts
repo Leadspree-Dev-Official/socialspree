@@ -161,7 +161,55 @@ export const INITIAL_PLANS: SubscriptionPlan[] = [
     ]
   },
 
-  // 3. INFLUENCER YEARLY PLANS
+  // 3. PREMIUM BUSINESS YEARLY PLANS
+  {
+    id: 'plan-prem-biz-prime',
+    name: 'Premium Business Unlimited',
+    priceMonthly: 417,
+    priceYearly: 5000,
+    currency: 'INR',
+    currencySymbol: '₹',
+    allocatedApiSlots: 25,
+    maxSocialAccounts: 50,
+    maxZernioTriggersPerMonth: 100000,
+    maxStorageMb: 100000,
+    aiCredits: 50000,
+    billingCycle: 'yearly',
+    targetRole: 'premium_business',
+    features: [
+      '₹5,000 / year (Billed Annually)',
+      'Everything Unlimited Social Posting',
+      'Private Cloud Media Vault Storage Included',
+      'Instagram & Facebook Comment Autoresponder Included',
+      'Enterprise Business Analytics & Multi-Tenant Control',
+      '24/7 Priority VIP Support'
+    ]
+  },
+  {
+    id: 'plan-prem-biz-vault',
+    name: 'Premium Business Cloud+',
+    priceMonthly: 3000,
+    priceYearly: 36000,
+    currency: 'INR',
+    currencySymbol: '₹',
+    allocatedApiSlots: 50,
+    maxSocialAccounts: 100,
+    maxZernioTriggersPerMonth: 1000000,
+    maxStorageMb: 500000,
+    aiCredits: 200000,
+    billingCycle: 'yearly',
+    targetRole: 'premium_business',
+    features: [
+      '₹36,000 / year (Billed Annually)',
+      'Supabase Premium Isolated Infrastructure Cloud',
+      'Dedicated Database & Storage Instance',
+      'Everything Unlimited Multi-Tenant Slots',
+      'Instagram & Facebook Comment Autoresponder Included',
+      'Dedicated SLA Account Manager'
+    ]
+  },
+
+  // 4. INFLUENCER YEARLY PLANS
   {
     id: 'plan-influencer-prime',
     name: 'Influencer Prime',
