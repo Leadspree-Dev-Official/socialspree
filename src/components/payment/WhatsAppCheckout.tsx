@@ -72,87 +72,70 @@ Please confirm offline payment instructions & instant key provisioning for our w
   };
 
   return (
-    <div className="font-['Inter'] text-slate-900 bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-4">
+    <div className="font-['Inter'] text-slate-900 space-y-3">
       
-      {/* Header Banner */}
-      <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl bg-[#25D366] text-white flex items-center justify-center shadow-xs">
-            <WhatsAppIcon className="w-4 h-4 text-white" />
-          </div>
-          <div>
-            <h3 className="text-sm font-bold text-slate-900">WhatsApp Direct Order Details</h3>
-            <p className="text-[11px] text-slate-500 font-medium">Pre-filled invoice message for direct sales desk</p>
-          </div>
-        </div>
-
-        <span className="text-[10px] font-mono font-bold bg-emerald-100 text-emerald-800 px-2.5 py-0.5 rounded-full">
-          Direct Sales Desk
-        </span>
-      </div>
-
       {/* Customer Info Input */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
         <div>
-          <label className="block text-xs font-bold text-slate-700 mb-1">Organization Name</label>
+          <label className="block text-[11px] font-bold text-slate-700 mb-1">Organization Name</label>
           <input
             type="text"
             value={orgName}
             onChange={(e) => setOrgName(e.target.value)}
             placeholder="Your Organization Name"
-            className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-[#25D366] focus:outline-none"
+            className="w-full px-3 py-1.5 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-[#25D366] focus:outline-none bg-slate-50/50"
           />
         </div>
 
         <div>
-          <label className="block text-xs font-bold text-slate-700 mb-1">Owner Email</label>
+          <label className="block text-[11px] font-bold text-slate-700 mb-1">Owner Email</label>
           <input
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="your.email@example.com"
-            className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-[#25D366] focus:outline-none"
+            className="w-full px-3 py-1.5 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-[#25D366] focus:outline-none bg-slate-50/50"
           />
         </div>
       </div>
 
       {/* Invoice Breakdown Preview Card */}
-      <div className="space-y-1.5">
-        <div className="flex items-center justify-between text-xs font-mono font-bold uppercase text-slate-500">
+      <div className="space-y-1">
+        <div className="flex items-center justify-between text-[10px] font-mono font-bold uppercase text-slate-500">
           <span>Formatted Invoice Preview</span>
           <button
             onClick={handleCopy}
-            className="text-[#25D366] hover:underline flex items-center gap-1 font-bold text-[11px] cursor-pointer"
+            className="text-[#25D366] hover:underline flex items-center gap-1 font-bold text-[10px] cursor-pointer"
           >
-            {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
-            <span>{copied ? 'Copied to Clipboard!' : 'Copy Raw Text'}</span>
+            {copied ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
+            <span>{copied ? 'Copied!' : 'Copy Text'}</span>
           </button>
         </div>
 
-        <div className="p-3.5 rounded-xl bg-slate-900 text-emerald-400 font-mono text-[11px] leading-relaxed whitespace-pre-wrap border border-slate-800 shadow-inner">
+        <div className="p-2.5 rounded-xl bg-slate-900 text-emerald-400 font-mono text-[10px] leading-relaxed whitespace-pre-wrap border border-slate-800 shadow-inner max-h-24 overflow-y-auto">
           {formattedText}
         </div>
       </div>
 
       {/* Action Buttons */}
-      <div className="pt-3 border-t border-slate-100 flex flex-col sm:flex-row items-center gap-2.5">
+      <div className="pt-2 border-t border-slate-100 flex flex-row items-center gap-2">
         <button
           onClick={handleCopy}
-          className="w-full sm:w-auto px-4 py-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+          className="px-3 py-2 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-bold transition-all flex items-center justify-center gap-1 cursor-pointer shrink-0"
         >
           {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5 text-slate-500" />}
-          <span>{copied ? 'Copied!' : 'Copy Order Text'}</span>
+          <span>{copied ? 'Copied' : 'Copy'}</span>
         </button>
 
         <a
           href={whatsappUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="w-full sm:flex-1 py-3 px-5 rounded-xl bg-[#25D366] hover:bg-[#1EBE5D] text-white text-xs font-bold shadow-md shadow-emerald-600/20 transition-all flex items-center justify-center gap-2 no-underline"
+          className="flex-1 py-2.5 px-4 rounded-xl bg-[#25D366] hover:bg-[#1EBE5D] text-white text-xs font-bold shadow-sm shadow-emerald-600/20 transition-all flex items-center justify-center gap-2 no-underline"
         >
           <WhatsAppIcon className="w-4 h-4 text-white" />
           <span>Launch WhatsApp Direct Order</span>
-          <ExternalLink className="w-3.5 h-3.5" />
+          <ExternalLink className="w-3 h-3" />
         </a>
       </div>
 
