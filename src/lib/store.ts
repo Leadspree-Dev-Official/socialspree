@@ -30,14 +30,15 @@ export const GLOBAL_SYSTEM_SETTINGS: SystemSettings = {
   businessModeEnabled: true
 };
 
-// Global Subscription Plans (Multi-Currency Regional Plans with AI Credits)
+// Global Subscription Plans (Business, Influencer, and Agency Tiers)
 export const INITIAL_PLANS: SubscriptionPlan[] = [
+  // 1. FREE PLAN
   {
     id: 'plan-free',
-    name: 'Free Plan (Default Sign-Up)',
+    name: 'Free Starter',
     priceMonthly: 0,
-    currency: 'USD',
-    currencySymbol: '$',
+    currency: 'INR',
+    currencySymbol: '₹',
     allocatedApiSlots: 1,
     maxSocialAccounts: 2,
     maxZernioTriggersPerDay: 2,
@@ -45,82 +46,214 @@ export const INITIAL_PLANS: SubscriptionPlan[] = [
     maxStorageMb: 500,
     chatGptConnectorAllowed: false,
     aiCredits: 50,
+    billingCycle: 'monthly',
+    targetRole: 'free',
     features: [
       '2 Social Channel Accounts Maximum',
       '2 Post dispatches per month',
       '500 MB Media Storage',
-      '50 AI Credits/mo'
+      '50 AI Credits / month',
+      'CoreSync & Zenith Engine Support'
     ]
   },
+
+  // 2. BUSINESS USER MONTHLY PLANS
   {
-    id: 'plan-starter',
-    name: 'Starter Plan (US/Global)',
-    priceMonthly: 19,
-    currency: 'USD',
-    currencySymbol: '$',
-    allocatedApiSlots: 1, // 1 API key = 2 social channels
-    maxSocialAccounts: 2,
-    maxZernioTriggersPerDay: 50,
-    maxZernioTriggersPerMonth: 1000,
-    maxStorageMb: 2000, // 2 GB
-    chatGptConnectorAllowed: false,
-    aiCredits: 500,
-    features: [
-      '1 Zenith API Key Slot (2 Social Channels)',
-      '50 Zenith Triggers / day (1,000 / mo)',
-      '2 GB Supabase/Cloudinary Storage',
-      '500 AI Content & Hashtag Credits/mo',
-      'Instant & Scheduled Posting',
-      'Basic Activity Audit Logs'
-    ]
-  },
-  {
-    id: 'plan-pro',
-    name: 'Pro Agency Plan (India Region)',
-    priceMonthly: 1499,
+    id: 'plan-biz-starter',
+    name: 'Business Starter',
+    priceMonthly: 49,
     currency: 'INR',
     currencySymbol: '₹',
-    allocatedApiSlots: 3, // 3 API keys = 6 social channels firing in parallel
-    maxSocialAccounts: 6,
-    maxZernioTriggersPerDay: 200,
-    maxZernioTriggersPerMonth: 5000,
-    maxStorageMb: 10000, // 10 GB
-    chatGptConnectorAllowed: true,
-    aiCredits: 2500,
-    isPopular: true,
+    allocatedApiSlots: 2,
+    maxSocialAccounts: 4,
+    maxZernioTriggersPerMonth: 8,
+    maxStorageMb: 1000,
+    aiCredits: 500,
+    billingCycle: 'monthly',
+    targetRole: 'business_user',
     features: [
-      '3 Zenith API Key Slots (6 Social Channels)',
-      '200 Zenith Triggers / day (5,000 / mo)',
-      '10 GB Media Vault Storage',
-      '2,500 AI Content & Hashtag Credits/mo',
-      'ChatGPT Scheduling Connector API',
-      'Parallel Key Firing Engine',
-      'Google Review Auto-AI Responder',
-      'Priority Super Admin Support'
+      '4 Social Accounts',
+      '8 Post Dispatches / month',
+      '500 AI Content Credits / mo',
+      'Basic Performance Analytics'
     ]
   },
   {
-    id: 'plan-enterprise',
-    name: 'Enterprise Agency Tier (UK/EU)',
-    priceMonthly: 119,
-    currency: 'GBP',
-    currencySymbol: '£',
-    allocatedApiSlots: 10, // 10 API keys = 20 social channels
-    maxSocialAccounts: 20,
-    maxZernioTriggersPerDay: 1000,
-    maxZernioTriggersPerMonth: 25000,
-    maxStorageMb: 50000, // 50 GB
-    chatGptConnectorAllowed: true,
-    aiCredits: 10000,
+    id: 'plan-biz-growth',
+    name: 'Business Growth',
+    priceMonthly: 99,
+    currency: 'INR',
+    currencySymbol: '₹',
+    allocatedApiSlots: 2,
+    maxSocialAccounts: 4,
+    maxZernioTriggersPerMonth: 16,
+    maxStorageMb: 2000,
+    aiCredits: 1000,
+    billingCycle: 'monthly',
+    targetRole: 'business_user',
     features: [
-      '10 Zenith API Key Slots (20 Social Channels)',
-      '1,000 Zenith Triggers / day (25,000 / mo)',
-      '50 GB Media Vault Storage',
-      '10,000 AI Content & Hashtag Credits/mo',
-      'ChatGPT Scheduling Connector API',
-      'Unlimited Parallel Dispatch Engine',
-      'Custom Storage Buckets & CDN',
-      'Dedicated Account Manager & SLA'
+      '4 Social Accounts',
+      '16 Post Dispatches / month',
+      '1,000 AI Content Credits / mo',
+      'Full Performance Analytics'
+    ]
+  },
+  {
+    id: 'plan-biz-pro',
+    name: 'Business Pro',
+    priceMonthly: 149,
+    currency: 'INR',
+    currencySymbol: '₹',
+    allocatedApiSlots: 3,
+    maxSocialAccounts: 6,
+    maxZernioTriggersPerMonth: 20,
+    maxStorageMb: 5000,
+    aiCredits: 2500,
+    isPopular: true,
+    billingCycle: 'monthly',
+    targetRole: 'business_user',
+    features: [
+      '6 Social Accounts',
+      '20 Post Dispatches / month',
+      '2,500 AI Content Credits / mo',
+      'Google Review Auto-AI Responder',
+      'Priority Support'
+    ]
+  },
+  {
+    id: 'plan-biz-scale',
+    name: 'Business Scale',
+    priceMonthly: 199,
+    currency: 'INR',
+    currencySymbol: '₹',
+    allocatedApiSlots: 3,
+    maxSocialAccounts: 6,
+    maxZernioTriggersPerMonth: 30,
+    maxStorageMb: 10000,
+    aiCredits: 5000,
+    billingCycle: 'monthly',
+    targetRole: 'business_user',
+    features: [
+      '6 Social Accounts',
+      '30 Post Dispatches / month',
+      '5,000 AI Content Credits / mo',
+      'Priority Dispatch Queue'
+    ]
+  },
+  {
+    id: 'plan-biz-ultimate',
+    name: 'Business Ultimate',
+    priceMonthly: 249,
+    currency: 'INR',
+    currencySymbol: '₹',
+    allocatedApiSlots: 4,
+    maxSocialAccounts: 8,
+    maxZernioTriggersPerMonth: 30,
+    maxStorageMb: 20000,
+    aiCredits: 10000,
+    billingCycle: 'monthly',
+    targetRole: 'business_user',
+    features: [
+      '8 Social Accounts',
+      '30 Post Dispatches / month',
+      '10,000 AI Content Credits / mo',
+      'Multi-Platform CoreSync & Zenith Engines'
+    ]
+  },
+
+  // 3. INFLUENCER YEARLY PLANS
+  {
+    id: 'plan-influencer-prime',
+    name: 'Influencer Prime',
+    priceMonthly: 417,
+    priceYearly: 5000,
+    currency: 'INR',
+    currencySymbol: '₹',
+    allocatedApiSlots: 25,
+    maxSocialAccounts: 50,
+    maxZernioTriggersPerMonth: 100000,
+    maxStorageMb: 100000,
+    aiCredits: 50000,
+    billingCycle: 'yearly',
+    targetRole: 'influencer',
+    features: [
+      '₹5,000 / year (Billed Annually)',
+      'Everything Unlimited Social Posting',
+      'Private Cloud Media Vault Storage',
+      'Instagram & Facebook Comment Autoresponder',
+      'Influencer Creator Performance Insights',
+      '24/7 Priority VIP Support'
+    ]
+  },
+  {
+    id: 'plan-influencer-vault',
+    name: 'Influencer Enterprise Vault',
+    priceMonthly: 3000,
+    priceYearly: 36000,
+    currency: 'INR',
+    currencySymbol: '₹',
+    allocatedApiSlots: 50,
+    maxSocialAccounts: 100,
+    maxZernioTriggersPerMonth: 1000000,
+    maxStorageMb: 500000,
+    aiCredits: 200000,
+    billingCycle: 'yearly',
+    targetRole: 'influencer',
+    features: [
+      '₹36,000 / year (Billed Annually)',
+      'Dedicated Supabase Premium Cloud Infrastructure',
+      'Unlimited Social Accounts & High-Volume Dispatches',
+      'High-Throughput Parallel Engine Execution',
+      'Dedicated Database Isolation & Cloud CDN',
+      'Personal Technical Account Manager'
+    ]
+  },
+
+  // 4. AGENCY YEARLY PLANS
+  {
+    id: 'plan-agency-command',
+    name: 'Agency Command',
+    priceMonthly: 833,
+    priceYearly: 10000,
+    currency: 'INR',
+    currencySymbol: '₹',
+    allocatedApiSlots: 50,
+    maxSocialAccounts: 100,
+    maxZernioTriggersPerMonth: 250000,
+    maxStorageMb: 250000,
+    aiCredits: 100000,
+    billingCycle: 'yearly',
+    targetRole: 'agency',
+    features: [
+      '₹10,000 / year (Billed Annually)',
+      'Everything Unlimited Multi-Brand Workspace',
+      'Private Cloud Media Vault Storage',
+      'Instagram & Facebook Comment Autoresponder',
+      'Multi-Brand Client Isolation & Team Roles',
+      'Full Agency White-Label Branding'
+    ]
+  },
+  {
+    id: 'plan-agency-infra',
+    name: 'Agency Enterprise Infrastructure',
+    priceMonthly: 3333,
+    priceYearly: 40000,
+    currency: 'INR',
+    currencySymbol: '₹',
+    allocatedApiSlots: 250,
+    maxSocialAccounts: 500,
+    maxZernioTriggersPerMonth: 5000000,
+    maxStorageMb: 1000000,
+    aiCredits: 1000000,
+    billingCycle: 'yearly',
+    targetRole: 'agency',
+    features: [
+      '₹40,000 / year (Billed Annually)',
+      'Dedicated Supabase Premium Cloud Infrastructure',
+      'Unlimited Client Organizations & Social Channels',
+      'Dedicated PostgreSQL Database Cluster & High Availability',
+      'Custom Domain & SSO Enterprise Integration',
+      '24/7 Dedicated SLA & Engineering Support'
     ]
   }
 ];

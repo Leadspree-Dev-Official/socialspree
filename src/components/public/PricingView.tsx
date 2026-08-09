@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { SubscriptionPlan, CurrencyCode } from '../../types';
+import { INITIAL_PLANS } from '../../lib/store';
 import { Check, Sparkles, Zap, ShieldCheck, ArrowRight, HelpCircle } from 'lucide-react';
 
 interface PricingViewProps {
@@ -124,14 +125,26 @@ export const PricingView: React.FC<PricingViewProps> = ({
     }
   ];
 
-  const rawPlans = Array.isArray(plans) && plans.length > 0 ? plans : defaultPlans;
-  // Ensure every plan item has full properties populated
-  const displayPlans = rawPlans.map(p => ({
+  const [selectedRoleTab, setSelectedRoleTab] = useState<'all' | 'business_user' | 'influencer' | 'agency'>('business_user');
+
+  const rawPlans = Array.isArray(plans) && plans.length > 0 ? plans : INITIAL_PLANS;
+  
+  // Filter plans based on category tab
+  const filteredPlans = rawPlans.filter((p: SubscriptionPlan) => {
+    if (selectedRoleTab === 'all') return true;
+    if (selectedRoleTab === 'business_user') return p.targetRole === 'business_user' || p.targetRole === 'free';
+    return p.targetRole === selectedRoleTab;
+  });
+
+  const displayPlans = filteredPlans.map((p: SubscriptionPlan) => ({
     ...p,
     id: p?.id || 'plan-custom',
     name: p?.name || 'Subscription Plan',
     priceMonthly: p?.priceMonthly ?? 19,
-    currency: p?.currency || 'USD',
+    priceYearly: p?.priceYearly,
+    billingCycle: p?.billingCycle || 'monthly',
+    currency: p?.currency || 'INR',
+    currencySymbol: p?.currencySymbol || '₹',
     allocatedApiSlots: p?.allocatedApiSlots ?? 1,
     maxSocialAccounts: p?.maxSocialAccounts ?? 2,
     aiCredits: p?.aiCredits ?? 1000,
@@ -146,68 +159,66 @@ export const PricingView: React.FC<PricingViewProps> = ({
         <div className="text-center max-w-3xl mx-auto space-y-4">
           <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-purple-100 text-[#5D3FD3] text-xs font-bold font-mono">
             <Zap className="w-3.5 h-3.5" />
-            <span>TRANSPARENT REGIONAL PRICING</span>
+            <span>TRANSPARENT SUBSCRIPTION PLANS</span>
           </div>
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-slate-900 tracking-tight">
-            Flexible Subscription Plans for Creators & Agencies
+            Plans Built for Business Users, Influencers & Agencies
           </h2>
           <p className="text-slate-600 font-medium text-base sm:text-lg">
-            Choose your API slot capacity & monthly AI credit allowance. Upgrade, downgrade, or cancel anytime.
+            Select your account role below to explore tailored monthly & annual pricing plans.
           </p>
         </div>
 
-        {/* Billing Cycle Toggle & Currency Switcher Controls */}
-        <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-6">
-          
-          {/* Monthly vs Annual Toggle */}
-          <div className="bg-slate-100 p-1.5 rounded-2xl border border-slate-200/80 flex items-center gap-1 shadow-inner">
-            <button
-              onClick={() => setBillingCycle('monthly')}
-              className={`px-5 py-2 rounded-xl text-xs font-bold transition-all ${
-                billingCycle === 'monthly'
-                  ? 'bg-white text-slate-900 shadow-sm border border-slate-200'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              Monthly Billing
-            </button>
-            <button
-              onClick={() => setBillingCycle('yearly')}
-              className={`px-5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
-                billingCycle === 'yearly'
-                  ? 'bg-[#5D3FD3] text-white shadow-md shadow-purple-500/20'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              <span>Annual Billing</span>
-              <span className="text-[10px] font-extrabold bg-amber-400 text-slate-950 px-2 py-0.5 rounded-full uppercase tracking-wider">
-                20% OFF
-              </span>
-            </button>
-          </div>
+        {/* Category Tabs: Business Users vs Influencers vs Agencies */}
+        <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
+          <button
+            onClick={() => setSelectedRoleTab('business_user')}
+            className={`px-5 py-2.5 rounded-2xl text-xs font-bold transition-all ${
+              selectedRoleTab === 'business_user'
+                ? 'bg-[#5D3FD3] text-white shadow-md shadow-purple-600/20'
+                : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'
+            }`}
+          >
+            🏢 Business Users (Monthly Plans)
+          </button>
 
-          {/* Multi-Currency Selector */}
-          <div className="flex items-center gap-1 bg-white p-1.5 rounded-2xl border border-slate-200 shadow-xs">
-            {(['USD', 'INR', 'GBP'] as CurrencyCode[]).map((curr) => (
-              <button
-                key={curr}
-                onClick={() => setSelectedCurrency(curr)}
-                className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all ${
-                  selectedCurrency === curr
-                    ? 'bg-slate-900 text-white shadow-sm'
-                    : 'text-slate-600 hover:bg-slate-100'
-                }`}
-              >
-                {currencyConfigs[curr]?.label ?? curr}
-              </button>
-            ))}
-          </div>
+          <button
+            onClick={() => setSelectedRoleTab('influencer')}
+            className={`px-5 py-2.5 rounded-2xl text-xs font-bold transition-all ${
+              selectedRoleTab === 'influencer'
+                ? 'bg-pink-600 text-white shadow-md shadow-pink-600/20'
+                : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'
+            }`}
+          >
+            ⭐ Influencers (Yearly Plans)
+          </button>
 
+          <button
+            onClick={() => setSelectedRoleTab('agency')}
+            className={`px-5 py-2.5 rounded-2xl text-xs font-bold transition-all ${
+              selectedRoleTab === 'agency'
+                ? 'bg-amber-600 text-white shadow-md shadow-amber-600/20'
+                : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'
+            }`}
+          >
+            💼 Agencies (Yearly Plans)
+          </button>
+
+          <button
+            onClick={() => setSelectedRoleTab('all')}
+            className={`px-5 py-2.5 rounded-2xl text-xs font-bold transition-all ${
+              selectedRoleTab === 'all'
+                ? 'bg-slate-900 text-white shadow-md'
+                : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'
+            }`}
+          >
+            View All Plans
+          </button>
         </div>
 
         {/* Pricing Cards Grid */}
-        <div className="mt-14 grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
-          {displayPlans.map((plan) => {
+        <div className="mt-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 items-stretch">
+          {displayPlans.map((plan: any) => {
             const priceInfo = getCalculatedPrice(plan);
             const isPro = plan.isPopular || plan.id === 'plan-pro';
             const monthlyVal = priceInfo?.monthlyFormatted ?? 0;
@@ -228,7 +239,7 @@ export const PricingView: React.FC<PricingViewProps> = ({
                 {isPro && (
                   <div className="absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-gradient-to-r from-[#5D3FD3] to-[#0066FF] text-white text-[11px] font-black uppercase tracking-wider shadow-md flex items-center gap-1.5">
                     <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-                    <span>Most Popular Agency Choice</span>
+                    <span>Most Popular Choice</span>
                   </div>
                 )}
 
@@ -246,10 +257,11 @@ export const PricingView: React.FC<PricingViewProps> = ({
                   {/* Price Header */}
                   <div className="mt-6 flex items-baseline gap-1">
                     <span className="text-4xl sm:text-5xl font-black text-slate-900">
-                      {currSymbol}{monthlyVal.toLocaleString()}
+                      {plan.currencySymbol || currSymbol}
+                      {plan.priceYearly ? plan.priceYearly.toLocaleString() : plan.priceMonthly.toLocaleString()}
                     </span>
                     <span className="text-sm font-bold text-slate-500">
-                      / month
+                      {plan.priceYearly || plan.billingCycle === 'yearly' ? '/ year' : '/ month'}
                     </span>
                   </div>
 
@@ -281,7 +293,7 @@ export const PricingView: React.FC<PricingViewProps> = ({
                     <div className="text-xs font-bold text-slate-900 uppercase font-mono tracking-wider">
                       Included Capabilities:
                     </div>
-                    {plan.features.map((feat, idx) => (
+                    {plan.features.map((feat: string, idx: number) => (
                       <div key={idx} className="flex items-start gap-2.5 text-xs text-slate-700 font-medium">
                         <div className="p-0.5 rounded-full bg-emerald-100 text-emerald-600 mt-0.5 shrink-0">
                           <Check className="w-3.5 h-3.5" />
