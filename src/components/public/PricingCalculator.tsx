@@ -84,8 +84,40 @@ export const PricingCalculator: React.FC<PricingCalculatorProps> = ({
 
   const { plan, isExactMatch } = recommendedPlan;
   const currencySymbol = currencyConfigs[selectedCurrency].symbol;
-  const priceMonthly = plan ? convertPrice(plan.priceMonthly, selectedCurrency) : 0;
-  const priceYearly = plan ? (plan.priceYearly ? convertPrice(plan.priceYearly, selectedCurrency) : priceMonthly * 12) : 0;
+
+  const calcPrice = useMemo(() => {
+    if (!plan) return { displayMonthly: 0, displayYearly: 0 };
+    const inrMonthly = plan.priceMonthly ?? 49;
+    const inrYearly = plan.priceYearly ?? (inrMonthly * 12);
+
+    if (inrYearly === 0) return { displayMonthly: 0, displayYearly: 0 };
+
+    if (selectedCurrency === 'USD') {
+      const roundedInrYearly = Math.ceil(inrYearly / 100) * 100;
+      let displayYearly = Math.ceil(roundedInrYearly / 100);
+      if (plan.id === 'plan-influencer-prime' || plan.id === 'plan-prem-biz-prime') displayYearly = 60;
+      if (plan.id === 'plan-agency-command') displayYearly = 120;
+      if (plan.id === 'plan-influencer-vault' || plan.id === 'plan-prem-biz-vault') displayYearly = 450;
+      if (plan.id === 'plan-agency-infra') displayYearly = 500;
+      const displayMonthly = Number((displayYearly / 12).toFixed(2));
+      return { displayMonthly, displayYearly };
+    }
+
+    if (selectedCurrency === 'GBP') {
+      const roundedInrYearly = Math.ceil(inrYearly / 100) * 100;
+      let displayYearly = Math.ceil(roundedInrYearly / 100);
+      if (plan.id === 'plan-influencer-prime' || plan.id === 'plan-prem-biz-prime') displayYearly = 50;
+      if (plan.id === 'plan-agency-command') displayYearly = 100;
+      if (plan.id === 'plan-influencer-vault' || plan.id === 'plan-prem-biz-vault') displayYearly = 360;
+      if (plan.id === 'plan-agency-infra') displayYearly = 400;
+      const displayMonthly = Number((displayYearly / 12).toFixed(2));
+      return { displayMonthly, displayYearly };
+    }
+
+    const displayYearly = inrYearly;
+    const displayMonthly = plan.targetRole === 'business_user' ? inrMonthly : Math.round(inrYearly / 12);
+    return { displayMonthly, displayYearly };
+  }, [plan, selectedCurrency]);
   
   const planMaxPosts = plan ? getPlanMaxPosts(plan) : 0;
   const planMaxAccounts = plan ? plan.maxSocialAccounts : 0;
@@ -269,12 +301,16 @@ export const PricingCalculator: React.FC<PricingCalculatorProps> = ({
                 <>
                   <h4 className="text-3xl font-black text-slate-900 mb-2">{plan.name}</h4>
                   <div className="flex items-baseline gap-1 mb-1">
-                    <span className="text-4xl font-black text-[#5D3FD3]">{currencySymbol}{priceYearly.toLocaleString()}</span>
-                    <span className="text-slate-500 font-bold text-sm">/ year</span>
+                    <span className="text-4xl font-black text-[#5D3FD3]">{currencySymbol}{calcPrice.displayMonthly.toLocaleString()}</span>
+                    <span className="text-slate-500 font-bold text-sm">/ month</span>
                   </div>
-                  {priceMonthly > 0 && (
+                  {calcPrice.displayYearly > 0 ? (
                     <p className="text-xs font-bold text-[#5D3FD3] bg-purple-50 px-2.5 py-1 rounded-lg inline-block font-mono mb-4">
-                      Billed annually (equivalent to {currencySymbol}{priceMonthly.toLocaleString()}/mo)
+                      Billed annually ({currencySymbol}{calcPrice.displayYearly.toLocaleString()} / year)
+                    </p>
+                  ) : (
+                    <p className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-lg inline-block font-mono mb-4">
+                      Free Forever (₹0)
                     </p>
                   )}
                   {!isExactMatch && (

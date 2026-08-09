@@ -28,30 +28,44 @@ export const PricingView: React.FC<PricingViewProps> = ({
     GBP: { symbol: '£', label: 'GBP (£)' },
   };
 
-  // Helper to compute price based on selected currency with Math.ceil ceiling conversion
+  // Helper to compute price based on selected currency with rounded annual conversion
   const getCalculatedPrice = (plan: SubscriptionPlan) => {
+    const currSym = currencyConfigs[selectedCurrency]?.symbol || '₹';
     const inrMonthly = plan.priceMonthly ?? 49;
     const inrYearly = plan.priceYearly ?? (inrMonthly * 12);
 
-    const currSym = currencyConfigs[selectedCurrency]?.symbol || '₹';
-
-    let displayMonthly = inrMonthly;
-    let displayYearly = inrYearly;
-
-    if (selectedCurrency === 'USD') {
-      displayMonthly = Math.ceil(inrMonthly / 80);
-      displayYearly = plan.priceYearly ? Math.ceil(plan.priceYearly / 80) : (displayMonthly * 12);
-    } else if (selectedCurrency === 'GBP') {
-      displayMonthly = Math.ceil(inrMonthly / 100);
-      displayYearly = plan.priceYearly ? Math.ceil(plan.priceYearly / 100) : (displayMonthly * 12);
+    if (inrYearly === 0) {
+      return { currSym, displayMonthly: 0, displayYearly: 0 };
     }
 
-    return {
-      currSym,
-      displayMonthly,
-      displayYearly,
-      chargedAnnualTotal: displayMonthly * 12
-    };
+    if (selectedCurrency === 'USD') {
+      const roundedInrYearly = Math.ceil(inrYearly / 100) * 100;
+      let displayYearly = Math.ceil(roundedInrYearly / 100);
+      if (plan.id === 'plan-influencer-prime' || plan.id === 'plan-prem-biz-prime') displayYearly = 60;
+      if (plan.id === 'plan-agency-command') displayYearly = 120;
+      if (plan.id === 'plan-influencer-vault' || plan.id === 'plan-prem-biz-vault') displayYearly = 450;
+      if (plan.id === 'plan-agency-infra') displayYearly = 500;
+
+      const displayMonthly = Number((displayYearly / 12).toFixed(2));
+      return { currSym, displayMonthly, displayYearly };
+    }
+
+    if (selectedCurrency === 'GBP') {
+      const roundedInrYearly = Math.ceil(inrYearly / 100) * 100;
+      let displayYearly = Math.ceil(roundedInrYearly / 100);
+      if (plan.id === 'plan-influencer-prime' || plan.id === 'plan-prem-biz-prime') displayYearly = 50;
+      if (plan.id === 'plan-agency-command') displayYearly = 100;
+      if (plan.id === 'plan-influencer-vault' || plan.id === 'plan-prem-biz-vault') displayYearly = 360;
+      if (plan.id === 'plan-agency-infra') displayYearly = 400;
+
+      const displayMonthly = Number((displayYearly / 12).toFixed(2));
+      return { currSym, displayMonthly, displayYearly };
+    }
+
+    // INR
+    const displayYearly = inrYearly;
+    const displayMonthly = plan.targetRole === 'business_user' ? inrMonthly : Math.round(inrYearly / 12);
+    return { currSym, displayMonthly, displayYearly };
   };
 
   const defaultPlans: SubscriptionPlan[] = INITIAL_PLANS;
@@ -64,40 +78,28 @@ export const PricingView: React.FC<PricingViewProps> = ({
   const filteredPlans = rawPlans.filter((p: SubscriptionPlan) => {
     const role = p.targetRole || (p.priceMonthly === 0 ? 'free' : p.priceMonthly < 300 ? 'business_user' : 'agency');
     if (selectedRoleTab === 'all') return true;
-    if (selectedRoleTab === 'business_user') return role === 'business_user' || role === 'free';
-    return role === selectedRoleTab;
+    return role === selectedRoleTab || (selectedRoleTab === 'business_user' && role === 'free');
   });
 
-  const displayPlans = filteredPlans.map((p: SubscriptionPlan) => ({
-    ...p,
-    id: p?.id || 'plan-custom',
-    name: p?.name || 'Subscription Plan',
-    priceMonthly: p?.priceMonthly ?? 49,
-    priceYearly: p?.priceYearly,
-    billingCycle: p?.billingCycle || 'monthly',
-    currency: p?.currency || 'INR',
-    currencySymbol: p?.currencySymbol || '₹',
-    allocatedApiSlots: p?.allocatedApiSlots ?? 1,
-    maxSocialAccounts: p?.maxSocialAccounts ?? 2,
-    aiCredits: p?.aiCredits ?? 1000,
-    features: Array.isArray(p?.features) ? p.features : ['Core Social Posting Engine']
-  }));
+  const displayPlans = filteredPlans.length > 0 ? filteredPlans : defaultPlans;
 
   return (
-    <section className="py-16 sm:py-24 bg-gradient-to-b from-white via-purple-50/30 to-slate-50 font-['Inter']">
+    <div className="py-16 bg-gradient-to-b from-purple-50/40 via-white to-slate-50 font-['Inter']">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
-        {/* Title Header */}
+        {/* Header Section */}
         <div className="text-center max-w-3xl mx-auto space-y-4">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-purple-100 text-[#5D3FD3] text-xs font-bold font-mono">
-            <Zap className="w-3.5 h-3.5" />
-            <span>TRANSPARENT SUBSCRIPTION PLANS</span>
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-100 text-[#5D3FD3] text-xs font-bold font-mono">
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>TRANSPARENT ENTERPRISE PRICING</span>
           </div>
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-slate-900 tracking-tight">
-            Plans Built for Business Users, Influencers & Agencies
-          </h2>
-          <p className="text-slate-600 font-medium text-base sm:text-lg">
-            Use the calculator below to find your perfect plan, or browse all plans by role.
+
+          <h1 className="text-4xl sm:text-5xl font-black text-slate-900 tracking-tight">
+            Flexible Plans for Every Growth Stage
+          </h1>
+
+          <p className="text-base sm:text-lg text-slate-600 font-normal leading-relaxed">
+            Provision isolated multi-tenant social management engines. Scale from starter channels to unlimited agency infrastructure.
           </p>
         </div>
 
@@ -111,27 +113,28 @@ export const PricingView: React.FC<PricingViewProps> = ({
           />
         </div>
 
-        {/* Currency Switcher (INR First) */}
-        <div className="mt-8 flex items-center justify-center">
-          <div className="flex items-center gap-1 bg-white p-1.5 rounded-2xl border border-slate-200 shadow-xs">
-            {(['INR', 'USD', 'GBP'] as CurrencyCode[]).map((curr) => (
-              <button
-                key={curr}
-                onClick={() => setSelectedCurrency(curr)}
-                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                  selectedCurrency === curr
-                    ? 'bg-slate-900 text-white shadow-sm'
-                    : 'text-slate-600 hover:bg-slate-100'
-                }`}
-              >
-                {currencyConfigs[curr]?.label ?? curr}
-              </button>
-            ))}
+        {/* Currency Switcher */}
+        <div className="mt-8 flex items-center justify-center gap-2">
+            <span className="text-xs font-bold text-slate-500 font-mono">CURRENCY:</span>
+            <div className="inline-flex bg-slate-100 p-1 rounded-2xl border border-slate-200">
+              {(Object.keys(currencyConfigs) as CurrencyCode[]).map((code) => (
+                <button
+                  key={code}
+                  onClick={() => setSelectedCurrency(code)}
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                    selectedCurrency === code
+                      ? 'bg-white text-[#5D3FD3] shadow-sm border border-slate-200'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  {currencyConfigs[code].label} ({currencyConfigs[code].symbol})
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
 
-        {/* Category Tabs: Business Users vs Influencers vs Agencies */}
-        <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+        {/* Role Category Tabs */}
+        <div className="mt-10 flex flex-wrap items-center justify-center gap-2">
           <button
             onClick={() => setSelectedRoleTab('business_user')}
             className={`px-5 py-2.5 rounded-2xl text-xs font-bold transition-all ${
@@ -193,9 +196,6 @@ export const PricingView: React.FC<PricingViewProps> = ({
           {displayPlans.map((plan: any) => {
             const priceInfo = getCalculatedPrice(plan);
             const isPro = plan.isPopular || plan.id === 'plan-pro' || plan.id === 'plan-biz-pro';
-            const creditsVal = plan?.aiCredits ?? 0;
-
-            const isYearlyTier = plan.targetRole === 'influencer' || plan.targetRole === 'agency' || plan.priceYearly !== undefined;
 
             return (
               <div
@@ -222,21 +222,21 @@ export const PricingView: React.FC<PricingViewProps> = ({
                     </h3>
                   </div>
 
-                  {/* Price Header - Yearly Payment */}
+                  {/* Main Price Header - Monthly Rate */}
                   <div className="mt-6 flex items-baseline gap-1">
                     <span className="text-4xl sm:text-5xl font-black text-slate-900">
                       {priceInfo.currSym}
-                      {priceInfo.displayYearly.toLocaleString()}
+                      {priceInfo.displayMonthly.toLocaleString()}
                     </span>
                     <span className="text-sm font-bold text-slate-500">
-                      / year
+                      / month
                     </span>
                   </div>
 
-                  {/* Monthly Equivalent & Annual Billing Badge */}
-                  {plan.priceMonthly > 0 ? (
+                  {/* Billed Annually Sub-badge */}
+                  {priceInfo.displayYearly > 0 ? (
                     <div className="mt-2 text-xs font-bold text-[#5D3FD3] bg-purple-50 px-2.5 py-1 rounded-lg inline-block font-mono">
-                      Billed annually (equivalent to {priceInfo.currSym}{priceInfo.displayMonthly.toLocaleString()}/mo)
+                      Billed annually ({priceInfo.currSym}{priceInfo.displayYearly.toLocaleString()} / year)
                     </div>
                   ) : (
                     <div className="mt-2 text-xs font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-lg inline-block font-mono">
@@ -285,6 +285,6 @@ export const PricingView: React.FC<PricingViewProps> = ({
         </div>
 
       </div>
-    </section>
+    </div>
   );
 };
