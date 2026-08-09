@@ -57,8 +57,6 @@ export const WhatsAppCheckout: React.FC<WhatsAppCheckoutProps> = ({
 📋 *Plan:* ${plan.name}
 💳 *Billing Cycle:* Billed Annually (Yearly Payment)
 💰 *Amount Due:* ${plan.currencySymbol}${totalYearlyAmount.toLocaleString()} / year
-🔑 *API Key Slots:* ${plan.allocatedApiSlots} Slots (${plan.maxSocialAccounts} Social Channels)
-🤖 *Monthly AI Credits:* ${plan.aiCredits.toLocaleString()} Credits
 🏢 *Organization:* ${sanitizedOrgName || 'N/A'}
 📧 *Email:* ${sanitizedEmail || 'N/A'}
 💳 *Payment Method:* ${paymentChannel}

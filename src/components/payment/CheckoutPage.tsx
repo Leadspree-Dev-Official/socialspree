@@ -190,23 +190,6 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                 </div>
               </div>
 
-              {/* Allocation Highlights */}
-              <div className="grid grid-cols-2 gap-3">
-                <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-100">
-                  <div className="text-[11px] text-slate-500 font-medium">API Slots</div>
-                  <div className="text-sm font-bold text-slate-900 font-mono mt-0.5">
-                    {selectedPlan.allocatedApiSlots} {selectedPlan.allocatedApiSlots === 1 ? 'Slot' : 'Slots'} ({selectedPlan.maxSocialAccounts} Channels)
-                  </div>
-                </div>
-
-                <div className="p-3.5 rounded-2xl bg-purple-50/50 border border-purple-100">
-                  <div className="text-[11px] text-purple-700 font-medium">Monthly AI Ledger</div>
-                  <div className="text-sm font-bold text-purple-900 font-mono mt-0.5">
-                    {selectedPlan.aiCredits.toLocaleString()} Credits/mo
-                  </div>
-                </div>
-              </div>
-
               {/* Feature Checklist */}
               <div className="space-y-2.5 pt-2">
                 <div className="text-xs font-bold text-slate-900 uppercase font-mono tracking-wider">

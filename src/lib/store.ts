@@ -178,10 +178,11 @@ export const INITIAL_PLANS: SubscriptionPlan[] = [
     targetRole: 'premium_business',
     features: [
       '₹5,000 / year (Billed Annually)',
-      'Everything Unlimited Social Posting',
-      'Private Cloud Media Vault Storage Included',
+      'Isolated Cloud Infrastructure (500 MB DB & 1 GB CDN Media Vault)',
+      '50,000 Monthly Active User Sessions & Dispatches',
+      'Everything Unlimited Social Posting & Accounts',
+      'Private Cloud Vault & Daily Automated Backups',
       'Instagram & Facebook Comment Autoresponder Included',
-      'Enterprise Business Analytics & Multi-Tenant Control',
       '24/7 Priority VIP Support'
     ]
   },
@@ -201,9 +202,11 @@ export const INITIAL_PLANS: SubscriptionPlan[] = [
     targetRole: 'premium_business',
     features: [
       '₹36,000 / year (Billed Annually)',
-      'Supabase Premium Isolated Infrastructure Cloud',
-      'Dedicated Database & Storage Instance',
-      'Everything Unlimited Multi-Tenant Slots',
+      'Pro Dedicated Cloud Infrastructure ($25/mo Tier + Upgraded Compute)',
+      '8 GB Database Storage & 100 GB High-Speed Media Vault',
+      '250,000 Monthly Active Sessions & High-Volume Parallel Engines',
+      'Point-in-Time Recovery & 99.9% Cloud Uptime SLA',
+      'Everything Unlimited Social Accounts & Multi-Tenant Channels',
       'Instagram & Facebook Comment Autoresponder Included',
       'Dedicated SLA Account Manager'
     ]
@@ -226,10 +229,11 @@ export const INITIAL_PLANS: SubscriptionPlan[] = [
     targetRole: 'influencer',
     features: [
       '₹5,000 / year (Billed Annually)',
-      'Everything Unlimited Social Posting',
+      'Isolated Cloud Infrastructure (500 MB DB & 1 GB CDN Storage)',
+      '50,000 Monthly Active User Sessions & Dispatches',
+      'Everything Unlimited Social Posting & Channels',
       'Private Cloud Media Vault Storage',
-      'Instagram & Facebook Comment Autoresponder',
-      'Influencer Creator Performance Insights',
+      'Instagram & Facebook Comment Autoresponder Included',
       '24/7 Priority VIP Support'
     ]
   },
@@ -249,15 +253,16 @@ export const INITIAL_PLANS: SubscriptionPlan[] = [
     targetRole: 'influencer',
     features: [
       '₹36,000 / year (Billed Annually)',
-      'Dedicated Supabase Premium Cloud Infrastructure',
+      'Pro Dedicated Cloud Infrastructure ($25/mo Tier + Upgraded Compute)',
+      '8 GB Database Storage & 100 GB High-Speed CDN Media Vault',
+      '250,000 Monthly Active User Sessions & High-Volume Execution',
+      'Point-in-Time Recovery & 99.9% Cloud Uptime SLA',
       'Unlimited Social Accounts & High-Volume Dispatches',
-      'High-Throughput Parallel Engine Execution',
-      'Dedicated Database Isolation & Cloud CDN',
-      'Personal Technical Account Manager'
+      'Dedicated SLA Technical Account Manager'
     ]
   },
 
-  // 4. AGENCY YEARLY PLANS
+  // 5. AGENCY YEARLY PLANS
   {
     id: 'plan-agency-command',
     name: 'Agency Command',
@@ -274,11 +279,12 @@ export const INITIAL_PLANS: SubscriptionPlan[] = [
     targetRole: 'agency',
     features: [
       '₹10,000 / year (Billed Annually)',
-      'Everything Unlimited Multi-Brand Workspace',
+      'Isolated Cloud Infrastructure (500 MB DB & 1 GB CDN Storage)',
+      '50,000 Monthly Active User Sessions & Multi-Brand Workspaces',
+      'Everything Unlimited Multi-Brand Channels & Accounts',
       'Private Cloud Media Vault Storage',
-      'Instagram & Facebook Comment Autoresponder',
-      'Multi-Brand Client Isolation & Team Roles',
-      'Full Agency White-Label Branding'
+      'Instagram & Facebook Comment Autoresponder Included',
+      'Full Agency White-Label Branding & Client Roles'
     ]
   },
   {
@@ -297,10 +303,11 @@ export const INITIAL_PLANS: SubscriptionPlan[] = [
     targetRole: 'agency',
     features: [
       '₹40,000 / year (Billed Annually)',
-      'Dedicated Supabase Premium Cloud Infrastructure',
+      'Pro Dedicated Cloud Infrastructure ($25/mo Tier + Upgraded Compute Cluster)',
+      '8 GB Database Storage & 100 GB High-Speed Media Vault',
+      '250,000 Monthly Active User Sessions & Multi-Tenant Databases',
+      'Point-in-Time Recovery & 99.9% High Availability SLA',
       'Unlimited Client Organizations & Social Channels',
-      'Dedicated PostgreSQL Database Cluster & High Availability',
-      'Custom Domain & SSO Enterprise Integration',
       '24/7 Dedicated SLA & Engineering Support'
     ]
   }

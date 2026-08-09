@@ -215,14 +215,11 @@ export const PricingView: React.FC<PricingViewProps> = ({
                 )}
 
                 <div>
-                  {/* Plan Name & Badge */}
-                  <div className="flex items-center justify-between pt-2">
+                  {/* Plan Name */}
+                  <div className="pt-2">
                     <h3 className="text-xl font-black text-slate-900 tracking-tight">
                       {plan.name}
                     </h3>
-                    <span className="text-[10px] font-mono font-bold bg-slate-100 text-slate-700 px-2.5 py-1 rounded-full">
-                      {plan.allocatedApiSlots} {plan.allocatedApiSlots === 1 ? 'Slot' : 'Slots'} ({plan.maxSocialAccounts} Channels)
-                    </span>
                   </div>
 
                   {/* Price Header - Yearly Payment */}
@@ -246,18 +243,6 @@ export const PricingView: React.FC<PricingViewProps> = ({
                       Free Forever (₹0)
                     </div>
                   )}
-
-                  {/* Feature Summary Metrics */}
-                  <div className="mt-6 p-4 rounded-2xl bg-purple-50/50 border border-purple-100/60 space-y-2">
-                    <div className="flex justify-between text-xs font-bold text-slate-800">
-                      <span>API Slot Allocation:</span>
-                      <span className="text-[#5D3FD3] font-mono">{plan.allocatedApiSlots} Slots ({plan.maxSocialAccounts} Accounts)</span>
-                    </div>
-                    <div className="flex justify-between text-xs font-bold text-slate-800">
-                      <span>Monthly AI Credit Ledger:</span>
-                      <span className="text-[#0066FF] font-mono">{creditsVal.toLocaleString()} Credits/mo</span>
-                    </div>
-                  </div>
 
                   {/* Feature Checklist */}
                   <div className="mt-6 pt-6 border-t border-slate-100 space-y-3">
