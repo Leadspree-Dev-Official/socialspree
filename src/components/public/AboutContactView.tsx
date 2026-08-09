@@ -23,7 +23,7 @@ export const AboutContactView: React.FC = () => {
   )}`;
 
   return (
-    <div className="py-16 sm:py-24 bg-gradient-to-b from-white via-slate-50 to-purple-50/20 font-['Inter']">
+    <div className="py-16 sm:py-24 bg-gradient-to-b from-white via-slate-50 to-purple-50/20 font-['Inter']" id="about">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-20">
         
         {/* Brand Mission & Overview */}

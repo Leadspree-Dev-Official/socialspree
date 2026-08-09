@@ -1,23 +1,10 @@
 /**
  * Composio Dual-Engine Integration Module for SocialSpree
- * Provides alternative multi-platform social media dispatching, managed OAuth sessions,
- * and AI Agent Toolkits via Composio API (https://docs.composio.dev)
+ * Secure backend-delegated OAuth sessions and multi-platform dispatch
  */
 
 import { Post, Tenant, PostLog, SocialPlatform } from '../types';
 import { supabase } from './supabase';
-
-export interface ComposioConfig {
-  apiKey?: string;
-  baseUrl?: string;
-  engineEnabled: boolean;
-}
-
-export const DEFAULT_COMPOSIO_CONFIG: ComposioConfig = {
-  apiKey: ((import.meta as any).env || {}).VITE_COMPOSIO_API_KEY || '',
-  baseUrl: 'https://backend.composio.dev/api/v1',
-  engineEnabled: true
-};
 
 /** Map SocialSpree platform keys to Composio Toolkit IDs */
 export const COMPOSIO_TOOLKIT_MAP: Record<SocialPlatform, string> = {
@@ -46,50 +33,32 @@ export interface ComposioSession {
 
 /**
  * Generate a white-labeled Composio Connect Link for user OAuth channel authentication
- * Uses Composio API: POST /api/v1/connectedAccounts/link
+ * Delegates securely to composio-connect Edge Function without client secret exposure.
  */
 export async function generateComposioConnectLink(
   appName: string,
   tenantId: string,
   callbackUrl: string = typeof window !== 'undefined' ? window.location.origin + '/connections' : ''
 ): Promise<{ redirectUrl: string; connectionId: string }> {
-  const entityId = `tenant_${tenantId}`;
-  const apiKey = DEFAULT_COMPOSIO_CONFIG.apiKey;
-
-  if (!apiKey) {
-    // Hosted Demo Connect Link when API Key is pending configuration
-    const demoUrl = `https://connect.composio.dev/auth?app=${encodeURIComponent(appName)}&entity_id=${encodeURIComponent(entityId)}&callback_url=${encodeURIComponent(callbackUrl)}`;
-    return {
-      redirectUrl: demoUrl,
-      connectionId: `conn_demo_${Date.now()}`
-    };
-  }
-
   try {
-    const res = await fetch(`${DEFAULT_COMPOSIO_CONFIG.baseUrl}/connectedAccounts/link`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey
-      },
-      body: JSON.stringify({
-        appName: appName.toLowerCase(),
-        entityId,
-        callbackUrl
-      })
+    const { data, error } = await supabase.functions.invoke('composio-connect', {
+      body: { action: 'generate_link', appName, tenantId, callbackUrl }
     });
 
-    if (!res.ok) {
-      const errText = await res.text();
-      throw new Error(`Composio Connect Link Error (${res.status}): ${errText}`);
+    if (error || !data) {
+      const entityId = `tenant_${tenantId}`;
+      return {
+        redirectUrl: `https://connect.composio.dev/auth?app=${encodeURIComponent(appName)}&entity_id=${encodeURIComponent(entityId)}&callback_url=${encodeURIComponent(callbackUrl)}`,
+        connectionId: `conn_fallback_${Date.now()}`
+      };
     }
 
-    const data = await res.json();
     return {
-      redirectUrl: data.redirectUrl || data.url || data.link || '',
-      connectionId: data.connectionId || data.id || `conn_${Date.now()}`
+      redirectUrl: data.redirectUrl,
+      connectionId: data.connectionId
     };
   } catch {
+    const entityId = `tenant_${tenantId}`;
     return {
       redirectUrl: `https://connect.composio.dev/auth?app=${encodeURIComponent(appName)}&entity_id=${encodeURIComponent(entityId)}&callback_url=${encodeURIComponent(callbackUrl)}`,
       connectionId: `conn_fallback_${Date.now()}`
@@ -98,38 +67,21 @@ export async function generateComposioConnectLink(
 }
 
 /**
- * Initialize or fetch a Composio user session for a tenant
+ * Initialize or fetch a Composio user session for a tenant via secure Edge Function
  */
 export async function getComposioUserSession(tenant: Tenant): Promise<ComposioSession> {
   const userId = `tenant_${tenant.id}`;
-  
-  // Call Supabase Edge Function or direct Composio API if API key is set
-  const apiKey = DEFAULT_COMPOSIO_CONFIG.apiKey;
-  if (!apiKey) {
-    return {
-      sessionId: `composio_demo_${tenant.id}`,
-      userId,
-      connectedApps: ['INSTAGRAM', 'FACEBOOK', 'LINKEDIN', 'TWITTER', 'YOUTUBE']
-    };
-  }
-
   try {
-    const res = await fetch(`${DEFAULT_COMPOSIO_CONFIG.baseUrl}/sessions`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey
-      },
-      body: JSON.stringify({ user_id: userId })
+    const { data, error } = await supabase.functions.invoke('composio-connect', {
+      body: { action: 'get_session', tenantId: tenant.id }
     });
-    if (!res.ok) throw new Error(`Composio session creation failed: ${res.statusText}`);
-    const data = await res.json();
+    if (error || !data) throw error || new Error('No session returned');
     return {
-      sessionId: data.session_id || data.id,
-      userId,
-      connectedApps: data.connected_apps || ['INSTAGRAM', 'FACEBOOK', 'LINKEDIN', 'TWITTER']
+      sessionId: data.sessionId,
+      userId: data.userId || userId,
+      connectedApps: data.connectedApps || ['INSTAGRAM', 'FACEBOOK', 'LINKEDIN', 'TWITTER']
     };
-  } catch (err: any) {
+  } catch {
     return {
       sessionId: `composio_fallback_${tenant.id}`,
       userId,
@@ -139,7 +91,7 @@ export async function getComposioUserSession(tenant: Tenant): Promise<ComposioSe
 }
 
 /**
- * Execute Post Dispatch via Composio Engine
+ * Execute Post Dispatch via Composio Engine via server publishing queue
  */
 export async function executeComposioPublishing(
   postInput: Omit<Post, 'id' | 'createdAt' | 'status'>,
@@ -167,10 +119,11 @@ export async function executeComposioPublishing(
     createdAt: now
   };
 
-  // Log post dispatch to Supabase
+  // 1. Save post record pre-locked with provider = 'composio'
   const { error: saveError } = await supabase.from('posts').insert({
     id: post.id,
     tenant_id: post.tenantId,
+    provider: 'composio',
     content: post.content,
     media_urls: post.mediaUrls,
     media_type: post.mediaType,
@@ -181,13 +134,20 @@ export async function executeComposioPublishing(
   });
   if (saveError) throw saveError;
 
+  // 2. Queue publishing job
+  const { data: queue, error: queueError } = await supabase.functions.invoke('publish-post', {
+    body: { postId: post.id },
+    headers: { 'x-idempotency-key': `${post.id}:${post.scheduledFor ?? 'now'}` },
+  });
+  if (queueError) throw queueError;
+
   const log: PostLog = {
     id: crypto.randomUUID(),
     postId: post.id,
     tenantId: tenant.id,
-    apiPostId: `composio_job_${postId}`,
+    apiPostId: queue?.jobId ? `composio_job_${queue.jobId}` : `composio_job_${postId}`,
     requestPayload,
-    responsePayload: { queued: true, provider: 'composio', session: session.sessionId },
+    responsePayload: queue ?? { queued: true, provider: 'composio', session: session.sessionId },
     httpStatus: 200,
     executionType: isScheduled ? 'cloud_native' : 'instant',
     createdAt: now
@@ -199,7 +159,7 @@ export async function executeComposioPublishing(
     success: true,
     message: isScheduled
       ? `Queued for CoreSync scheduled dispatch at ${new Date(postInput.scheduledFor!).toLocaleString()}`
-      : `Dispatched via CoreSync Managed OAuth Engine across ${postInput.selectedAccountIds.length} channels.`
+      : `Queued for secure CoreSync managed dispatch across ${postInput.selectedAccountIds.length} channels.`
   };
 }
 
@@ -207,10 +167,8 @@ export async function executeComposioPublishing(
  * Fetch live CoreSync (Composio) media insights & analytics snapshots for a tenant
  */
 export async function fetchComposioAnalyticsSnapshots(tenant: Tenant): Promise<void> {
-  const session = await getComposioUserSession(tenant);
   const now = new Date().toISOString();
 
-  // Query recent published posts for this tenant
   const { data: posts } = await supabase
     .from('posts')
     .select('id, content, selected_account_ids')
@@ -218,7 +176,6 @@ export async function fetchComposioAnalyticsSnapshots(tenant: Tenant): Promise<v
     .limit(10);
 
   if (!posts || posts.length === 0) {
-    // Generate default workspace snapshot if no posts published yet
     await supabase.from('analytics_snapshots').upsert([{
       id: `coresync_default_${tenant.id}`,
       tenant_id: tenant.id,

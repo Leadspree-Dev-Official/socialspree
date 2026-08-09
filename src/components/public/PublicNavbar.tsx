@@ -72,16 +72,13 @@ export const PublicNavbar: React.FC<PublicNavbarProps> = ({
                 <button
                   key={item.id}
                   onClick={() => handleNavClick(item.id)}
-                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all relative ${
+                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                     isActive
-                      ? 'bg-white text-[#5D3FD3] shadow-sm shadow-slate-200 border border-slate-200/50'
+                      ? 'bg-white text-[#5D3FD3] shadow-sm border border-purple-200 font-extrabold'
                       : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
                   }`}
                 >
                   {item.label}
-                  {isActive && (
-                    <span className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-[#5D3FD3]"></span>
-                  )}
                 </button>
               );
             })}

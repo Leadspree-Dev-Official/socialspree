@@ -94,7 +94,7 @@ export async function executePublishing(
   };
 
   const { error: saveError } = await supabase.from('posts').insert({
-    id: post.id, tenant_id: post.tenantId, content: post.content,
+    id: post.id, tenant_id: post.tenantId, provider: 'zernio', content: post.content,
     media_urls: post.mediaUrls, media_type: post.mediaType,
     is_cloudflare_hosted: post.isCloudflareHosted,
     selected_account_ids: post.selectedAccountIds, status: post.status,

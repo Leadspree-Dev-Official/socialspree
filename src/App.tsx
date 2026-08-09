@@ -305,7 +305,18 @@ export function App() {
   const handleNavigatePublic = (view: PublicSubView) => {
     setViewMode('public');
     setPublicSubView(view);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    setTimeout(() => {
+      if (view === 'landing') {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } else {
+        const elem = document.getElementById(view);
+        if (elem) {
+          elem.scrollIntoView({ behavior: 'smooth' });
+        } else {
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+      }
+    }, 50);
   };
 
   const handleLaunchApp = async () => {
@@ -729,27 +740,21 @@ export function App() {
           />
 
           <main className="flex-1">
-            {publicSubView === 'landing' && (
-              <LandingHero
-                onNavigate={handleNavigatePublic}
-                onLaunchApp={handleLaunchApp}
-                onOpenCheckout={(planId) => handleOpenCheckout(planId)}
-              />
-            )}
-            {publicSubView === 'features' && (
-              <FeaturesView
-                onOpenCheckout={(planId) => handleOpenCheckout(planId)}
-                onLaunchApp={handleLaunchApp}
-              />
-            )}
-            {publicSubView === 'pricing' && (
-              <PricingView
-                plans={getStoredPlans()}
-                onOpenCheckout={(planId, cycle, curr, sym) => handleOpenCheckout(planId, cycle, curr, sym)}
-              />
-            )}
-            {publicSubView === 'testimonials' && <TestimonialsView />}
-            {publicSubView === 'about' && <AboutContactView />}
+            <LandingHero
+              onNavigate={handleNavigatePublic}
+              onLaunchApp={handleLaunchApp}
+              onOpenCheckout={(planId) => handleOpenCheckout(planId)}
+            />
+            <FeaturesView
+              onOpenCheckout={(planId) => handleOpenCheckout(planId)}
+              onLaunchApp={handleLaunchApp}
+            />
+            <PricingView
+              plans={getStoredPlans()}
+              onOpenCheckout={(planId, cycle, curr, sym) => handleOpenCheckout(planId, cycle, curr, sym)}
+            />
+            <TestimonialsView />
+            <AboutContactView />
           </main>
 
           <PublicFooter
