@@ -1,5 +1,6 @@
 import { Post, Tenant, PostLog, SocialPlatform } from '../types';
 import { supabase } from './supabase';
+import { executeComposioPublishing } from './composio';
 
 export interface PublishResult {
   post: Post;
@@ -34,8 +35,6 @@ export function validateCloudflareMediaForScheduling(mediaUrls: string[], isClou
 
   return { isValid: true };
 }
-
-import { executeComposioPublishing } from './composio';
 
 /**
  * Execute Enterprise Publishing Engine / Dispatcher (Zernio or Composio)
@@ -127,3 +126,118 @@ export async function executePublishing(
 
   return { post, log, success: true, message };
 }
+
+/**
+ * Generates an OAuth connect URL for a social platform via Zernio Edge Function
+ */
+export async function generateZernioConnectUrl(
+  platform: SocialPlatform,
+  tenantId: string,
+  slotNumber: number = 1,
+  redirectUrl?: string
+): Promise<{ url?: string; redirectUrl?: string; authUrl?: string }> {
+  const { data, error } = await supabase.functions.invoke('zernio-connect', {
+    body: {
+      tenantId,
+      platform,
+      label: `slot-${slotNumber}`,
+      redirectUrl: redirectUrl || window.location.href,
+    },
+  });
+
+  if (error || data?.error) {
+    throw new Error(data?.error || error?.message || 'Failed to generate Zernio Connect URL');
+  }
+
+  const connectUrl = data?.url || data?.redirectUrl || data?.authUrl;
+  return { url: connectUrl, redirectUrl: connectUrl, authUrl: connectUrl };
+}
+
+/**
+ * Fetches and syncs connected accounts for a tenant slot via Zernio Edge Function
+ */
+export async function fetchZernioAccounts(
+  tenantId: string,
+  slotNumber: number = 1
+): Promise<any[]> {
+  const { data, error } = await supabase.functions.invoke('zernio-accounts', {
+    body: {
+      tenantId,
+      label: `slot-${slotNumber}`,
+    },
+  });
+
+  if (error || data?.error) {
+    throw new Error(data?.error || error?.message || 'Failed to fetch Zernio accounts');
+  }
+
+  return data?.accounts ?? [];
+}
+
+/**
+ * Triggers Zernio analytics snapshot sync for a tenant via Zernio Edge Function
+ */
+export async function fetchZernioAnalyticsSnapshots(
+  tenantId: string,
+  slotLabel: string = 'slot-1'
+): Promise<any[]> {
+  const { data, error } = await supabase.functions.invoke('zernio-analytics', {
+    body: {
+      tenantId,
+      label: slotLabel,
+    },
+  });
+
+  if (error || data?.error) {
+    throw new Error(data?.error || error?.message || 'Failed to sync Zernio analytics');
+  }
+
+  return data?.snapshots ?? [];
+}
+
+/**
+ * Retrieves status for a published/scheduled post via Zernio Edge Function
+ */
+export async function getZernioPostStatus(
+  postId: string,
+  tenantId: string
+): Promise<any> {
+  const { data, error } = await supabase.functions.invoke('zernio-post-manage', {
+    body: {
+      action: 'get',
+      postId,
+      tenantId,
+    },
+  });
+
+  if (error || data?.error) {
+    throw new Error(data?.error || error?.message || 'Failed to fetch Zernio post status');
+  }
+
+  return data;
+}
+
+/**
+ * Cancels or deletes a scheduled post in Zernio via Zernio Edge Function
+ */
+export async function deleteZernioScheduledPost(
+  postId: string,
+  tenantId: string,
+  slotLabel: string = 'slot-1'
+): Promise<boolean> {
+  const { data, error } = await supabase.functions.invoke('zernio-post-manage', {
+    body: {
+      action: 'delete',
+      postId,
+      tenantId,
+      label: slotLabel,
+    },
+  });
+
+  if (error || data?.error) {
+    throw new Error(data?.error || error?.message || 'Failed to delete Zernio scheduled post');
+  }
+
+  return data?.deleted ?? true;
+}
+

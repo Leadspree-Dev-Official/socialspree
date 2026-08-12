@@ -97,6 +97,19 @@ export async function executeComposioPublishing(
   postInput: Omit<Post, 'id' | 'createdAt' | 'status'>,
   tenant: Tenant
 ): Promise<{ post: Post; log: PostLog; success: boolean; message: string }> {
+  // 1. Content & Media Validation
+  const hasText = Boolean(postInput.content && postInput.content.trim().length > 0);
+  const hasMedia = postInput.mediaUrls.length > 0;
+
+  if (!hasText && !hasMedia) {
+    throw new Error("Post cannot be empty. Please enter text caption OR attach image/video media.");
+  }
+
+  // 2. Selected Channels Check
+  if (postInput.selectedAccountIds.length === 0) {
+    throw new Error("Please select at least one social media channel to publish to.");
+  }
+
   const session = await getComposioUserSession(tenant);
   const postId = crypto.randomUUID();
   const now = new Date().toISOString();
@@ -164,56 +177,90 @@ export async function executeComposioPublishing(
 }
 
 /**
- * Fetch live CoreSync (Composio) media insights & analytics snapshots for a tenant
+ * Fetches and syncs connected accounts for a tenant slot via Composio Edge Function
  */
-export async function fetchComposioAnalyticsSnapshots(tenant: Tenant): Promise<void> {
-  const now = new Date().toISOString();
-
-  const { data: posts } = await supabase
-    .from('posts')
-    .select('id, content, selected_account_ids')
-    .eq('tenant_id', tenant.id)
-    .limit(10);
-
-  if (!posts || posts.length === 0) {
-    await supabase.from('analytics_snapshots').upsert([{
-      id: `coresync_default_${tenant.id}`,
-      tenant_id: tenant.id,
-      zernio_post_id: `coresync_demo`,
-      views: 14500,
-      likes: 1240,
-      comments: 180,
-      shares: 95,
-      clicks: 340,
-      engagement_rate: 5.2,
-      synced_at: now
-    }], { onConflict: 'id' });
-    return;
-  }
-
-  const snapshots = posts.map((p, idx) => {
-    const views = Math.floor(1200 + idx * 850 + Math.random() * 500);
-    const likes = Math.floor(80 + idx * 45 + Math.random() * 30);
-    const comments = Math.floor(12 + idx * 8 + Math.random() * 10);
-    const shares = Math.floor(5 + idx * 3 + Math.random() * 5);
-    const clicks = Math.floor(25 + idx * 15 + Math.random() * 20);
-    const engagement_rate = Number(((likes + comments + shares) / (views || 1) * 100).toFixed(2));
-
-    return {
-      id: `coresync_snap_${p.id}`,
-      tenant_id: tenant.id,
-      zernio_post_id: `coresync_${p.id.slice(0, 8)}`,
-      views,
-      likes,
-      comments,
-      shares,
-      clicks,
-      engagement_rate,
-      synced_at: now
-    };
+export async function fetchComposioAccounts(
+  tenantId: string,
+  slotNumber: number = 1
+): Promise<any[]> {
+  const { data, error } = await supabase.functions.invoke('composio-accounts', {
+    body: {
+      tenantId,
+      label: `slot-${slotNumber}`,
+    },
   });
 
-  await supabase
-    .from('analytics_snapshots')
-    .upsert(snapshots, { onConflict: 'id' });
+  if (error || data?.error) {
+    throw new Error(data?.error || error?.message || 'Failed to fetch Composio accounts');
+  }
+
+  return data?.accounts ?? [];
 }
+
+/**
+ * Fetch live CoreSync (Composio) media insights & analytics snapshots for a tenant via Edge Function
+ */
+export async function fetchComposioAnalyticsSnapshots(
+  tenant: Tenant,
+  slotLabel: string = 'slot-1'
+): Promise<any[]> {
+  const { data, error } = await supabase.functions.invoke('composio-analytics', {
+    body: {
+      tenantId: tenant.id,
+      label: slotLabel,
+    },
+  });
+
+  if (error || data?.error) {
+    throw new Error(data?.error || error?.message || 'Failed to sync Composio analytics');
+  }
+
+  return data?.snapshots ?? [];
+}
+
+/**
+ * Retrieves status for a published/scheduled Composio post via Edge Function
+ */
+export async function getComposioPostStatus(
+  postId: string,
+  tenantId: string
+): Promise<any> {
+  const { data, error } = await supabase.functions.invoke('composio-post-manage', {
+    body: {
+      action: 'get',
+      postId,
+      tenantId,
+    },
+  });
+
+  if (error || data?.error) {
+    throw new Error(data?.error || error?.message || 'Failed to fetch Composio post status');
+  }
+
+  return data;
+}
+
+/**
+ * Cancels or deletes a scheduled post in Composio via Edge Function
+ */
+export async function deleteComposioScheduledPost(
+  postId: string,
+  tenantId: string,
+  slotLabel: string = 'slot-1'
+): Promise<boolean> {
+  const { data, error } = await supabase.functions.invoke('composio-post-manage', {
+    body: {
+      action: 'delete',
+      postId,
+      tenantId,
+      label: slotLabel,
+    },
+  });
+
+  if (error || data?.error) {
+    throw new Error(data?.error || error?.message || 'Failed to delete Composio scheduled post');
+  }
+
+  return data?.deleted ?? true;
+}
+

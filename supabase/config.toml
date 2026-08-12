@@ -504,3 +504,44 @@ verify_jwt = true
 import_map = "./functions/publish-post/deno.json"
 entrypoint = "./functions/composio-connect/index.ts"
 
+[functions.zernio-connect]
+enabled = true
+verify_jwt = true
+import_map = "./functions/publish-post/deno.json"
+entrypoint = "./functions/zernio-connect/index.ts"
+
+[functions.zernio-accounts]
+enabled = true
+verify_jwt = true
+import_map = "./functions/publish-post/deno.json"
+entrypoint = "./functions/zernio-accounts/index.ts"
+
+[functions.zernio-analytics]
+enabled = true
+verify_jwt = true
+import_map = "./functions/publish-post/deno.json"
+entrypoint = "./functions/zernio-analytics/index.ts"
+
+[functions.zernio-post-manage]
+enabled = true
+verify_jwt = true
+import_map = "./functions/publish-post/deno.json"
+entrypoint = "./functions/zernio-post-manage/index.ts"
+
+[functions.composio-accounts]
+enabled = true
+verify_jwt = true
+import_map = "./functions/publish-post/deno.json"
+entrypoint = "./functions/composio-accounts/index.ts"
+
+[functions.composio-analytics]
+enabled = true
+verify_jwt = true
+import_map = "./functions/publish-post/deno.json"
+entrypoint = "./functions/composio-analytics/index.ts"
+
+[functions.composio-post-manage]
+enabled = true
+verify_jwt = true
+import_map = "./functions/publish-post/deno.json"
+entrypoint = "./functions/composio-post-manage/index.ts"

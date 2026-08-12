@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { fetchComposioAnalyticsSnapshots } from '../../lib/composio';
+import { fetchZernioAnalyticsSnapshots } from '../../lib/zernio';
 import { Tenant, Post, SocialAccount } from '../../types';
 import { 
   BarChart3, 
@@ -55,11 +56,11 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
         if (engine === 'coresync') {
           await fetchComposioAnalyticsSnapshots(tenant);
         } else if (engine === 'zenith') {
-          await supabase.functions.invoke('zernio-analytics', { body: { tenantId: tenant.id } });
+          await fetchZernioAnalyticsSnapshots(tenant.id);
         } else {
           await Promise.all([
             fetchComposioAnalyticsSnapshots(tenant),
-            supabase.functions.invoke('zernio-analytics', { body: { tenantId: tenant.id } })
+            fetchZernioAnalyticsSnapshots(tenant.id)
           ]);
         }
       }

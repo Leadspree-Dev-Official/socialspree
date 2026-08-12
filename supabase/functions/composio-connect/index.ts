@@ -1,15 +1,17 @@
 import { actor, cors, json } from '../_shared/server.ts';
+import { getComposioKey } from '../_shared/composio.ts';
 
 Deno.serve(async req => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
   try {
-    const { profile } = await actor(req);
+    const { db, profile } = await actor(req);
     const body = await req.json();
     const { action, appName, tenantId, callbackUrl } = body;
 
-    const composioApiKey = Deno.env.get('COMPOSIO_API_KEY');
     const targetTenantId = profile.is_super_admin ? (tenantId || profile.tenant_id) : profile.tenant_id;
     const entityId = `tenant_${targetTenantId}`;
+    // Resolve per-tenant key from vault, falling back to global COMPOSIO_API_KEY env secret
+    const composioApiKey = await getComposioKey(db, targetTenantId);
 
     if (action === 'generate_link') {
       if (!composioApiKey) {

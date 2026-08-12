@@ -16,8 +16,8 @@ export async function slotKey(db: any, tenantId: string, label: string) {
 }
 
 export function normalizeZernioError(error: unknown) {
-  if (error instanceof RateLimitError) return { code: 'rate_limit', message: error.message, retryAfterSeconds: error.getSecondsUntilReset(), retryable: true };
-  if (error instanceof ValidationError) return { code: 'validation', message: error.message, fields: error.fields, retryable: false };
+  if (error instanceof RateLimitError) return { code: 'rate_limit', message: error.message, retryAfterSeconds: error.getSecondsUntilReset(), retryable: true, statusCode: 429 };
+  if (error instanceof ValidationError) return { code: 'validation', message: error.message, fields: error.fields, retryable: false, statusCode: 422 };
   if (error instanceof ZernioApiError) return { code: 'api_error', message: error.message, statusCode: error.statusCode, retryable: error.statusCode === 408 || error.statusCode === 409 || error.statusCode === 429 || error.statusCode >= 500 };
-  return { code: 'unknown', message: error instanceof Error ? error.message : 'Zernio request failed', retryable: true };
+  return { code: 'unknown', message: error instanceof Error ? error.message : 'Zernio request failed', retryable: true, statusCode: 500 };
 }

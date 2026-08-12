@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { SocialAccount, Tenant, SocialPlatform } from '../../types';
-import { generateComposioConnectLink } from '../../lib/composio';
+import { generateComposioConnectLink, fetchComposioAccounts } from '../../lib/composio';
+import { generateZernioConnectUrl, fetchZernioAccounts } from '../../lib/zernio';
 import { 
   Share2, 
   Plus, 
@@ -91,15 +92,27 @@ export const SocialConnectionsView: React.FC<SocialConnectionsViewProps> = ({
   const [error, setError] = useState<string>();
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    if (!params.get('connected') && params.get('zernio') !== 'connected') return;
+    // The OAuth callback URL is built with ?connected=true, so check that param.
+    if (params.get('connected') !== 'true') return;
     const slot = Number(params.get('slot') || 1);
     setBusy(`sync:${slot}`);
-    supabase.functions.invoke('zernio-accounts', { body: { tenantId: tenant.id, label: `slot-${slot}` } })
-      .then(({ data, error: invokeError }) => {
-        if (invokeError || data?.error) setError(data?.error || invokeError?.message);
-        else window.location.assign(`${window.location.origin}${window.location.pathname}`);
-      }).finally(() => setBusy(undefined));
-  }, [tenant.id]);
+
+    const engine = tenant.dispatchEngine || 'dual';
+    const isComposio = engine === 'coresync' || (engine as string) === 'composio';
+    const syncPromise = isComposio
+      ? fetchComposioAccounts(tenant.id, slot)
+      : engine === 'zenith'
+      ? fetchZernioAccounts(tenant.id, slot)
+      : Promise.all([fetchZernioAccounts(tenant.id, slot), fetchComposioAccounts(tenant.id, slot)]);
+
+    syncPromise
+      .then(() => {
+        window.location.assign(`${window.location.origin}${window.location.pathname}`);
+      })
+      .catch((err: any) => setError(err?.message || 'Failed to sync connected accounts'))
+      .finally(() => setBusy(undefined));
+  }, [tenant.id, tenant.dispatchEngine]);
+
   const handleToggleChannel = async (slotNum: number, platformId: SocialPlatform, isConnected: boolean, isAtLimit: boolean) => {
     if (isConnected || isAtLimit) return;
 
@@ -107,26 +120,23 @@ export const SocialConnectionsView: React.FC<SocialConnectionsViewProps> = ({
     setError(undefined);
 
     try {
+      const isZernioEngine = !tenant.dispatchEngine || tenant.dispatchEngine === 'zenith' || tenant.dispatchEngine === 'dual';
       const callbackUrl = `${window.location.origin}${window.location.pathname}?connected=true&slot=${slotNum}&platform=${platformId}`;
-      const { redirectUrl } = await generateComposioConnectLink(platformId, tenant.id, callbackUrl);
       
-      if (redirectUrl) {
-        window.open(redirectUrl, 'composio_auth', 'width=620,height=780,scrollbars=yes,status=yes');
-      }
-
-      if (onAddAccount) {
-        onAddAccount({
-          platform: platformId,
-          channelAccountId: `composio_${platformId}_${Date.now()}`,
-          accountName: `${platformId.toUpperCase()} Account`,
-          accountHandle: `@${platformId}_user`,
-          accountAvatar: '',
-          slotNumber: slotNum,
-          status: 'active'
-        });
+      if (isZernioEngine) {
+        const { redirectUrl } = await generateZernioConnectUrl(platformId, tenant.id, slotNum, callbackUrl);
+        if (redirectUrl) {
+          window.open(redirectUrl, 'zernio_auth', 'width=620,height=780,scrollbars=yes,status=yes');
+        }
+      } else {
+        // Composio OAuth: open the auth popup; account sync happens on redirect return
+        const { redirectUrl } = await generateComposioConnectLink(platformId, tenant.id, callbackUrl);
+        if (redirectUrl) {
+          window.open(redirectUrl, 'composio_auth', 'width=620,height=780,scrollbars=yes,status=yes');
+        }
       }
     } catch (err: any) {
-      setError(err?.message || 'Unable to generate CoreSync Connect Link');
+      setError(err?.message || 'Unable to generate Connect Link');
     } finally {
       setBusy(undefined);
     }

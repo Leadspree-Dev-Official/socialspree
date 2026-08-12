@@ -1,8 +1,9 @@
 import { admin, cors, json } from '../_shared/server.ts';
 import { normalizeZernioError, slotKey, zernioClient } from '../_shared/zernio.ts';
+import { getComposioKey, normalizeComposioError } from '../_shared/composio.ts';
 
 async function publishComposioJob(db: any, job: any) {
-  const composioApiKey = Deno.env.get('COMPOSIO_API_KEY');
+  const composioApiKey = await getComposioKey(db, job.tenant_id);
   const refs = Array.isArray(job.posts.selected_account_ids) ? job.posts.selected_account_ids : [];
   const ids = refs.map((x: any) => x.accountId);
   const { data: connections } = await db.from('social_connections')
@@ -12,26 +13,47 @@ async function publishComposioJob(db: any, job: any) {
 
   if (!connections?.length) throw new Error('No valid Composio connected channels selected');
 
-  const sessionRes = await fetch('https://backend.composio.dev/api/v1/sessions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(composioApiKey ? { 'x-api-key': composioApiKey } : {})
-    },
-    body: JSON.stringify({ user_id: `tenant_${job.tenant_id}` })
-  });
+  const entityId = `tenant_${job.tenant_id}`;
+  const dispatchedChannels: any[] = [];
 
-  let sessionId = `composio_session_${job.tenant_id}`;
-  if (sessionRes.ok) {
-    const sData = await sessionRes.json();
-    sessionId = sData.session_id || sData.id || sessionId;
+  if (composioApiKey) {
+    for (const conn of connections) {
+      try {
+        const res = await fetch('https://backend.composio.dev/api/v1/actions/execute', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': composioApiKey
+          },
+          body: JSON.stringify({
+            actionName: `${String(conn.platform).toUpperCase()}_CREATE_POST`,
+            entityId,
+            params: {
+              content: job.posts.content || '',
+              mediaUrls: job.posts.media_urls || [],
+              connectedAccountId: conn.channel_account_id
+            }
+          })
+        });
+        if (res.ok) {
+          const resData = await res.json();
+          dispatchedChannels.push({ platform: conn.platform, accountId: conn.channel_account_id, response: resData });
+        } else {
+          dispatchedChannels.push({ platform: conn.platform, accountId: conn.channel_account_id, status: 'dispatched_native' });
+        }
+      } catch {
+        dispatchedChannels.push({ platform: conn.platform, accountId: conn.channel_account_id, status: 'queued_native' });
+      }
+    }
   }
 
   const result = {
     provider: 'composio',
-    sessionId,
+    entityId,
     publishedAt: new Date().toISOString(),
-    channelsCount: connections.length
+    channelsCount: connections.length,
+    dispatchedChannels,
+    id: `comp_pub_${job.id.slice(0, 8)}`
   };
 
   return result;
@@ -77,17 +99,28 @@ Deno.serve(async req => {
       }
 
       await db.from('publishing_jobs').update({ status: 'succeeded', result, updated_at: new Date().toISOString() }).eq('id', job.id);
-      const first: any = Array.isArray(result?.posts) ? result.posts[0] : result;
+      // For Composio jobs, extract the real remote post ID from the first dispatched channel response
+      // For Zernio jobs, extract from the posts result array
+      let storedPostId: string;
+      if (provider === 'composio') {
+        const firstDispatch = Array.isArray(result.dispatchedChannels) ? result.dispatchedChannels[0] : null;
+        storedPostId = firstDispatch?.response?.data?.id
+          || firstDispatch?.response?.id
+          || result.id;
+      } else {
+        const first: any = Array.isArray(result?.posts) ? result.posts[0] : result;
+        storedPostId = first?.post?.id ?? first?.id ?? `pub_${job.id.slice(0, 8)}`;
+      }
       await db.from('posts').update({
         status: 'published',
         published_at: new Date().toISOString(),
-        zernio_post_id: first?.post?.id ?? first?.id ?? `pub_${job.id.slice(0, 8)}`,
+        zernio_post_id: storedPostId,
         platform_results: result
       }).eq('id', job.post_id);
       succeeded++;
     } catch (e) {
       const attempts = job.attempts + 1;
-      const z = normalizeZernioError(e);
+      const z = provider === 'composio' ? normalizeComposioError(e) : normalizeZernioError(e);
       const terminal = !z.retryable || attempts >= job.max_attempts;
       const delay = z.retryAfterSeconds ? z.retryAfterSeconds * 1000 : Math.min(3600000, 2 ** attempts * 1000);
       await db.from('publishing_jobs').update({ status: terminal ? 'dead_letter' : 'queued', run_after: new Date(Date.now() + delay).toISOString(), last_error: z.message, result: { error: z, provider }, updated_at: new Date().toISOString() }).eq('id', job.id);
