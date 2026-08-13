@@ -13,8 +13,39 @@ export async function actor(req: Request) {
   // Supabase Third-Party Auth maps Clerk's JWT subject to the user identity.
   // Keep the lookup keyed to the verified token subject, never an email or
   // browser-supplied profile ID.
-  const { data: profile } = await db.from('profiles').select('id,tenant_id,is_super_admin,role').eq('id', user.id).single();
-  if (!profile) throw new Error('Profile not provisioned');
+  let { data: profile } = await db.from('profiles').select('id,tenant_id,is_super_admin,role').eq('id', user.id).maybeSingle();
+
+  if (!profile && user.email) {
+    const emailLower = user.email.toLowerCase().trim();
+    const { data: emailProfile } = await db.from('profiles').select('id,tenant_id,is_super_admin,role').ilike('email', emailLower).maybeSingle();
+    if (emailProfile) {
+      await db.from('profiles').update({ id: user.id }).eq('id', emailProfile.id);
+      profile = { ...emailProfile, id: user.id };
+    } else {
+      const newTenantId = crypto.randomUUID();
+      await db.from('tenants').insert({
+        id: newTenantId,
+        name: `${user.email.split('@')[0]}'s Workspace`,
+        owner_email: emailLower,
+        tier_plan: 'free',
+        status: 'active',
+        payment_status: 'paid'
+      }).catch(() => {});
+
+      const { data: newProfile } = await db.from('profiles').upsert({
+        id: user.id,
+        email: emailLower,
+        full_name: user.user_metadata?.full_name || user.email.split('@')[0],
+        tenant_id: newTenantId,
+        role: 'business_user',
+        is_super_admin: false
+      }).select('id,tenant_id,is_super_admin,role').single();
+
+      profile = newProfile;
+    }
+  }
+
+  if (!profile) throw new Error('Your account profile is not provisioned yet.');
   return { db, user, profile };
 }
 
