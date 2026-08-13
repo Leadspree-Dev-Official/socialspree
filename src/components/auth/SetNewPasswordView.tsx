@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useClerk, useUser } from '@clerk/react';
 import { ArrowLeft, KeyRound, ShieldCheck, Lock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -15,6 +16,18 @@ export function SetNewPasswordView({ onCancel }: SetNewPasswordViewProps) {
   const clerk = useClerk();
   const { isSignedIn } = useUser();
   const navigate = useNavigate();
+  useEffect(() => {
+    if (!isSignedIn) {
+      const timer = setTimeout(() => {
+        try {
+          clerk.openSignIn();
+        } catch {
+          /* ignore if already open */
+        }
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [isSignedIn, clerk]);
 
   const handleBackToSignIn = () => {
     if (onCancel) {
