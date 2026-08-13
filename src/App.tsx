@@ -52,6 +52,7 @@ import { DocsView } from './components/public/DocsView';
 import { PublicFooter } from './components/public/PublicFooter';
 import { CheckoutPage } from './components/payment/CheckoutPage';
 import { AuthGate } from './components/auth/AuthGate';
+import { SetNewPasswordView } from './components/auth/SetNewPasswordView';
 import { clearAuthenticatedCache, hydrateFromCloud, mapProfile, type Profile } from './lib/api';
 import { auth } from './lib/api';
 import { setClerkTokenProvider, supabase } from './lib/supabase';
@@ -83,7 +84,7 @@ export function App() {
     if (typeof window === 'undefined') return { tab: 'dashboard', view: 'public' };
     const path = window.location.pathname.replace(/^\/+|\/+$/g, '');
     if (!path || path === 'features' || path === 'pricing' || path === 'testimonials' || path === 'about' || path === 'docs' || path === 'checkout' || path === 'cart') return { tab: 'dashboard', view: 'public' };
-    if (path === 'login' || path === 'auth' || path === 'sign-in') return { tab: 'dashboard', view: 'auth' };
+    if (path === 'login' || path === 'auth' || path === 'sign-in' || path === 'reset' || path === 'reset-password' || path === 'set-password') return { tab: 'dashboard', view: 'auth' };
     if (path === 'admin') return { tab: 'admin', view: 'app' };
     if (path === 'infludash' || path === 'influencer' || path === 'agency' || path === 'dashboard') {
       return { tab: 'dashboard', view: 'app' };
@@ -886,6 +887,9 @@ export function App() {
                   onLaunchApp={handleLaunchApp}
                 />
               } />
+              <Route path="/reset" element={<SetNewPasswordView onCancel={() => { setCloudError(''); setViewMode('public'); navigate('/'); }} />} />
+              <Route path="/reset-password" element={<SetNewPasswordView onCancel={() => { setCloudError(''); setViewMode('public'); navigate('/'); }} />} />
+              <Route path="/set-password" element={<SetNewPasswordView onCancel={() => { setCloudError(''); setViewMode('public'); navigate('/'); }} />} />
             </Routes>
           </main>
 
