@@ -48,20 +48,21 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
 
   // Compute pricing
   const baseMonthly = selectedPlan.priceMonthly ?? 49;
+  const sourceCurrency = selectedPlan.currency || 'USD';
   let convertedMonthly = baseMonthly;
 
-  if (effectiveCurrency === 'USD') {
+  if (sourceCurrency === 'INR' && effectiveCurrency === 'USD') {
     convertedMonthly = Math.ceil(baseMonthly / 80);
-  } else if (effectiveCurrency === 'GBP') {
+  } else if (sourceCurrency === 'INR' && effectiveCurrency === 'GBP') {
     convertedMonthly = Math.ceil(baseMonthly / 100);
   }
 
   const displayMonthly = convertedMonthly;
   const totalYearlyAmount = selectedPlan.priceYearly 
-    ? (effectiveCurrency === 'USD' ? Math.ceil(selectedPlan.priceYearly / 80) : effectiveCurrency === 'GBP' ? Math.ceil(selectedPlan.priceYearly / 100) : selectedPlan.priceYearly)
+    ? (sourceCurrency === 'INR' && effectiveCurrency === 'USD' ? Math.ceil(selectedPlan.priceYearly / 80) : sourceCurrency === 'INR' && effectiveCurrency === 'GBP' ? Math.ceil(selectedPlan.priceYearly / 100) : selectedPlan.priceYearly)
     : (displayMonthly * 12);
 
-  const totalAmount = totalYearlyAmount;
+  const totalAmount = billingCycle === 'yearly' ? totalYearlyAmount : displayMonthly;
 
   return (
     <div className="min-h-screen bg-slate-50 font-['Inter'] text-slate-900 py-4 px-3 sm:px-6 lg:px-8 flex flex-col justify-between">
@@ -262,7 +263,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                   {activeChannel === 'whatsapp' ? (
                     <WhatsAppCheckout
                       plan={selectedPlan}
-                      billingCycle="yearly"
+                      billingCycle={billingCycle}
                       onClose={() => {}}
                     />
                   ) : (

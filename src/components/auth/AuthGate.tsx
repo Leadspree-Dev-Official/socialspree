@@ -62,7 +62,7 @@ export function AuthGate({ onCancel }: AuthGateProps) {
                 onClick={() => signOut(() => { window.location.href = '/login'; })}
                 className="flex h-11 w-full items-center justify-center gap-2 border border-slate-300 bg-white px-4 text-xs font-bold text-slate-700 transition-colors hover:bg-slate-50 rounded-xl"
               >
-                <LogOut className="h-3.5 h-3.5" />
+                <LogOut className="w-3.5 h-3.5" />
                 Sign out & Switch Account
               </button>
             </div>

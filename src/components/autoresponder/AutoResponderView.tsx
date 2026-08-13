@@ -216,8 +216,8 @@ export const AutoResponderView: React.FC<AutoResponderViewProps> = ({
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         };
 
-        setLogs([newLog, ...logs]);
-        setRules(rules.map(r => r.id === matchedRule.id ? { ...r, triggerCount: r.triggerCount + 1 } : r));
+        setLogs(prevLogs => [newLog, ...prevLogs]);
+        setRules(prevRules => prevRules.map(r => r.id === matchedRule.id ? { ...r, triggerCount: r.triggerCount + 1 } : r));
         setNotification(`⚡ Webhook Triggered! Matched Keyword "${foundKw.toUpperCase()}". Public comment reply & Private DM dispatched!`);
       } else {
         setNotification(`ℹ️ Comment received, but no active rule matched keywords in "${simComment}".`);

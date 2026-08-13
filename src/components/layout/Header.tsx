@@ -249,23 +249,23 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* User Account Quick Switcher */}
         <div className="flex items-center gap-2">
-          <button 
-            onClick={onOpenUserProfile} 
-            className="w-9 h-9 rounded-full border-2 border-purple-300 hover:border-[#5D3FD3] overflow-hidden flex items-center justify-center transition-all shadow-2xs"
-            title="Open Profile Settings"
-          >
-            {avatarUrl ? (
+          {avatarUrl ? (
+            <button 
+              onClick={onOpenUserProfile} 
+              className="w-9 h-9 rounded-full border-2 border-purple-300 hover:border-[#5D3FD3] overflow-hidden flex items-center justify-center transition-all shadow-2xs"
+              title="Open Profile Settings"
+            >
               <img src={avatarUrl} alt={displayName} className="w-full h-full object-cover" />
-            ) : (
-              <UserButton 
-                appearance={{
-                  elements: {
-                    avatarBox: "w-9 h-9 rounded-full border border-slate-300 hover:border-[#5D3FD3]"
-                  }
-                }}
-              />
-            )}
-          </button>
+            </button>
+          ) : (
+            <UserButton 
+              appearance={{
+                elements: {
+                  avatarBox: "w-9 h-9 rounded-full border border-slate-300 hover:border-[#5D3FD3]"
+                }
+              }}
+            />
+          )}
         </div>
 
       </div>

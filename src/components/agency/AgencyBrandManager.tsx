@@ -198,7 +198,9 @@ export const AgencyBrandManager: React.FC<AgencyBrandManagerProps> = ({
 
                   <div className="grid grid-cols-3 gap-2 mt-4 pt-3 border-t border-slate-100 text-[11px] font-mono text-slate-600">
                     <div className="bg-slate-50 p-2 rounded-lg text-center">
-                      <div className="font-bold text-slate-900">{accounts.length}</div>
+                      <div className="font-bold text-slate-900">
+                        {accounts.filter(a => brand.connectedAccountIds.includes(a.id) || brand.connectedAccountIds.includes(a.channelAccountId)).length || brand.connectedAccountIds.length}
+                      </div>
                       <div className="text-[9px] text-slate-400 uppercase">Accounts</div>
                     </div>
                     <div className="bg-slate-50 p-2 rounded-lg text-center">

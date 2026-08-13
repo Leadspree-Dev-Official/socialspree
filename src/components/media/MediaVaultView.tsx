@@ -503,16 +503,21 @@ export const MediaVaultView: React.FC<MediaVaultViewProps> = ({
                       >
                         {copiedId === asset.id ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
                       </button>
-                      <a
-                        href={getSafeExternalUrl(asset.url)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="p-1 text-slate-500 hover:text-slate-900 rounded aria-disabled:pointer-events-none aria-disabled:opacity-40"
-                        aria-disabled={!getSafeExternalUrl(asset.url)}
-                        title="Open External URL"
-                      >
-                        <ExternalLink className="w-3.5 h-3.5" />
-                      </a>
+                      {getSafeExternalUrl(asset.url) ? (
+                        <a
+                          href={getSafeExternalUrl(asset.url)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="p-1 text-slate-500 hover:text-slate-900 rounded"
+                          title="Open External URL"
+                        >
+                          <ExternalLink className="w-3.5 h-3.5" />
+                        </a>
+                      ) : (
+                        <span className="p-1 text-slate-300 cursor-not-allowed" title="Invalid URL">
+                          <ExternalLink className="w-3.5 h-3.5" />
+                        </span>
+                      )}
                     </div>
                   </div>
 

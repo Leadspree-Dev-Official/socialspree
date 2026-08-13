@@ -104,7 +104,7 @@ export const AuditLogsView: React.FC<AuditLogsViewProps> = ({
                         ? 'bg-emerald-100 text-emerald-800'
                         : 'bg-red-100 text-red-800'
                     }`}>
-                      {log.httpStatus} OK
+                      {log.httpStatus} {log.httpStatus === 200 || log.httpStatus === 201 ? 'OK' : 'Error'}
                     </span>
                   </td>
 

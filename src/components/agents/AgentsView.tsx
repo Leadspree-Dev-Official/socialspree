@@ -682,7 +682,7 @@ How can I assist you today? 😊`;
             </div>
 
             <button
-              onClick={() => setMessages([messages[0]])}
+              onClick={() => setMessages(messages.length > 0 ? [messages[0]] : [])}
               className="px-3 py-1.5 text-slate-500 hover:text-slate-900 hover:bg-slate-200/50 rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors"
             >
               <RefreshCw className="w-3.5 h-3.5" />

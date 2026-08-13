@@ -44,13 +44,19 @@ export const RazorpaySandbox: React.FC<RazorpaySandboxProps> = ({
       return;
     }
     if (!(window as any).Razorpay) {
-      await new Promise<void>((resolve, reject) => {
-        const script = document.createElement('script');
-        script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-        script.onload = () => resolve();
-        script.onerror = () => reject(new Error('Unable to load Razorpay Checkout'));
-        document.head.appendChild(script);
-      }).catch(err => setErrorMessage(err.message));
+      try {
+        await new Promise<void>((resolve, reject) => {
+          const script = document.createElement('script');
+          script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+          script.onload = () => resolve();
+          script.onerror = () => reject(new Error('Unable to load Razorpay Checkout'));
+          document.head.appendChild(script);
+        });
+      } catch (err: any) {
+        setErrorMessage(err.message || 'Unable to load Razorpay Checkout');
+        setState('form');
+        return;
+      }
     }
     if (!(window as any).Razorpay) { setState('form'); return; }
     const checkout = new (window as any).Razorpay({

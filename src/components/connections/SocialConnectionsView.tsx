@@ -42,7 +42,7 @@ export const SocialConnectionsView: React.FC<SocialConnectionsViewProps> = ({
   const tenantAccounts = accounts.filter(a => a.tenantId === tenant.id);
   const slotsList = tenant.apiSlotDetails && tenant.apiSlotDetails.length > 0
     ? tenant.apiSlotDetails
-    : Array.from({ length: tenant.allocatedApiSlots || 2 }).map((_, idx) => ({
+    : Array.from({ length: tenant.allocatedApiSlots ?? 2 }).map((_, idx) => ({
         id: `slot-${idx + 1}`,
         slotNumber: idx + 1,
         slotName: `API ${idx + 1}`,

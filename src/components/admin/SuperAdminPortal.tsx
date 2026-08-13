@@ -216,6 +216,7 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
       setBusinessModeEnabled(true);
       setAgencyModeEnabled(false);
       setInfluencerModeEnabled(false);
+      setWebsiteEnabled(true);
     } else if (mode === 'website') {
       if (!agencyModeEnabled && !influencerModeEnabled) {
         setWebsiteEnabled(prev => !prev);
@@ -229,7 +230,9 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
     GLOBAL_SYSTEM_SETTINGS.currencySymbol = currencySymbol;
     GLOBAL_SYSTEM_SETTINGS.platformName = platformName.trim();
     GLOBAL_SYSTEM_SETTINGS.supportEmail = supportEmail.trim();
-    GLOBAL_SYSTEM_SETTINGS.aiApiKey = '';
+    if (aiApiKeyInput.trim()) {
+      GLOBAL_SYSTEM_SETTINGS.aiApiKey = `••••${aiApiKeyInput.trim().slice(-4)}`;
+    }
     GLOBAL_SYSTEM_SETTINGS.defaultAiCredits = defaultCreditsInput;
     GLOBAL_SYSTEM_SETTINGS.websiteEnabled = websiteEnabled;
     GLOBAL_SYSTEM_SETTINGS.agencyModeEnabled = agencyModeEnabled;
@@ -772,9 +775,9 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
                 <label className="block font-semibold text-slate-700 mb-1">Global AI API Key (Gemini API / OpenAI API)</label>
                 <input
                   type="text"
-                  required
                   value={aiApiKeyInput}
                   onChange={(e) => setAiApiKeyInput(e.target.value)}
+                  placeholder="Optional: Enter new key to update"
                   className="w-full p-2.5 border rounded-lg font-mono text-xs focus:ring-2 focus:ring-amber-500"
                 />
               </div>
@@ -1850,10 +1853,14 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
             {/* Custom Quota Overrides Form */}
             <form onSubmit={(e) => {
               e.preventDefault();
-              inspectingTenant.maxSocialAccounts = customAccountsInput;
-              inspectingTenant.customZernioDailyLimit = customDailyZernioInput;
-              inspectingTenant.customZernioMonthlyLimit = customMonthlyZernioInput;
-              inspectingTenant.customStorageLimitMb = customStorageMbInput;
+              onUpdateTenantLimit(inspectingTenant.id, customAccountsInput);
+              setInspectingTenant(prev => prev ? {
+                ...prev,
+                maxSocialAccounts: customAccountsInput,
+                customZernioDailyLimit: customDailyZernioInput,
+                customZernioMonthlyLimit: customMonthlyZernioInput,
+                customStorageLimitMb: customStorageMbInput
+              } : null);
               setInspectingTenant(null);
             }} className="space-y-3 pt-2 text-xs border-t border-slate-100">
               <h4 className="font-bold text-slate-900">Super Admin Custom Quota Overrides</h4>

@@ -330,7 +330,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
               </div>
 
               <p className="text-xs font-medium text-slate-800 line-clamp-2">
-                {item.content || (item.zernio_post_id ? `Post #${item.zernio_post_id}` : 'Top Performing Social Campaign Asset')}
+                {item.content || tenantPosts.find(p => p.id === item.post_id)?.content || (item.zernio_post_id ? `Post #${item.zernio_post_id}` : 'Top Performing Social Campaign Asset')}
               </p>
 
               <div className="grid grid-cols-3 gap-1 pt-2 border-t border-slate-200/60 text-[10px] font-mono text-slate-600">

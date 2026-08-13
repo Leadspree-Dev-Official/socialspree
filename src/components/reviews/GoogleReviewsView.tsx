@@ -137,7 +137,9 @@ export const GoogleReviewsView: React.FC<GoogleReviewsViewProps> = ({
                 <button
                   onClick={() => {
                     setSelectedReview(rev);
-                    handleGenerateAIReply(rev);
+                    if (!replyInput.trim()) {
+                      handleGenerateAIReply(rev);
+                    }
                   }}
                   className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold rounded-xl shadow-xs flex items-center gap-1.5"
                 >

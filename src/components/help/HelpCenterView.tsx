@@ -23,12 +23,6 @@ import {
 
 export const HelpCenterView: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
-
-  // Ticket Form State
-  const [subject, setSubject] = useState('');
-  const [message, setMessage] = useState('');
-  const [submittedTicket, setSubmittedTicket] = useState(false);
 
   const faqs = [
     {
@@ -48,10 +42,21 @@ export const HelpCenterView: React.FC = () => {
       a: "Standard Tier uses our hybrid background cron engine to process background dispatches. Pro Tier Engine features real-time cloud native dispatchers with instant execution, custom webhook callbacks, and expanded social channel connection limits (up to 100 accounts)."
     },
     {
+      q: "How do AI credits work and how can I top them up?",
+      a: "Each AI caption, hashtag, or hook generation debits 10 AI credits from your tenant balance. AI Agent chat bookings debit 15 credits. If your credit balance falls below 10, contact your Super Admin to request an instant credit top-up."
+    },
+    {
       q: "How does Super Admin API allocation work?",
       a: "Super Admin (leadspree24x7@gmail.com) has root access in the Super Admin Portal to provision client accounts, allocate master API keys, toggle subscription tiers, set max account connection limits, and update global Cloudinary/Cloudflare storage defaults."
     }
   ];
+
+  const [openFaqQuestion, setOpenFaqQuestion] = useState<string | null>(faqs[0]?.q || null);
+
+  // Ticket Form State
+  const [subject, setSubject] = useState('');
+  const [message, setMessage] = useState('');
+  const [submittedTicket, setSubmittedTicket] = useState(false);
 
   const filteredFaqs = faqs.filter(f => 
     f.q.toLowerCase().includes(searchQuery.toLowerCase()) || 
@@ -113,11 +118,11 @@ export const HelpCenterView: React.FC = () => {
 
           <div className="space-y-3">
             {filteredFaqs.map((faq, idx) => {
-              const isOpen = openFaqIndex === idx;
+              const isOpen = openFaqQuestion === faq.q;
               return (
                 <div key={idx} className="border border-slate-200 rounded-xl overflow-hidden transition-colors">
                   <button
-                    onClick={() => setOpenFaqIndex(isOpen ? null : idx)}
+                    onClick={() => setOpenFaqQuestion(isOpen ? null : faq.q)}
                     className="w-full p-4 text-left font-bold text-xs text-slate-900 bg-slate-50/50 hover:bg-slate-100 flex items-center justify-between gap-3"
                   >
                     <span>{faq.q}</span>

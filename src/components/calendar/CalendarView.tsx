@@ -881,10 +881,10 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                   onClick={() => {
                     if (onDeletePost) {
                       onDeletePost(inspectPost.id);
+                      setNotification('🗑️ Scheduled post deleted successfully!');
+                      setTimeout(() => setNotification(null), 3000);
                     }
                     setInspectPost(null);
-                    setNotification('🗑️ Scheduled post deleted successfully!');
-                    setTimeout(() => setNotification(null), 3000);
                   }}
                   className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                   title="Delete Scheduled Post"

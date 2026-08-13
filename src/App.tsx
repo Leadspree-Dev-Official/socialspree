@@ -944,6 +944,7 @@ export function App() {
                   onDeductAiCredits={(amount, desc) => handleDeductAiCredits(currentTenant.id, amount, desc)}
                   onPostPublished={handlePostPublished}
                   onUpdateTenantCloudinary={handleUpdateTenantCloudinary}
+                  onNavigateToCalendar={() => setActiveTab('calendar')}
                 />
               )}
 

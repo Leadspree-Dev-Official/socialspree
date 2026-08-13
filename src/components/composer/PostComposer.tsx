@@ -39,6 +39,7 @@ interface PostComposerProps {
   onDeductAiCredits?: (amount: number, description: string) => void;
   onPostPublished: (post: Post, log: any) => void;
   onUpdateTenantCloudinary?: (tenantId: string, config: CloudinaryConfig) => void;
+  onNavigateToCalendar?: () => void;
 }
 
 export const PostComposer: React.FC<PostComposerProps> = ({
@@ -47,7 +48,8 @@ export const PostComposer: React.FC<PostComposerProps> = ({
   aiLogs = [],
   onDeductAiCredits,
   onPostPublished,
-  onUpdateTenantCloudinary
+  onUpdateTenantCloudinary,
+  onNavigateToCalendar
 }) => {
   const [content, setContent] = useState('');
   const [mediaMode, setMediaMode] = useState<'cloudinary' | 'link'>('cloudinary');
@@ -66,7 +68,11 @@ export const PostComposer: React.FC<PostComposerProps> = ({
   }, [tenant.id, accounts.length]);
 
   const [isScheduling, setIsScheduling] = useState(false);
-  const [scheduledDate, setScheduledDate] = useState('2026-07-30T14:00');
+  const [scheduledDate, setScheduledDate] = useState(() => {
+    const d = new Date();
+    d.setHours(d.getHours() + 1, 0, 0, 0);
+    return d.toISOString().slice(0, 16);
+  });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploadingCloudinary, setIsUploadingCloudinary] = useState(false);
@@ -122,7 +128,10 @@ export const PostComposer: React.FC<PostComposerProps> = ({
       return;
     }
     setAiOutput(data.content);
-    setAiNotification(`⚡ AI Output Generated (${data.creditsRemaining} credits remaining)`);
+    if (onDeductAiCredits) {
+      onDeductAiCredits(10, `AI ${mode} generation`);
+    }
+    setAiNotification(`⚡ AI Output Generated (${data.creditsRemaining ?? currentAiCredits - 10} credits remaining)`);
     setTimeout(() => setAiNotification(null), 3000);
   };
 
@@ -212,8 +221,8 @@ export const PostComposer: React.FC<PostComposerProps> = ({
     }
   };
 
-  const handleSaveCloudinarySettings = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSaveCloudinarySettings = (e?: React.SyntheticEvent) => {
+    if (e) e.preventDefault();
     if (onUpdateTenantCloudinary) {
       onUpdateTenantCloudinary(tenant.id, {
         cloudName: customCloudName.trim() || GLOBAL_DEFAULT_CLOUDINARY.cloudName,
@@ -266,6 +275,17 @@ export const PostComposer: React.FC<PostComposerProps> = ({
     setIsSubmitting(true);
     setNotification(null);
 
+    if (isScheduling && mediaUrls.length > 0) {
+      const { isValid, message } = validateCloudflareMediaForScheduling(mediaUrls, false);
+      if (!isValid && message) {
+        setNotification({
+          type: 'error',
+          title: 'Media Validation Warning',
+          message
+        });
+      }
+    }
+
     const postPayload: Post = {
       id: crypto.randomUUID(),
       tenantId: tenant.id,
@@ -315,7 +335,9 @@ export const PostComposer: React.FC<PostComposerProps> = ({
           'bg-purple-50 border-purple-300 text-purple-900'
         }`}>
           <div className="flex items-center gap-3">
-            {notification.type === 'success' ? <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" /> : <AlertCircle className="w-5 h-5 text-red-600 shrink-0" />}
+            {notification.type === 'success' ? <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" /> :
+             notification.type === 'error' ? <AlertCircle className="w-5 h-5 text-red-600 shrink-0" /> :
+             <Zap className="w-5 h-5 text-purple-600 shrink-0" />}
             <div>
               <div className="font-bold text-sm">{notification.title}</div>
               <div>{notification.message}</div>
@@ -346,8 +368,12 @@ export const PostComposer: React.FC<PostComposerProps> = ({
             <button
               type="button"
               onClick={() => {
-                const calBtn = document.querySelector('button[key="calendar"]') as HTMLElement;
-                if (calBtn) calBtn.click();
+                if (onNavigateToCalendar) {
+                  onNavigateToCalendar();
+                } else {
+                  const calTab = document.querySelector('[data-tab="calendar"]') as HTMLElement;
+                  if (calTab) calTab.click();
+                }
               }}
               className="px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm"
             >

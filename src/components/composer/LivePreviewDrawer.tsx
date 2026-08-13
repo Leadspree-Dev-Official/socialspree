@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { SocialPlatform } from '../../types';
 import { 
   Instagram, 
@@ -39,8 +39,16 @@ export const LivePreviewDrawer: React.FC<LivePreviewDrawerProps> = ({
   mediaType,
   tenantName
 }) => {
-  // Always default to Instagram as requested
   const [activePlatform, setActivePlatform] = useState<PreviewPlatform>('instagram');
+
+  useEffect(() => {
+    if (selectedPlatforms.length > 0) {
+      const first = selectedPlatforms[0] as PreviewPlatform;
+      if (['instagram', 'linkedin', 'youtube', 'facebook', 'google_business'].includes(first)) {
+        setActivePlatform(first);
+      }
+    }
+  }, [selectedPlatforms]);
 
   const platformTabs: { id: PreviewPlatform; label: string; icon: any }[] = [
     { id: 'instagram', label: 'Instagram', icon: Instagram },

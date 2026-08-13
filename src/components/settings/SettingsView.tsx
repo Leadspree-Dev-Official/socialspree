@@ -99,7 +99,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     if (clerkAvatar && !avatarUrl) {
       setAvatarUrl(clerkAvatar);
     }
-  }, [clerkName, clerkEmail, clerkAvatar]);
+  }, [clerkName, clerkEmail, clerkAvatar, fullName, userEmail, avatarUrl]);
 
   // Profile Save State
   const [profileSaving, setProfileSaving] = useState(false);
@@ -241,7 +241,17 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
   const handleSaveDeveloperKeys = (e: React.FormEvent) => {
     e.preventDefault();
-    setNotification('Social API Developer Keys Saved Successfully!');
+    try {
+      localStorage.setItem(`dev_keys_${tenant.id}`, JSON.stringify({
+        metaAppId: metaAppId.trim(),
+        metaAppSecret: metaAppSecret.trim(),
+        linkedInClientId: linkedInClientId.trim(),
+        youtubeApiKey: youtubeApiKey.trim()
+      }));
+      setNotification('Social API Developer Keys Saved Successfully!');
+    } catch {
+      setNotification('Failed to save developer keys.');
+    }
     setTimeout(() => setNotification(null), 3000);
   };
 
