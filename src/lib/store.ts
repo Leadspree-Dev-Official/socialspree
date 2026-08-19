@@ -29,7 +29,10 @@ export const GLOBAL_SYSTEM_SETTINGS: SystemSettings = {
   influencerModeEnabled: false,
   businessModeEnabled: true,
   aiCreditsEnabled: false,
-  voiceAssistantEnabled: false
+  voiceAssistantEnabled: false,
+  zernioEnabled: true,
+  coresyncEnabled: true,
+  dispatchEngine: 'dual'
 };
 
 // Global Subscription Plans (Business, Influencer, and Agency Tiers)

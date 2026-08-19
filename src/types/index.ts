@@ -127,6 +127,8 @@ export interface SystemSettings {
   businessModeEnabled?: boolean;
   aiCreditsEnabled?: boolean;
   voiceAssistantEnabled?: boolean;
+  zernioEnabled?: boolean;
+  coresyncEnabled?: boolean;
 }
 
 export interface Tenant {
