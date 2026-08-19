@@ -26,6 +26,7 @@ import {
   LogOut
 } from 'lucide-react';
 import { SuperAdminSubTab } from '../admin/SuperAdminPortal';
+import { GLOBAL_SYSTEM_SETTINGS } from '../../lib/store';
 
 export type TabType = 
   | 'dashboard' 
@@ -194,18 +195,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <span>Storage & Cloudflare CDN</span>
             </button>
 
-            {/* AI Credits & Limits */}
-            <button
-              onClick={() => handleAdminSubTabClick('ai_credits')}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-all ${
-                activeTab === 'admin' && activeAdminSubTab === 'ai_credits'
-                  ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 shadow-md shadow-amber-900/40 font-extrabold'
-                  : 'text-amber-300 hover:text-amber-200 hover:bg-amber-500/10'
-              }`}
-            >
-              <Sparkles className="w-4 h-4 text-amber-400" />
-              <span>AI Credits & Settings</span>
-            </button>
+            {/* AI Credits & Limits (Only visible when AI Credits is turned ON) */}
+            {GLOBAL_SYSTEM_SETTINGS.aiCreditsEnabled && (
+              <button
+                onClick={() => handleAdminSubTabClick('ai_credits')}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-all ${
+                  activeTab === 'admin' && activeAdminSubTab === 'ai_credits'
+                    ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 shadow-md shadow-amber-900/40 font-extrabold'
+                    : 'text-amber-300 hover:text-amber-200 hover:bg-amber-500/10'
+                }`}
+              >
+                <Sparkles className="w-4 h-4 text-amber-400" />
+                <span>AI Credits & Settings</span>
+              </button>
+            )}
 
             {/* Server Profile Presets */}
             <button

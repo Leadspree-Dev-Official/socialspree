@@ -779,13 +779,15 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
                             <Eye className="w-3 h-3 text-purple-700" />
                             <span>Inspect</span>
                           </button>
-                          <button
-                            onClick={() => onSelectSubTab('ai_credits')}
-                            title="Top-Up AI Credits"
-                            className="px-2 py-0.5 bg-amber-50 text-amber-800 hover:bg-amber-100 rounded text-[10px] font-bold border border-amber-200 cursor-pointer"
-                          >
-                            + Credits
-                          </button>
+                          {aiCreditsEnabled && (
+                            <button
+                              onClick={() => onSelectSubTab('ai_credits')}
+                              title="Top-Up AI Credits"
+                              className="px-2 py-0.5 bg-amber-50 text-amber-800 hover:bg-amber-100 rounded text-[10px] font-bold border border-amber-200 cursor-pointer"
+                            >
+                              + Credits
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>
