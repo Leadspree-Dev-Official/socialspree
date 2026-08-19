@@ -15,7 +15,14 @@ import {
   Database,
   Star,
   RefreshCw,
-  Sliders
+  Sliders,
+  Send,
+  Building2,
+  Lock,
+  Globe2,
+  Cpu,
+  Share2,
+  HardDrive
 } from 'lucide-react';
 
 interface FeaturesViewProps {
@@ -27,294 +34,277 @@ export const FeaturesView: React.FC<FeaturesViewProps> = ({
   onOpenCheckout,
   onLaunchApp,
 }) => {
-  const [selectedFeatureIndex, setSelectedFeatureIndex] = useState(0);
-  const [activeTabSlotDemo, setActiveTabSlotDemo] = useState<number>(1);
-  const [aiPromptDemo, setAiPromptDemo] = useState('Create an engaging launch post for a SaaS social media publishing tool');
+  const [selectedSlotCount, setSelectedSlotCount] = useState<number>(3);
+  const [aiPromptDemo, setAiPromptDemo] = useState('Create an agency announcement post for client onboarding');
   const [aiResultDemo, setAiResultDemo] = useState<string | null>(null);
   const [aiGenerating, setAiGenerating] = useState(false);
+  const [activePreviewPlatform, setActivePreviewPlatform] = useState<'instagram' | 'tiktok' | 'linkedin' | 'x'>('instagram');
 
   const handleSimulateAi = () => {
     setAiGenerating(true);
     setTimeout(() => {
-      setAiResultDemo(`🚀 Scale your agency's social presence with SocialSpree! Multi-channel parallel publishing, Cloudflare CDN media storage, and AI-powered viral hashtag generation.\n\n#SaaS #SocialMediaMarketing #AgencyGrowth #Automation #TechTool`);
+      setAiResultDemo(`🚀 Excited to onboard our newest enterprise brand to SocialSpree! 100% automated multi-channel publishing with isolated API slot governance and Cloudflare CDN video delivery. ⚡\n\n#DigitalAgency #MarketingAutomation #SaaS #SocialGrowth`);
       setAiGenerating(false);
-    }, 800);
+    }, 700);
   };
 
   const featurePillars = [
     {
       id: 'api-slots',
-      title: 'Multi-Tenant 2-Channel API Slot Allocation',
-      subtitle: 'Isolated secret keys per tenant with strict 2-channel boundary per slot',
+      title: 'Isolated 2-Channel API Slots',
+      subtitle: 'Zero cross-contamination or quota collisions across client accounts',
       icon: Key,
-      badge: 'Architecture Core',
+      badge: 'Multi-Tenant Core',
       color: 'from-[#5D3FD3] to-purple-600',
-      description: 'Each tenant receives isolated Zenith API slots configured by Super Admin. 1 API Slot allocates exactly 2 social media channels, eliminating rate limit collisions across tenant workloads.',
+      description: 'Each workspace tenant is provisioned with dedicated 2-channel API slot boundaries. 1 Slot = 2 Channels firing in parallel, ensuring complete rate limit isolation.',
       highlights: [
-        'Isolated secret API keys per tenant workspace',
-        'Strict 2-channel boundary (1 slot = 2 accounts)',
-        'Dynamic slot upgrade & expansion via Super Admin',
-        'Zero cross-tenant key leakage or quota overlap'
+        'Isolated secret credentials per tenant',
+        'Strict 2-channel boundary per slot group',
+        'Dynamic slot upgrades via Super Admin',
+        '100% White-Labeled client workspace'
       ]
     },
     {
       id: 'device-preview',
-      title: 'Interactive iPhone 16 Pro Live Feed Preview',
-      subtitle: 'WYSIWYG preview frame across Instagram, LinkedIn, X, TikTok, YouTube & Facebook',
+      title: 'Real-Time Hardware Preview',
+      subtitle: 'WYSIWYG layout viewport matching authentic iOS display geometry',
       icon: Smartphone,
-      badge: 'Visual Editor',
+      badge: 'Visual Precision',
       color: 'from-blue-600 to-indigo-600',
-      description: 'Validate post formatting, aspect ratios, line breaks, and hashtag layout in an authentic iPhone 16 Pro viewport before firing to live social channels.',
+      description: 'Verify aspect ratios, line breaks, Dynamic Island notch geometry, and hashtag readability before triggering parallel network dispatch.',
       highlights: [
-        'Real-time multi-platform feed switching',
-        'Authentic iOS notch & display geometry',
-        'Media crop ratio validation (1:1, 9:16, 16:9)',
-        'Character count limit warnings per platform'
+        'Instant multi-platform feed switcher',
+        'Authentic notch & status bar layout',
+        'Image & video aspect crop validation',
+        'Platform character limit alerts'
       ]
     },
     {
       id: 'cloud-native',
-      title: 'Parallel Key Firing & Cloud Native Execution',
-      subtitle: 'Instant dispatch or background cron job worker execution',
+      title: 'Parallel Async Firing Queue',
+      subtitle: 'Concurrent dispatch to 15+ social networks in under 200ms',
       icon: Zap,
-      badge: 'Execution Engine',
+      badge: 'Dispatch Engine',
       color: 'from-amber-500 to-orange-600',
-      description: 'Fire posts to 10+ social accounts simultaneously using async multi-threaded parallel requests. Scheduled posts run via background Cloud Native cron workers.',
+      description: 'Fire scheduled or instant posts concurrently across Instagram, TikTok, LinkedIn, YouTube, X, and Facebook with automatic retry mechanisms.',
       highlights: [
-        'Instant multi-channel parallel request dispatch',
-        'Background cron job scheduled post execution',
-        'Automatic retry on temporary HTTP failures (503/504)',
-        'Real-time status tracking: Draft -> Scheduled -> Published'
+        'Simultaneous multi-network dispatch',
+        'Background cron worker execution',
+        'Idempotent request tracking',
+        'Real-time HTTP payload audit trail'
       ]
     },
     {
       id: 'ai-generator',
-      title: 'AI Viral Content & Hashtag Generator',
-      subtitle: 'Built-in AI credit ledger (10 credits per generation) for captions & tags',
+      title: 'AI Viral Content & Hashtags',
+      subtitle: 'Built-in Gemini AI credit engine (10 credits/run) for hooks & tags',
       icon: Bot,
-      badge: 'AI Engine',
-      color: 'from-purple-600 to-pink-600',
-      description: 'Generate high-converting post captions, tailored call-to-actions, and optimized viral hashtag clusters with built-in credit ledger tracking.',
+      badge: 'AI Automation',
+      color: 'from-pink-500 to-rose-600',
+      description: 'Generate high-converting post captions, viral hashtag clusters, and tailored engagement hooks with real-time tenant credit ledger tracking.',
       highlights: [
-        'Gemini AI API integration with prompt tuning',
-        'Deducts exactly 10 AI credits per generation',
-        'Automatic AI Credit Log audit trail',
-        'Super Admin manual AI credit top-up support'
+        'Gemini API prompt engineering',
+        'Deducts exactly 10 AI credits per run',
+        'Auto-inserts into composer editor',
+        'AI credit refill console in Super Admin'
       ]
     },
     {
-      id: 'dual-cdn',
-      title: 'Dual Media CDN Infrastructure (Cloudflare + Cloudinary)',
-      subtitle: 'Public R2 domain delivery & multi-account Cloudinary storage pool manager',
+      id: 'media-vault',
+      title: 'Cloudflare CDN & Media Vault',
+      subtitle: 'Ultra-fast global edge media storage and video distribution',
       icon: Cloud,
-      badge: 'Media Pipeline',
-      color: 'from-[#0066FF] to-cyan-600',
-      description: 'High-speed global media distribution powered by Cloudflare R2 public bucket delivery and multi-account Cloudinary fallback pool.',
+      badge: 'Media Infrastructure',
+      color: 'from-cyan-500 to-blue-600',
+      description: 'Host video reels, high-resolution carousels, and graphic assets on global Cloudflare edge CDN with unsigned Cloudinary direct uploads.',
       highlights: [
-        'Cloudflare R2 Public Domain (https://pub-4921029102.r2.dev)',
-        'Multi-Cloudinary account pool managed by Super Admin',
-        'Automatic image optimization & video transcoding',
-        'Tenant-level custom CDN domain overrides'
+        'Instant CDN video delivery globally',
+        'Multi-Cloudinary storage pool manager',
+        'Strict tenant media isolation',
+        'Enforced CDN links for scheduled posts'
       ]
     },
     {
-      id: 'review-responder',
-      title: 'Google Review AI Responder & Audit Logs',
-      subtitle: 'Automated review sentiment analysis and HTTP request audit trail',
-      icon: FileText,
-      badge: 'Reputation & Audit',
-      color: 'from-emerald-600 to-teal-600',
-      description: 'Monitor Google Business reviews, categorize sentiment (Positive / Neutral / Negative), and trigger AI-generated responses with full HTTP request payload logging.',
+      id: 'agency-suite',
+      title: 'Agency Multi-Brand Suite',
+      subtitle: 'Dedicated workspaces, brand colors, and team governance',
+      icon: Building2,
+      badge: 'Agency Operations',
+      color: 'from-purple-700 to-indigo-800',
+      description: 'Manage unlimited client brands under one roof. Assign brand colors, logos, channel groupings, and team access without data leakage.',
       highlights: [
-        'Automated sentiment classification & star rating filter',
-        'One-click AI response generation',
-        'Complete HTTP payload request/response audit logs',
-        'Filter logs by execution mode (Instant, Cron, Cloud Native)'
+        'Isolated multi-brand profiles',
+        'Custom brand palettes and logos',
+        'Super Admin governance console',
+        'Instant role switching for demos'
       ]
     }
   ];
 
-  const currentFeature = featurePillars[selectedFeatureIndex];
-
   return (
-    <div className="py-16 sm:py-24 bg-gradient-to-b from-slate-50 to-white font-['Inter']">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="py-16 sm:py-24 bg-gradient-to-b from-purple-50/40 via-white to-slate-50 font-['Inter']">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-20">
         
-        {/* Section Title */}
+        {/* ========================================================================= */}
+        {/* SECTION HEADER */}
+        {/* ========================================================================= */}
         <div className="text-center max-w-3xl mx-auto space-y-4">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-100 text-[#5D3FD3] text-xs font-bold font-mono">
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>PLATFORM CAPABILITIES</span>
+          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-purple-100 text-[#5D3FD3] text-xs font-bold font-mono">
+            <Cpu className="w-3.5 h-3.5" />
+            <span>ENTERPRISE ARCHITECTURE</span>
           </div>
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-slate-900 tracking-tight">
-            6 Core Feature Pillars Built for Enterprise Scale
-          </h2>
-          <p className="text-slate-600 font-medium text-base sm:text-lg">
-            Everything digital agencies and SaaS providers need to manage multi-tenant social media publishing with zero operational friction.
+          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-slate-900 tracking-tight">
+            Built for Extreme Throughput & Complete Tenant Isolation
+          </h1>
+          <p className="text-slate-600 font-medium text-base sm:text-lg leading-relaxed">
+            Discover the 6 core pillars that make SocialSpree the premier multi-tenant publishing platform for digital agencies and high-velocity creators.
           </p>
         </div>
 
-        {/* Feature Cards Grid (6 Pillars) */}
-        <div className="mt-16 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {featurePillars.map((feature, idx) => {
-            const Icon = feature.icon;
-            const isSelected = selectedFeatureIndex === idx;
+        {/* ========================================================================= */}
+        {/* 6-PILLAR FEATURE BENTO GRID */}
+        {/* ========================================================================= */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {featurePillars.map((pillar) => {
+            const Icon = pillar.icon;
             return (
               <div
-                key={feature.id}
-                onClick={() => setSelectedFeatureIndex(idx)}
-                className={`bg-white rounded-3xl p-6 sm:p-8 border transition-all cursor-pointer flex flex-col justify-between relative group ${
-                  isSelected
-                    ? 'border-[#5D3FD3] shadow-xl shadow-purple-500/10 ring-2 ring-purple-500/20'
-                    : 'border-slate-200/80 hover:border-purple-300 hover:shadow-lg'
-                }`}
+                key={pillar.id}
+                className="bg-white rounded-3xl p-8 border border-slate-200/80 shadow-md hover:shadow-2xl hover:border-purple-300 transition-all duration-300 flex flex-col justify-between group relative overflow-hidden"
               >
-                <div>
-                  <div className="flex items-center justify-between mb-6">
-                    <div className={`w-12 h-12 rounded-2xl bg-gradient-to-tr ${feature.color} text-white flex items-center justify-center shadow-md`}>
-                      <Icon className="w-6 h-6" />
-                    </div>
-                    <span className="text-[11px] font-bold font-mono px-2.5 py-1 rounded-full bg-slate-100 text-slate-700">
-                      {feature.badge}
+                {/* Top Glowing Header Accent */}
+                <div className={`w-14 h-14 rounded-2xl bg-gradient-to-tr ${pillar.color} text-white flex items-center justify-center mb-6 shadow-lg shadow-purple-500/20 group-hover:scale-105 transition-transform`}>
+                  <Icon className="w-7 h-7" />
+                </div>
+
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full border border-purple-100">
+                      {pillar.badge}
                     </span>
                   </div>
 
                   <h3 className="text-xl font-black text-slate-900 tracking-tight group-hover:text-[#5D3FD3] transition-colors">
-                    {feature.title}
+                    {pillar.title}
                   </h3>
-                  <p className="text-xs font-semibold text-[#5D3FD3] mt-1">
-                    {feature.subtitle}
+
+                  <p className="text-xs text-slate-600 font-medium leading-relaxed">
+                    {pillar.description}
                   </p>
-                  <p className="text-xs text-slate-600 mt-3 leading-relaxed">
-                    {feature.description}
-                  </p>
+
+                  {/* Highlights Checklist */}
+                  <div className="pt-4 border-t border-slate-100 space-y-2">
+                    {pillar.highlights.map((h, i) => (
+                      <div key={i} className="flex items-center gap-2 text-xs text-slate-700 font-semibold">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                        <span>{h}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
 
-                <div className="mt-6 pt-4 border-t border-slate-100 space-y-2">
-                  {feature.highlights.slice(0, 2).map((h, hIdx) => (
-                    <div key={hIdx} className="flex items-center gap-2 text-xs text-slate-700 font-medium">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                      <span>{h}</span>
-                    </div>
-                  ))}
-                  
-                  <div className="pt-2 flex items-center justify-between text-xs font-bold text-[#5D3FD3]">
-                    <span>Explore Feature Sandbox</span>
-                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                  </div>
+                <div className="pt-6 mt-6 border-t border-slate-100 flex items-center justify-between">
+                  <span className="text-[11px] font-mono font-bold text-slate-400">
+                    Engine SLA: 99.99%
+                  </span>
+                  <span className="text-xs font-bold text-[#5D3FD3] flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+                    <span>Explore</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </span>
                 </div>
               </div>
             );
           })}
         </div>
 
-        {/* Feature Sandbox Preview Block */}
-        <div className="mt-16 bg-slate-900 text-white rounded-3xl p-8 sm:p-12 border border-slate-800 shadow-2xl relative overflow-hidden">
+        {/* ========================================================================= */}
+        {/* INTERACTIVE FEATURE PLAYGROUND: API SLOT CALCULATOR */}
+        {/* ========================================================================= */}
+        <div className="bg-slate-900 text-white rounded-3xl p-6 sm:p-10 border border-slate-800 shadow-2xl overflow-hidden relative">
+          <div className="absolute top-0 right-0 w-96 h-96 bg-[#5D3FD3]/20 rounded-full blur-3xl -z-0 pointer-events-none" />
           
-          <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-8 pb-8 border-b border-slate-800">
-            <div>
-              <div className="flex items-center gap-3">
-                <span className="text-xs font-mono font-bold px-3 py-1 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30">
-                  Interactive Demo
-                </span>
-                <span className="text-xs text-slate-400 font-mono">Pillar #{selectedFeatureIndex + 1} of 6</span>
+          <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+            
+            {/* Left Column: Interactive Slider */}
+            <div className="lg:col-span-6 space-y-6">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/20 text-purple-300 text-xs font-mono font-bold border border-purple-500/30">
+                <Key className="w-3.5 h-3.5 text-amber-300" />
+                <span>INTERACTIVE 2-CHANNEL SLOT CALCULATOR</span>
               </div>
-              <h3 className="text-2xl sm:text-3xl font-black mt-2 text-white">
-                {currentFeature.title}
-              </h3>
-              <p className="text-slate-400 text-sm mt-1 max-w-2xl">
-                {currentFeature.description}
+
+              <h2 className="text-2xl sm:text-4xl font-black text-white tracking-tight">
+                Scale API Slot Capacity in Real Time
+              </h2>
+
+              <p className="text-xs sm:text-sm text-slate-300 font-medium leading-relaxed">
+                Move the slider to see how Super Admin provisions isolated 2-channel slot groups for client organizations.
               </p>
+
+              {/* Slider Input */}
+              <div className="space-y-3 p-5 bg-slate-950/70 rounded-2xl border border-slate-800">
+                <div className="flex items-center justify-between text-xs font-mono font-bold">
+                  <span className="text-slate-400">ALLOCATED API SLOTS:</span>
+                  <span className="text-purple-400 text-base">{selectedSlotCount} Slots</span>
+                </div>
+
+                <input
+                  type="range"
+                  min={1}
+                  max={10}
+                  value={selectedSlotCount}
+                  onChange={(e) => setSelectedSlotCount(Number(e.target.value))}
+                  className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-[#5D3FD3]"
+                />
+
+                <div className="flex items-center justify-between text-[10px] font-mono text-slate-500">
+                  <span>1 Slot (2 Accounts)</span>
+                  <span>5 Slots (10 Accounts)</span>
+                  <span>10 Slots (20 Accounts)</span>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => onOpenCheckout()}
+                className="px-6 py-3.5 rounded-xl bg-[#5D3FD3] hover:bg-purple-600 text-white font-bold text-xs shadow-lg shadow-purple-500/25 transition-all flex items-center gap-2 cursor-pointer"
+              >
+                <Sparkles className="w-4 h-4 text-amber-300" />
+                <span>Provision {selectedSlotCount} Slots for Your Agency</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
             </div>
 
-            <button
-              onClick={onLaunchApp}
-              className="px-6 py-3 rounded-xl bg-gradient-to-r from-[#5D3FD3] to-[#0066FF] text-white text-xs font-bold shadow-lg hover:scale-105 transition-all flex items-center gap-2 shrink-0"
-            >
-              <span>Launch App to Test</span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
-          </div>
+            {/* Right Column: Dynamic Slot Grid Preview */}
+            <div className="lg:col-span-6 bg-slate-950/90 p-6 rounded-2xl border border-slate-800 space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                <span className="text-xs font-mono font-bold text-slate-400">
+                  PROVISIONED SLOT CAPACITY BREAKDOWN:
+                </span>
+                <span className="text-xs font-bold text-emerald-400 font-mono">
+                  {selectedSlotCount * 2} Parallel Social Channels
+                </span>
+              </div>
 
-          {/* Dynamic Interactive Sandbox Body depending on selectedFeatureIndex */}
-          <div className="mt-8">
-            {selectedFeatureIndex === 0 && (
-              <div className="space-y-4">
-                <div className="text-xs font-mono text-purple-300 font-bold uppercase tracking-wider">
-                  Live API Slot Allocator Preview
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {[1, 2, 3].map((slotNum) => (
-                    <div 
-                      key={slotNum}
-                      onClick={() => setActiveTabSlotDemo(slotNum)}
-                      className={`p-4 rounded-2xl border transition-all cursor-pointer ${
-                        activeTabSlotDemo === slotNum
-                          ? 'bg-purple-900/40 border-purple-500'
-                          : 'bg-slate-800/50 border-slate-700 hover:bg-slate-800'
-                      }`}
-                    >
-                      <div className="flex justify-between items-center">
-                        <span className="font-mono font-bold text-sm text-purple-300">API Slot #{slotNum}</span>
-                        <span className="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded font-mono">
-                          2 Channels Active
-                        </span>
-                      </div>
-                      <div className="text-xs font-mono text-slate-400 mt-2 truncate">
-                        Key: provisioned securely by backend
-                      </div>
-                      <div className="mt-3 text-[11px] text-slate-300 flex justify-between border-t border-slate-700/60 pt-2">
-                        <span>Connected: Instagram, LinkedIn</span>
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                      </div>
+              {/* Dynamic Slots Pills Grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 max-h-56 overflow-y-auto pr-1">
+                {[...Array(selectedSlotCount)].map((_, idx) => (
+                  <div key={idx} className="p-3 rounded-xl bg-slate-900 border border-purple-500/30 text-xs space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="font-mono font-bold text-purple-300 text-[11px]">SLOT #{idx + 1}</span>
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                     </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {selectedFeatureIndex === 3 && (
-              <div className="space-y-4 max-w-2xl">
-                <div className="text-xs font-mono text-purple-300 font-bold uppercase tracking-wider">
-                  Test AI Viral Caption & Hashtag Generator (-10 AI Credits)
-                </div>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={aiPromptDemo}
-                    onChange={(e) => setAiPromptDemo(e.target.value)}
-                    className="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-purple-500"
-                    placeholder="Enter prompt..."
-                  />
-                  <button
-                    onClick={handleSimulateAi}
-                    disabled={aiGenerating}
-                    className="px-5 py-2.5 rounded-xl bg-purple-600 text-white font-bold text-xs flex items-center gap-2 hover:bg-purple-500 transition-colors"
-                  >
-                    {aiGenerating ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Bot className="w-4 h-4" />}
-                    <span>Generate</span>
-                  </button>
-                </div>
-                {aiResultDemo && (
-                  <div className="p-4 rounded-2xl bg-purple-950/60 border border-purple-500/30 text-xs font-mono text-purple-200 whitespace-pre-wrap">
-                    {aiResultDemo}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {selectedFeatureIndex !== 0 && selectedFeatureIndex !== 3 && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {currentFeature.highlights.map((h, i) => (
-                  <div key={i} className="p-4 rounded-2xl bg-slate-800/60 border border-slate-700 flex items-center gap-3">
-                    <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
-                    <span className="text-xs font-medium text-slate-200">{h}</span>
+                    <div className="text-[10px] text-slate-400 font-medium">2 Active Channels</div>
+                    <div className="text-[9px] font-mono text-slate-500">Key: ••••••••••••••••</div>
                   </div>
                 ))}
               </div>
-            )}
-          </div>
 
+              <div className="pt-2 text-[11px] text-slate-400 leading-relaxed font-sans">
+                💡 <strong>White-Label Guarantee:</strong> End client users connect social profiles directly into each assigned slot without ever seeing raw engine credentials.
+              </div>
+            </div>
+
+          </div>
         </div>
 
       </div>
