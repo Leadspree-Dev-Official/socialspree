@@ -1,215 +1,317 @@
 import React, { useState } from 'react';
 import { GoogleReview, Tenant } from '../../types';
-import { Star, MessageSquare, Sparkles, CheckCircle2, ThumbsUp, Send } from 'lucide-react';
+import { 
+  Star, 
+  Sparkles, 
+  CheckCircle2, 
+  MapPin, 
+  ShieldAlert, 
+  TrendingUp, 
+  BellRing, 
+  ArrowLeft, 
+  Mail, 
+  Send,
+  Zap,
+  Globe2
+} from 'lucide-react';
 
 interface GoogleReviewsViewProps {
   tenant: Tenant;
   reviews: GoogleReview[];
-  onReplyReview: (reviewId: string, replyText: string) => void;
+  onReplyReview?: (reviewId: string, replyText: string) => void;
+  onReturnToDashboard?: () => void;
 }
 
 export const GoogleReviewsView: React.FC<GoogleReviewsViewProps> = ({
   tenant,
   reviews,
-  onReplyReview
+  onReturnToDashboard
 }) => {
-  const [selectedReview, setSelectedReview] = useState<GoogleReview | null>(null);
-  const [replyInput, setReplyInput] = useState('');
-  const [starFilter, setStarFilter] = useState<number | 'all'>('all');
+  const [waitlistEmail, setWaitlistEmail] = useState('');
+  const [isSubscribed, setIsSubscribed] = useState(() => {
+    try {
+      return localStorage.getItem(`waitlist_google_reviews_${tenant.id}`) === 'true';
+    } catch {
+      return false;
+    }
+  });
 
   const tenantReviews = reviews.filter(r => r.tenantId === tenant.id);
-  const filteredReviews = starFilter === 'all' 
-    ? tenantReviews 
-    : tenantReviews.filter(r => r.rating === starFilter);
-
   const avgRating = tenantReviews.length > 0
     ? (tenantReviews.reduce((acc, r) => acc + r.rating, 0) / tenantReviews.length).toFixed(1)
-    : '5.0';
+    : '4.9';
 
-  const handleGenerateAIReply = (rev: GoogleReview) => {
-    const aiReplies = [
-      `Thank you so much ${rev.authorName}! We're delighted you had a great experience with our team. Looking forward to serving you again!`,
-      `Hi ${rev.authorName}, thank you for your feedback! We appreciate your support and strive for top quality service.`,
-      `Dear ${rev.authorName}, we value your business! Thank you for taking the time to share your review.`
-    ];
-    setReplyInput(aiReplies[Math.floor(Math.random() * aiReplies.length)]);
-  };
-
-  const handleSendReply = (e: React.FormEvent) => {
+  const handleJoinWaitlist = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedReview || !replyInput.trim()) return;
+    if (!waitlistEmail.trim() || !waitlistEmail.includes('@')) return;
 
-    onReplyReview(selectedReview.id, replyInput.trim());
-    setSelectedReview(null);
-    setReplyInput('');
+    try {
+      localStorage.setItem(`waitlist_google_reviews_${tenant.id}`, 'true');
+      localStorage.setItem(`waitlist_email_${tenant.id}`, waitlistEmail.trim());
+    } catch {
+      /* ignore storage quota */
+    }
+    setIsSubscribed(true);
   };
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6">
-      {/* Header */}
-      <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-            <Star className="w-5 h-5 text-amber-500 fill-amber-400" />
-            <span>Google Reviews Management Hub</span>
-          </h2>
-          <p className="text-xs text-slate-500 mt-1">
-            Monitor Google Business customer ratings, analyze sentiment, and send instant AI-assisted responses.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-4">
-          <div className="text-right">
-            <div className="text-2xl font-black text-slate-900 flex items-center gap-1">
-              <span>{avgRating}</span>
-              <div className="flex text-amber-400 text-sm">
-                {'★'.repeat(5)}
-              </div>
+    <div className="relative min-h-[750px] w-full overflow-hidden rounded-3xl font-['Inter']">
+      
+      {/* ========================================================================= */}
+      {/* 1. BLURRED TRANSPARENT BACKGROUND SCREENS (REALISTIC GOOGLE REVIEWS UI) */}
+      {/* ========================================================================= */}
+      <div 
+        aria-hidden="true" 
+        className="filter blur-[6px] opacity-35 select-none pointer-events-none space-y-6 transform scale-[1.01] transition-all"
+      >
+        {/* Header Preview Screen */}
+        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-400 to-orange-500 flex items-center justify-center text-white font-black shadow-md">
+              <Star className="w-6 h-6 fill-white" />
             </div>
-            <div className="text-[11px] text-slate-500 font-mono">
-              Based on {tenantReviews.length} customer reviews
+            <div>
+              <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+                <span>Google Business Profile Reviews Hub</span>
+                <span className="bg-blue-100 text-blue-800 text-[10px] font-mono font-bold px-2 py-0.5 rounded-full">
+                  VERIFIED LOCATION
+                </span>
+              </h2>
+              <p className="text-xs text-slate-500 mt-1 flex items-center gap-2">
+                <MapPin className="w-3.5 h-3.5 text-slate-400" />
+                <span>Downtown Flagship Store • 428 Broadway, New York, NY</span>
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-6">
+            <div className="text-right">
+              <div className="text-3xl font-black text-slate-900 flex items-center justify-end gap-1">
+                <span>{avgRating}</span>
+                <div className="flex text-amber-400 text-base">
+                  {'★'.repeat(5)}
+                </div>
+              </div>
+              <div className="text-[11px] text-slate-500 font-mono">
+                Based on 284 verified Google Maps ratings
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Star Filter Tabs */}
-      <div className="flex items-center gap-2 bg-white p-2 rounded-xl border border-slate-200 shadow-xs text-xs font-semibold">
-        <button
-          onClick={() => setStarFilter('all')}
-          className={`px-3.5 py-1.5 rounded-lg transition-all ${
-            starFilter === 'all' ? 'bg-[#0066FF] text-white shadow-xs' : 'text-slate-600 hover:bg-slate-100'
-          }`}
-        >
-          All Reviews ({tenantReviews.length})
-        </button>
-        {[5, 4, 3, 2, 1].map((stars) => (
-          <button
-            key={stars}
-            onClick={() => setStarFilter(stars)}
-            className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1 ${
-              starFilter === stars ? 'bg-[#0066FF] text-white shadow-xs' : 'text-slate-600 hover:bg-slate-100'
-            }`}
-          >
-            <span>{stars} Stars</span>
-            <span className="text-amber-400">★</span>
-          </button>
-        ))}
-      </div>
+        {/* Metrics Grid Preview */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
+            <div className="text-[11px] font-mono text-slate-500 uppercase font-bold">Total Reviews</div>
+            <div className="text-2xl font-black text-slate-900 mt-1">1,492</div>
+            <div className="text-[11px] text-emerald-600 font-medium mt-1">↑ +18.4% this month</div>
+          </div>
+          <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
+            <div className="text-[11px] font-mono text-slate-500 uppercase font-bold">AI Auto-Reply Rate</div>
+            <div className="text-2xl font-black text-[#5D3FD3] mt-1">98.2%</div>
+            <div className="text-[11px] text-slate-400 font-medium mt-1">Avg response time: 4 mins</div>
+          </div>
+          <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
+            <div className="text-[11px] font-mono text-slate-500 uppercase font-bold">Positive Sentiment</div>
+            <div className="text-2xl font-black text-emerald-600 mt-1">94.7%</div>
+            <div className="text-[11px] text-slate-400 font-medium mt-1">1,413 Five-Star ratings</div>
+          </div>
+          <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
+            <div className="text-[11px] font-mono text-slate-500 uppercase font-bold">Reputation Shield</div>
+            <div className="text-2xl font-black text-blue-600 mt-1">Active</div>
+            <div className="text-[11px] text-slate-400 font-medium mt-1">Auto-escalate 1-star reviews</div>
+          </div>
+        </div>
 
-      {/* Reviews Cards List */}
-      <div className="space-y-4">
-        {filteredReviews.map((rev) => (
-          <div key={rev.id} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-3">
-            <div className="flex items-start justify-between">
-              <div className="flex items-center gap-3">
-                <img src={rev.authorAvatar} alt="" className="w-10 h-10 rounded-full object-cover border border-slate-200" />
-                <div>
-                  <div className="font-bold text-slate-900 text-sm">{rev.authorName}</div>
-                  <div className="text-[11px] text-slate-400 font-mono">{rev.relativeTime}</div>
+        {/* Sample Reviews Stream Preview */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {[
+            {
+              author: 'Sophia Martinez',
+              time: '2 hours ago',
+              rating: 5,
+              comment: 'Outstanding service and prompt delivery! The team went above and beyond for our company event. Will definitely return!',
+              reply: 'Hi Sophia, thank you so much for the 5-star review! We are thrilled our team could make your event special.'
+            },
+            {
+              author: 'David Harrison',
+              time: '1 day ago',
+              rating: 5,
+              comment: 'Best customer experience in town. Staff was extremely knowledgeable and resolved our request in under 10 minutes.',
+              reply: 'Thank you David! We appreciate your loyalty and look forward to serving you again soon!'
+            }
+          ].map((item, idx) => (
+            <div key={idx} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-purple-100 text-[#5D3FD3] font-bold flex items-center justify-center">
+                    {item.author[0]}
+                  </div>
+                  <div>
+                    <div className="font-bold text-slate-900 text-sm">{item.author}</div>
+                    <div className="text-[11px] text-slate-400 font-mono">{item.time}</div>
+                  </div>
+                </div>
+                <div className="flex text-amber-400 text-sm">
+                  {'★'.repeat(item.rating)}
                 </div>
               </div>
+              <p className="text-xs text-slate-700 bg-slate-50 p-3 rounded-xl">
+                "{item.comment}"
+              </p>
+              <div className="bg-purple-50/70 border border-purple-200 p-3 rounded-xl text-xs space-y-1">
+                <div className="flex items-center gap-1 text-[#5D3FD3] font-bold">
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>Zenith AI Response Published</span>
+                </div>
+                <p className="text-slate-700 italic">{item.reply}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
 
-              <div className="flex items-center gap-1 text-amber-400">
-                {'★'.repeat(rev.rating)}
-                <span className="text-xs font-bold text-slate-800 ml-1">({rev.rating}/5)</span>
+      {/* ========================================================================= */}
+      {/* 2. CENTERED TRANSPARENT GLASSMORPHIC COMING SOON POPUP MODAL */}
+      {/* ========================================================================= */}
+      <div className="absolute inset-0 z-20 flex items-center justify-center p-4 sm:p-6 bg-slate-950/40 backdrop-blur-md animate-in fade-in duration-300">
+        <div className="relative max-w-2xl w-full bg-slate-900/90 backdrop-blur-2xl border-2 border-amber-500/40 rounded-3xl p-6 sm:p-8 shadow-2xl shadow-purple-950/80 text-white space-y-6 ring-1 ring-white/10">
+          
+          {/* Top Floating Glow Badge */}
+          <div className="flex items-center justify-between">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-400/40 text-amber-300 text-xs font-mono font-bold uppercase tracking-wider shadow-inner">
+              <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
+              <span>Google Business Suite • Coming Soon</span>
+            </div>
+
+            <span className="text-[10px] font-mono uppercase text-slate-400 font-bold bg-white/5 px-2.5 py-1 rounded-lg border border-white/10">
+              Q3 2026 Release
+            </span>
+          </div>
+
+          {/* Hero Header */}
+          <div className="space-y-2">
+            <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-white leading-tight">
+              Automate & Supercharge Your{' '}
+              <span className="bg-gradient-to-r from-amber-300 via-orange-400 to-amber-200 bg-clip-text text-transparent">
+                Google Business Reviews
+              </span>
+            </h2>
+            <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+              Connect your Google Maps storefronts, auto-generate hyper-personalized review replies with Zenith AI, and defend your brand reputation on autopilot.
+            </p>
+          </div>
+
+          {/* Feature Highlight Pills Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+            <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 hover:border-amber-400/30 transition-all flex items-start gap-3">
+              <div className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center shrink-0 mt-0.5">
+                <Zap className="w-4 h-4 text-amber-400" />
+              </div>
+              <div>
+                <div className="text-xs font-bold text-white">Instant AI Auto-Responder</div>
+                <div className="text-[11px] text-slate-400 leading-normal mt-0.5">
+                  Replies to 5-star praise and feedback with custom brand voice in seconds.
+                </div>
               </div>
             </div>
 
-            <p className="text-xs text-slate-700 leading-relaxed bg-slate-50/60 p-3.5 rounded-xl border border-slate-100">
-              "{rev.comment}"
-            </p>
-
-            {/* Existing Reply or Reply Action */}
-            {rev.reply ? (
-              <div className="bg-blue-50/70 border border-blue-200 p-3.5 rounded-xl text-xs space-y-1">
-                <div className="flex items-center justify-between text-blue-900 font-bold">
-                  <span className="flex items-center gap-1">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-blue-600" />
-                    <span>Business Reply Published</span>
-                  </span>
-                  <span className="text-[10px] text-blue-700 font-mono">{rev.reply.repliedAt}</span>
+            <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 hover:border-amber-400/30 transition-all flex items-start gap-3">
+              <div className="w-8 h-8 rounded-xl bg-blue-500/20 text-blue-400 flex items-center justify-center shrink-0 mt-0.5">
+                <Globe2 className="w-4 h-4 text-blue-400" />
+              </div>
+              <div>
+                <div className="text-xs font-bold text-white">Multi-Location Sync</div>
+                <div className="text-[11px] text-slate-400 leading-normal mt-0.5">
+                  Manage dozens of storefronts & regional map locations in one feed.
                 </div>
-                <p className="text-slate-700 italic">{rev.reply.text}</p>
+              </div>
+            </div>
+
+            <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 hover:border-amber-400/30 transition-all flex items-start gap-3">
+              <div className="w-8 h-8 rounded-xl bg-red-500/20 text-red-400 flex items-center justify-center shrink-0 mt-0.5">
+                <ShieldAlert className="w-4 h-4 text-red-400" />
+              </div>
+              <div>
+                <div className="text-xs font-bold text-white">Reputation Shield</div>
+                <div className="text-[11px] text-slate-400 leading-normal mt-0.5">
+                  Instant SMS & webhook alerts for 1–3 star ratings before SEO is impacted.
+                </div>
+              </div>
+            </div>
+
+            <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 hover:border-amber-400/30 transition-all flex items-start gap-3">
+              <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0 mt-0.5">
+                <TrendingUp className="w-4 h-4 text-emerald-400" />
+              </div>
+              <div>
+                <div className="text-xs font-bold text-white">Review Booster Links</div>
+                <div className="text-[11px] text-slate-400 leading-normal mt-0.5">
+                  Send WhatsApp & SMS invite links to happy customers automatically.
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Interactive VIP Early Access Waitlist */}
+          <div className="pt-2">
+            {isSubscribed ? (
+              <div className="p-4 rounded-2xl bg-gradient-to-r from-emerald-950/80 to-slate-900 border border-emerald-500/40 flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+                </div>
+                <div>
+                  <div className="text-xs font-bold text-white">You're on the VIP Early Access List!</div>
+                  <div className="text-[11px] text-emerald-300">
+                    We will notify your account as soon as the Google Business Profile connector goes live.
+                  </div>
+                </div>
               </div>
             ) : (
-              <div className="flex justify-end">
-                <button
-                  onClick={() => {
-                    setSelectedReview(rev);
-                    if (!replyInput.trim()) {
-                      handleGenerateAIReply(rev);
-                    }
-                  }}
-                  className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold rounded-xl shadow-xs flex items-center gap-1.5"
-                >
-                  <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-                  <span>AI Reply to Review</span>
-                </button>
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
-
-      {/* Reply Modal */}
-      {selectedReview && (
-        <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 border border-slate-200 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h3 className="font-bold text-slate-900 text-base flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-[#0066FF]" />
-                <span>Publish Google Review Reply</span>
-              </h3>
-              <button onClick={() => setSelectedReview(null)} className="text-slate-400 hover:text-slate-700">✕</button>
-            </div>
-
-            <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 text-xs text-slate-700">
-              <strong>Replying to {selectedReview.authorName}:</strong>
-              <p className="italic mt-1 text-slate-600">"{selectedReview.comment}"</p>
-            </div>
-
-            <form onSubmit={handleSendReply} className="space-y-4 text-xs">
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="font-semibold text-slate-700">Response Text</label>
+              <form onSubmit={handleJoinWaitlist} className="space-y-2">
+                <div className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+                  <BellRing className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Get Notified for Beta Access & Free Launch Credits:</span>
+                </div>
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <div className="relative flex-1">
+                    <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    <input
+                      type="email"
+                      required
+                      placeholder="Enter work email for priority access..."
+                      value={waitlistEmail}
+                      onChange={(e) => setWaitlistEmail(e.target.value)}
+                      className="w-full pl-10 pr-3.5 py-2.5 bg-slate-950/90 border border-white/20 focus:border-amber-400 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-amber-400 font-mono"
+                    />
+                  </div>
                   <button
-                    type="button"
-                    onClick={() => handleGenerateAIReply(selectedReview)}
-                    className="text-[11px] text-blue-600 hover:text-blue-800 font-bold flex items-center gap-1"
+                    type="submit"
+                    className="px-5 py-2.5 bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 hover:from-amber-400 hover:to-orange-500 text-slate-950 font-black rounded-xl text-xs transition-all shadow-lg shadow-amber-500/20 flex items-center justify-center gap-2 cursor-pointer shrink-0 active:scale-95"
                   >
-                    <Sparkles className="w-3 h-3 text-amber-500" /> Regenerate AI Draft
+                    <span>Notify Me</span>
+                    <Send className="w-3.5 h-3.5" />
                   </button>
                 </div>
-                <textarea
-                  rows={4}
-                  required
-                  value={replyInput}
-                  onChange={(e) => setReplyInput(e.target.value)}
-                  className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-500 text-xs text-slate-800"
-                />
-              </div>
-
-              <div className="flex justify-end gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setSelectedReview(null)}
-                  className="px-4 py-2 bg-slate-100 text-slate-700 rounded-lg font-semibold hover:bg-slate-200"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2 bg-[#0066FF] text-white rounded-lg font-bold hover:bg-blue-700 shadow-md flex items-center gap-1.5"
-                >
-                  <Send className="w-3.5 h-3.5" />
-                  <span>Send Response</span>
-                </button>
-              </div>
-            </form>
+              </form>
+            )}
           </div>
+
+          {/* Footer Navigation Switcher */}
+          {onReturnToDashboard && (
+            <div className="pt-2 border-t border-white/10 flex justify-end">
+              <button
+                type="button"
+                onClick={onReturnToDashboard}
+                className="px-4 py-2 bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer"
+              >
+                <ArrowLeft className="w-3.5 h-3.5" />
+                <span>Return to Workspace Dashboard</span>
+              </button>
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 };

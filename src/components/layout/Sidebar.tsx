@@ -386,14 +386,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
               <button
                 onClick={() => handleNavClick('reviews')}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${
                   activeTab === 'reviews'
                     ? 'bg-[#5D3FD3] text-white shadow-md shadow-purple-900/30'
                     : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
                 }`}
               >
-                <Star className="w-4 h-4 text-slate-400" />
-                <span>Google Reviews</span>
+                <div className="flex items-center gap-3">
+                  <Star className="w-4 h-4 text-amber-400 fill-amber-400/20" />
+                  <span>Google Reviews</span>
+                </div>
+                <span className="text-[9px] font-mono font-black uppercase px-1.5 py-0.5 rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/30 shadow-xs">
+                  SOON
+                </span>
               </button>
 
               <button

@@ -1192,6 +1192,7 @@ export function App() {
                   tenant={currentTenant}
                   reviews={reviews}
                   onReplyReview={handleReplyReview}
+                  onReturnToDashboard={() => setActiveTab('dashboard')}
                 />
               )}
 
