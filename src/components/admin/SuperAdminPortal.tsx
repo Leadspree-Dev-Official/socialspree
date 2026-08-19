@@ -6,7 +6,8 @@ import {
   GLOBAL_CLOUDINARY_POOL, 
   INITIAL_PLANS, 
   GLOBAL_SYSTEM_SETTINGS,
-  getStoredPlans
+  getStoredPlans,
+  getStoredSystemSettings
 } from '../../lib/store';
 import { supabase } from '../../lib/supabase';
 import { plans as cloudPlans } from '../../lib/api';
@@ -68,6 +69,7 @@ interface SuperAdminPortalProps {
   onUpdateTenantRenewalDate?: (tenantId: string, renewalDate: string) => void;
   onUpdateTenantPlan?: (tenantId: string, planId: string) => void;
   onTopupAiCredits?: (tenantId: string, amount: number, description: string) => void;
+  onUpdateSystemSettings?: (settings: SystemSettings) => void;
   activeSubTab: SuperAdminSubTab;
   onSelectSubTab: (subTab: SuperAdminSubTab) => void;
 }
@@ -88,27 +90,30 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
   onUpdateTenantRenewalDate,
   onUpdateTenantPlan,
   onTopupAiCredits,
+  onUpdateSystemSettings,
   activeSubTab,
   onSelectSubTab
 }) => {
+  const initialSettings = getStoredSystemSettings();
+
   // System Settings State & 4 Server Mode Toggles
-  const [systemCurrency, setSystemCurrency] = useState<CurrencyCode>(GLOBAL_SYSTEM_SETTINGS.currency);
-  const [currencySymbol, setCurrencySymbol] = useState<string>(GLOBAL_SYSTEM_SETTINGS.currencySymbol);
-  const [platformName, setPlatformName] = useState<string>(GLOBAL_SYSTEM_SETTINGS.platformName);
-  const [supportEmail, setSupportEmail] = useState<string>(GLOBAL_SYSTEM_SETTINGS.supportEmail);
-  const [aiApiKeyInput, setAiApiKeyInput] = useState<string>(GLOBAL_SYSTEM_SETTINGS.aiApiKey || '');
-  const [defaultCreditsInput, setDefaultCreditsInput] = useState<number>(GLOBAL_SYSTEM_SETTINGS.defaultAiCredits || 1000);
+  const [systemCurrency, setSystemCurrency] = useState<CurrencyCode>(initialSettings.currency);
+  const [currencySymbol, setCurrencySymbol] = useState<string>(initialSettings.currencySymbol);
+  const [platformName, setPlatformName] = useState<string>(initialSettings.platformName);
+  const [supportEmail, setSupportEmail] = useState<string>(initialSettings.supportEmail);
+  const [aiApiKeyInput, setAiApiKeyInput] = useState<string>(initialSettings.aiApiKey || '');
+  const [defaultCreditsInput, setDefaultCreditsInput] = useState<number>(initialSettings.defaultAiCredits || 1000);
 
   // 4 Primary Server Mode Controls
-  const [websiteEnabled, setWebsiteEnabled] = useState<boolean>(GLOBAL_SYSTEM_SETTINGS.websiteEnabled ?? true);
-  const [agencyModeEnabled, setAgencyModeEnabled] = useState<boolean>(GLOBAL_SYSTEM_SETTINGS.agencyModeEnabled ?? false);
-  const [influencerModeEnabled, setInfluencerModeEnabled] = useState<boolean>(GLOBAL_SYSTEM_SETTINGS.influencerModeEnabled ?? false);
-  const [businessModeEnabled, setBusinessModeEnabled] = useState<boolean>(GLOBAL_SYSTEM_SETTINGS.businessModeEnabled ?? true);
-  const [aiCreditsEnabled, setAiCreditsEnabled] = useState<boolean>(GLOBAL_SYSTEM_SETTINGS.aiCreditsEnabled ?? false);
-  const [voiceAssistantEnabled, setVoiceAssistantEnabled] = useState<boolean>(GLOBAL_SYSTEM_SETTINGS.voiceAssistantEnabled ?? false);
-  const [zernioEnabled, setZernioEnabled] = useState<boolean>(GLOBAL_SYSTEM_SETTINGS.zernioEnabled ?? true);
-  const [coresyncEnabled, setCoresyncEnabled] = useState<boolean>(GLOBAL_SYSTEM_SETTINGS.coresyncEnabled ?? true);
-  const [globalDispatchEngine, setGlobalDispatchEngine] = useState<EngineChoice>(GLOBAL_SYSTEM_SETTINGS.dispatchEngine ?? 'dual');
+  const [websiteEnabled, setWebsiteEnabled] = useState<boolean>(initialSettings.websiteEnabled ?? true);
+  const [agencyModeEnabled, setAgencyModeEnabled] = useState<boolean>(initialSettings.agencyModeEnabled ?? false);
+  const [influencerModeEnabled, setInfluencerModeEnabled] = useState<boolean>(initialSettings.influencerModeEnabled ?? false);
+  const [businessModeEnabled, setBusinessModeEnabled] = useState<boolean>(initialSettings.businessModeEnabled ?? true);
+  const [aiCreditsEnabled, setAiCreditsEnabled] = useState<boolean>(initialSettings.aiCreditsEnabled ?? false);
+  const [voiceAssistantEnabled, setVoiceAssistantEnabled] = useState<boolean>(initialSettings.voiceAssistantEnabled ?? false);
+  const [zernioEnabled, setZernioEnabled] = useState<boolean>(initialSettings.zernioEnabled ?? true);
+  const [coresyncEnabled, setCoresyncEnabled] = useState<boolean>(initialSettings.coresyncEnabled ?? true);
+  const [globalDispatchEngine, setGlobalDispatchEngine] = useState<EngineChoice>(initialSettings.dispatchEngine ?? 'dual');
 
   const [settingsNotification, setSettingsNotification] = useState<string | null>(null);
 
@@ -289,31 +294,48 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
 
   const handleSaveSystemSettings = async (e: React.FormEvent) => {
     e.preventDefault();
-    GLOBAL_SYSTEM_SETTINGS.currency = systemCurrency;
-    GLOBAL_SYSTEM_SETTINGS.currencySymbol = currencySymbol;
-    GLOBAL_SYSTEM_SETTINGS.platformName = platformName.trim();
-    GLOBAL_SYSTEM_SETTINGS.supportEmail = supportEmail.trim();
-    if (aiApiKeyInput.trim()) {
-      GLOBAL_SYSTEM_SETTINGS.aiApiKey = `••••${aiApiKeyInput.trim().slice(-4)}`;
+    const updatedSettings: SystemSettings = {
+      currency: systemCurrency,
+      currencySymbol: currencySymbol,
+      platformName: platformName.trim(),
+      supportEmail: supportEmail.trim(),
+      aiApiKey: aiApiKeyInput.trim() ? `••••${aiApiKeyInput.trim().slice(-4)}` : GLOBAL_SYSTEM_SETTINGS.aiApiKey,
+      defaultAiCredits: defaultCreditsInput,
+      websiteEnabled: websiteEnabled,
+      agencyModeEnabled: agencyModeEnabled,
+      influencerModeEnabled: influencerModeEnabled,
+      businessModeEnabled: businessModeEnabled,
+      aiCreditsEnabled: aiCreditsEnabled,
+      voiceAssistantEnabled: voiceAssistantEnabled,
+      zernioEnabled: zernioEnabled,
+      coresyncEnabled: coresyncEnabled,
+      dispatchEngine: globalDispatchEngine,
+    };
+
+    Object.assign(GLOBAL_SYSTEM_SETTINGS, updatedSettings);
+
+    try {
+      localStorage.setItem('spree_system_settings', JSON.stringify(updatedSettings));
+      await supabase.from('system_settings').upsert({
+        key: 'spree_global_settings',
+        value: JSON.stringify(updatedSettings),
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'key' });
+    } catch (err) {
+      console.warn('System settings cloud sync notice:', err);
     }
-    GLOBAL_SYSTEM_SETTINGS.defaultAiCredits = defaultCreditsInput;
-    GLOBAL_SYSTEM_SETTINGS.websiteEnabled = websiteEnabled;
-    GLOBAL_SYSTEM_SETTINGS.agencyModeEnabled = agencyModeEnabled;
-    GLOBAL_SYSTEM_SETTINGS.influencerModeEnabled = influencerModeEnabled;
-    GLOBAL_SYSTEM_SETTINGS.businessModeEnabled = businessModeEnabled;
-    GLOBAL_SYSTEM_SETTINGS.aiCreditsEnabled = aiCreditsEnabled;
-    GLOBAL_SYSTEM_SETTINGS.voiceAssistantEnabled = voiceAssistantEnabled;
-    GLOBAL_SYSTEM_SETTINGS.zernioEnabled = zernioEnabled;
-    GLOBAL_SYSTEM_SETTINGS.coresyncEnabled = coresyncEnabled;
-    GLOBAL_SYSTEM_SETTINGS.dispatchEngine = globalDispatchEngine;
+
+    if (onUpdateSystemSettings) {
+      onUpdateSystemSettings(updatedSettings);
+    }
 
     if (aiApiKeyInput.trim() && tenants[0]) {
       const { error } = await supabase.functions.invoke('manage-credentials', { body: { tenantId: tenants[0].id, provider: 'openai', label: 'global', secret: aiApiKeyInput.trim() } });
       if (error) { setSettingsNotification(`AI credential save failed: ${error.message}`); return; }
       setAiApiKeyInput('');
     }
-    setSettingsNotification('Global system mode, dispatch engine, and currency settings saved successfully!');
-    setTimeout(() => setSettingsNotification(null), 3000);
+    setSettingsNotification('✅ System settings, AI feature switches, and mode controls saved & activated successfully!');
+    setTimeout(() => setSettingsNotification(null), 3500);
   };
 
   const handleOpenUserInspector = (tenant: Tenant) => {

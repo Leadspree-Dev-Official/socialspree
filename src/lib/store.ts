@@ -35,6 +35,19 @@ export const GLOBAL_SYSTEM_SETTINGS: SystemSettings = {
   dispatchEngine: 'dual'
 };
 
+export function getStoredSystemSettings(): SystemSettings {
+  try {
+    const saved = typeof window !== 'undefined' ? localStorage.getItem('spree_system_settings') : null;
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      return { ...GLOBAL_SYSTEM_SETTINGS, ...parsed };
+    }
+  } catch {
+    /* ignore storage read error */
+  }
+  return GLOBAL_SYSTEM_SETTINGS;
+}
+
 // Global Subscription Plans (Business, Influencer, and Agency Tiers)
 export const INITIAL_PLANS: SubscriptionPlan[] = [
   // 1. FREE PLAN

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, useNavigate } from 'react-router-dom';
 import { useUser, useClerk, useSession } from '@clerk/react';
-import { Tenant, SocialAccount, Post, PostLog, GoogleReview, CloudinaryConfig, ApiAllocationSlot, AiCreditLog, SubscriptionPlan, CurrencyCode, MediaAsset, AgencyBrand } from './types';
+import { Tenant, SocialAccount, Post, PostLog, GoogleReview, CloudinaryConfig, ApiAllocationSlot, AiCreditLog, SubscriptionPlan, CurrencyCode, MediaAsset, AgencyBrand, SystemSettings } from './types';
 import { 
   INITIAL_TENANTS, 
   INITIAL_POST_LOGS, 
@@ -9,6 +9,7 @@ import {
   SUPER_ADMIN_EMAIL,
   GLOBAL_DEFAULT_CLOUDINARY,
   GLOBAL_SYSTEM_SETTINGS,
+  getStoredSystemSettings,
   getStoredTenants,
   saveStoredTenants,
   getStoredAccounts,
@@ -118,8 +119,19 @@ export function App() {
     return list[0] || INITIAL_TENANTS[0];
   });
   const [isSuperAdminMode, setIsSuperAdminMode] = useState<boolean>(false);
+  const [systemSettings, setSystemSettings] = useState<SystemSettings>(() => getStoredSystemSettings());
   const [activeTab, setActiveTab] = useState<TabType>(initialRoute.tab);
   const [adminSubTab, setAdminSubTab] = useState<SuperAdminSubTab>('dashboard');
+
+  const handleUpdateSystemSettings = (newSettings: SystemSettings) => {
+    setSystemSettings(newSettings);
+    Object.assign(GLOBAL_SYSTEM_SETTINGS, newSettings);
+    try {
+      localStorage.setItem('spree_system_settings', JSON.stringify(newSettings));
+    } catch {
+      /* ignore storage quota errors */
+    }
+  };
 
   // Keep browser URL pathname synced with view mode, active tab, and role (app mode only)
   useEffect(() => {
@@ -968,8 +980,8 @@ export function App() {
             activeTab={activeTab}
             setActiveTab={handleSelectTab}
             isSuperAdmin={isSuperAdminMode}
-            isAgencyMode={GLOBAL_SYSTEM_SETTINGS.agencyModeEnabled || currentTenant.tierPlan === 'agency'}
-            isInfluencerMode={GLOBAL_SYSTEM_SETTINGS.influencerModeEnabled || currentTenant.tierPlan === 'pro'}
+            isAgencyMode={systemSettings.agencyModeEnabled || currentTenant.tierPlan === 'agency'}
+            isInfluencerMode={systemSettings.influencerModeEnabled || currentTenant.tierPlan === 'pro'}
             activeAdminSubTab={adminSubTab}
             onSelectAdminSubTab={setAdminSubTab}
             onReturnToPublic={() => { setViewMode('public'); navigate('/'); }}
@@ -978,6 +990,7 @@ export function App() {
             userEmail={user?.primaryEmailAddress?.emailAddress || profile?.email || undefined}
             userRole={profile?.role || undefined}
             avatarUrl={profile?.avatarUrl || user?.imageUrl || undefined}
+            aiCreditsEnabled={systemSettings.aiCreditsEnabled ?? false}
           />
 
           <div className="flex-1 flex flex-col md:ml-[260px] min-w-0">
@@ -999,12 +1012,12 @@ export function App() {
               userEmail={user?.primaryEmailAddress?.emailAddress || profile?.email || SUPER_ADMIN_EMAIL}
               userProfile={profile ? { ...profile, fullName: user?.fullName || profile.fullName } : null}
               onOpenUserProfile={() => setActiveTab('settings')}
-              isAgencyMode={GLOBAL_SYSTEM_SETTINGS.agencyModeEnabled || currentTenant.tierPlan === 'agency'}
+              isAgencyMode={systemSettings.agencyModeEnabled || currentTenant.tierPlan === 'agency'}
               brands={brands}
               activeBrand={activeBrand}
               onSelectBrand={setActiveBrand}
               onOpenBrandManager={() => setActiveTab('agency_brands')}
-              onOpenVoiceAssistant={GLOBAL_SYSTEM_SETTINGS.voiceAssistantEnabled ? () => {
+              onOpenVoiceAssistant={systemSettings.voiceAssistantEnabled ? () => {
                 window.dispatchEvent(new KeyboardEvent('keydown', { key: 'v', code: 'KeyV', altKey: true }));
               } : undefined}
             />
@@ -1051,7 +1064,7 @@ export function App() {
                   tenant={currentTenant}
                   accounts={accounts.filter(a => a.tenantId === currentTenant.id)}
                   aiLogs={aiLogs.filter(l => l.tenantId === currentTenant.id)}
-                  aiCreditsEnabled={GLOBAL_SYSTEM_SETTINGS.aiCreditsEnabled ?? false}
+                  aiCreditsEnabled={systemSettings.aiCreditsEnabled ?? false}
                   onDeductAiCredits={(amount, desc) => handleDeductAiCredits(currentTenant.id, amount, desc)}
                   onPostPublished={handlePostPublished}
                   onUpdateTenantCloudinary={handleUpdateTenantCloudinary}
@@ -1160,6 +1173,7 @@ export function App() {
                   onUpdateTenantRenewalDate={handleUpdateTenantRenewalDate}
                   onUpdateTenantPlan={handleUpdateTenantPlan}
                   onTopupAiCredits={handleTopupAiCredits}
+                  onUpdateSystemSettings={handleUpdateSystemSettings}
                   activeSubTab={adminSubTab}
                   onSelectSubTab={setAdminSubTab}
                 />
@@ -1187,7 +1201,7 @@ export function App() {
             />
 
             {/* Voice AI Assistant Overlay & Floating Widget with Alt+V shortcut */}
-            {GLOBAL_SYSTEM_SETTINGS.voiceAssistantEnabled && (
+            {systemSettings.voiceAssistantEnabled && (
               <VoiceAssistantOverlay
                 activeTab={activeTab}
                 onNavigateTab={handleSelectTab}

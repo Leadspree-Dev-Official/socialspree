@@ -59,6 +59,7 @@ interface SidebarProps {
   userEmail?: string;
   userRole?: string;
   avatarUrl?: string;
+  aiCreditsEnabled?: boolean;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -74,7 +75,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   userFullName,
   userEmail,
   userRole,
-  avatarUrl
+  avatarUrl,
+  aiCreditsEnabled = false,
 }) => {
   const { user } = useUser();
   const clerkEmail = user?.primaryEmailAddress?.emailAddress;
@@ -196,7 +198,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </button>
 
             {/* AI Credits & Limits (Only visible when AI Credits is turned ON) */}
-            {GLOBAL_SYSTEM_SETTINGS.aiCreditsEnabled && (
+            {aiCreditsEnabled && (
               <button
                 onClick={() => handleAdminSubTabClick('ai_credits')}
                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-all ${
