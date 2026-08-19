@@ -1,52 +1,95 @@
 import { createClient } from 'npm:@supabase/supabase-js@2.48.1';
 
-export const cors = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-idempotency-key' };
-export const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { ...cors, 'Content-Type': 'application/json' } });
-export const admin = () => createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, { auth: { persistSession: false } });
+const DEFAULT_ALLOWED_ORIGINS = [
+  'https://socialspree.leadspree.in',
+  'https://socialspree.pages.dev',
+  'http://localhost:5173',
+  'http://localhost:3000',
+  'http://127.0.0.1:5173'
+];
+
+export const ALLOWED_WEB_ORIGINS = () => {
+  const envVal = Deno.env.get('ALLOWED_WEB_ORIGINS') || '';
+  const parsed = envVal.split(',').map(v => v.trim()).filter(Boolean);
+  return Array.from(new Set([...DEFAULT_ALLOWED_ORIGINS, ...parsed]));
+};
+
+export function cors(req?: Request) {
+  const origin = req?.headers.get('Origin') || '';
+  const allow = ALLOWED_WEB_ORIGINS();
+  const headers: Record<string, string> = {
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-idempotency-key, x-worker-secret',
+    'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
+    'Vary': 'Origin'
+  };
+  if (origin && (allow.includes(origin) || origin.endsWith('.pages.dev') || origin.endsWith('.leadspree.in'))) {
+    headers['Access-Control-Allow-Origin'] = origin;
+    headers['Access-Control-Allow-Credentials'] = 'true';
+  } else if (!origin) {
+    headers['Access-Control-Allow-Origin'] = '*';
+  }
+  return headers;
+}
+
+export const json = (body: unknown, status = 200, req?: Request) =>
+  new Response(JSON.stringify(body), {
+    status,
+    headers: { ...cors(req), 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }
+  });
+
+export const admin = () => createClient(
+  Deno.env.get('SUPABASE_URL')!,
+  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+  { auth: { persistSession: false, autoRefreshToken: false } }
+);
 
 export async function actor(req: Request) {
-  const token = req.headers.get('Authorization')?.replace(/^Bearer\s+/i, '');
+  const authorization = req.headers.get('Authorization') || '';
+  const match = authorization.match(/^Bearer\s+(.+)$/i);
+  if (!match) throw new Error('Unauthorized');
+
+  const token = match[1].trim();
   if (!token) throw new Error('Unauthorized');
+
   const db = admin();
   const { data: { user }, error } = await db.auth.getUser(token);
   if (error || !user) throw new Error('Unauthorized');
-  // Supabase Third-Party Auth maps Clerk's JWT subject to the user identity.
-  // Keep the lookup keyed to the verified token subject, never an email or
-  // browser-supplied profile ID.
-  let { data: profile } = await db.from('profiles').select('id,tenant_id,is_super_admin,role').eq('id', user.id).maybeSingle();
 
-  if (!profile && user.email) {
-    const emailLower = user.email.toLowerCase().trim();
-    const { data: emailProfile } = await db.from('profiles').select('id,tenant_id,is_super_admin,role').ilike('email', emailLower).maybeSingle();
-    if (emailProfile) {
-      await db.from('profiles').update({ id: user.id }).eq('id', emailProfile.id);
-      profile = { ...emailProfile, id: user.id };
-    } else {
-      const newTenantId = crypto.randomUUID();
-      await db.from('tenants').insert({
-        id: newTenantId,
-        name: `${user.email.split('@')[0]}'s Workspace`,
-        owner_email: emailLower,
-        tier_plan: 'free',
-        status: 'active',
-        payment_status: 'paid'
-      }).catch(() => {});
+  const { data: profile, error: profileError } = await db
+    .from('profiles')
+    .select('id,tenant_id,is_super_admin,role')
+    .eq('id', user.id)
+    .maybeSingle();
 
-      const { data: newProfile } = await db.from('profiles').upsert({
-        id: user.id,
-        email: emailLower,
-        full_name: user.user_metadata?.full_name || user.email.split('@')[0],
-        tenant_id: newTenantId,
-        role: 'business_user',
-        is_super_admin: false
-      }).select('id,tenant_id,is_super_admin,role').single();
-
-      profile = newProfile;
-    }
-  }
-
+  if (profileError) throw new Error('Unable to resolve account profile');
   if (!profile) throw new Error('Your account profile is not provisioned yet.');
+  if (!profile.tenant_id && !profile.is_super_admin) throw new Error('Your account has no tenant assigned.');
+
   return { db, user, profile };
+}
+
+export function isPublicSafeUrl(rawUrl: string): boolean {
+  try {
+    const u = new URL(rawUrl);
+    if (u.protocol !== 'https:' && u.protocol !== 'http:') return false;
+    const host = u.hostname.toLowerCase();
+    if (
+      host === 'localhost' ||
+      host === '127.0.0.1' ||
+      host === '::1' ||
+      host === '169.254.169.254' ||
+      host.startsWith('10.') ||
+      host.startsWith('192.168.') ||
+      /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(host) ||
+      host.endsWith('.local') ||
+      host.endsWith('.internal')
+    ) {
+      return false;
+    }
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export async function sha256(value: string) {
@@ -60,13 +103,21 @@ async function encryptionKey() {
   const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(raw));
   return crypto.subtle.importKey('raw', digest, 'AES-GCM', false, ['encrypt', 'decrypt']);
 }
+
 export async function encrypt(value: string) {
   const iv = crypto.getRandomValues(new Uint8Array(12));
-  const encrypted = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, await encryptionKey(), new TextEncoder().encode(value));
+  const encrypted = await crypto.subtle.encrypt(
+    { name: 'AES-GCM', iv },
+    await encryptionKey(),
+    new TextEncoder().encode(value)
+  );
   return `${btoa(String.fromCharCode(...iv))}.${btoa(String.fromCharCode(...new Uint8Array(encrypted)))}`;
 }
+
 export async function decrypt(value: string) {
-  const [ivText, bodyText] = value.split('.');
+  const parts = value.split('.');
+  if (parts.length !== 2) throw new Error('Invalid encrypted credential format');
+  const [ivText, bodyText] = parts;
   const iv = Uint8Array.from(atob(ivText), c => c.charCodeAt(0));
   const body = Uint8Array.from(atob(bodyText), c => c.charCodeAt(0));
   const clear = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, await encryptionKey(), body);

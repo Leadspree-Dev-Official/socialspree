@@ -10,6 +10,7 @@
     "preview": "vite preview",
     "test:auth": "node tests/auth-audit.mjs",
     "test:security": "node tests/security-boundary.mjs",
+    "test:security:static": "node tests/static-security-regressions.mjs",
     "test:rls": "node tests/live-rls.mjs"
   },
   "dependencies": {
