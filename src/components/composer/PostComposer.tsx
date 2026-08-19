@@ -39,6 +39,7 @@ interface PostComposerProps {
   tenant: Tenant;
   accounts: SocialAccount[];
   aiLogs?: AiCreditLog[];
+  aiCreditsEnabled?: boolean;
   onDeductAiCredits?: (amount: number, description: string) => void;
   onPostPublished: (post: Post, log: any) => void;
   onUpdateTenantCloudinary?: (tenantId: string, config: CloudinaryConfig) => void;
@@ -50,6 +51,7 @@ export const PostComposer: React.FC<PostComposerProps> = ({
   tenant,
   accounts,
   aiLogs = [],
+  aiCreditsEnabled = false,
   onDeductAiCredits,
   onPostPublished,
   onUpdateTenantCloudinary,
@@ -733,118 +735,120 @@ export const PostComposer: React.FC<PostComposerProps> = ({
             </div>
           </form>
 
-          {/* AI CONTENT & HASHTAG GENERATOR SECTION (POSITIONED BELOW EDITOR) */}
-          <div className="bg-gradient-to-br from-purple-900 via-indigo-950 to-slate-950 text-white rounded-2xl p-6 shadow-xl border border-purple-800/50 space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-purple-800/40 pb-3 gap-2">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-400 to-amber-600 text-slate-950 flex items-center justify-center font-black">
-                  <Sparkles className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-base tracking-tight flex items-center gap-2">
-                    <span>AI Caption & Viral Hashtag Generator</span>
-                    <span className="bg-amber-400/20 text-amber-300 text-[10px] font-mono px-2 py-0.5 rounded border border-amber-400/30">
-                      10 CREDITS/GEN
-                    </span>
-                  </h3>
-                  <p className="text-xs text-purple-200">
-                    Instantly generate engaging captions, viral hook sentences, and hashtags tailored for all social platforms.
-                  </p>
-                </div>
-              </div>
-
-              {/* AI Credits Badge & Credit Logs Trigger */}
-              <div className="flex items-center gap-2 shrink-0">
-                <div className="px-3 py-1.5 bg-amber-400/20 text-amber-300 border border-amber-400/30 rounded-xl text-xs font-mono font-bold flex items-center gap-1.5">
-                  <Coins className="w-4 h-4 text-amber-400" />
-                  <span>{currentAiCredits} AI Credits</span>
+          {/* AI CONTENT & HASHTAG GENERATOR SECTION (ONLY RENDERED WHEN ENABLED IN SUPER ADMIN) */}
+          {aiCreditsEnabled && (
+            <div className="bg-gradient-to-br from-purple-900 via-indigo-950 to-slate-950 text-white rounded-2xl p-6 shadow-xl border border-purple-800/50 space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-purple-800/40 pb-3 gap-2">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-400 to-amber-600 text-slate-950 flex items-center justify-center font-black">
+                    <Sparkles className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-base tracking-tight flex items-center gap-2">
+                      <span>AI Caption & Viral Hashtag Generator</span>
+                      <span className="bg-amber-400/20 text-amber-300 text-[10px] font-mono px-2 py-0.5 rounded border border-amber-400/30">
+                        10 CREDITS/GEN
+                      </span>
+                    </h3>
+                    <p className="text-xs text-purple-200">
+                      Instantly generate engaging captions, viral hook sentences, and hashtags tailored for all social platforms.
+                    </p>
+                  </div>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => setShowAiLogModal(true)}
-                  className="p-2 bg-purple-900/60 hover:bg-purple-800 text-purple-200 rounded-xl text-xs font-bold transition-colors border border-purple-700/50 flex items-center gap-1"
-                  title="View AI Credit Deduction Logs"
-                >
-                  <History className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
+                {/* AI Credits Badge & Credit Logs Trigger */}
+                <div className="flex items-center gap-2 shrink-0">
+                  <div className="px-3 py-1.5 bg-amber-400/20 text-amber-300 border border-amber-400/30 rounded-xl text-xs font-mono font-bold flex items-center gap-1.5">
+                    <Coins className="w-4 h-4 text-amber-400" />
+                    <span>{currentAiCredits} AI Credits</span>
+                  </div>
 
-            {aiNotification && (
-              <div className="p-3 bg-purple-500/20 border border-purple-400/30 rounded-xl text-xs text-amber-300 font-semibold animate-in fade-in">
-                {aiNotification}
-              </div>
-            )}
-
-            {/* AI Inputs & Quick Presets */}
-            <div className="space-y-3 text-xs">
-              <input
-                type="text"
-                value={aiPrompt}
-                onChange={(e) => setAiPrompt(e.target.value)}
-                placeholder="Enter topic or keywords (e.g. New Product Launch, Summer Sale, Tech Tips)..."
-                className="w-full p-3 bg-slate-900/80 border border-purple-700/50 rounded-xl text-xs text-white placeholder-purple-300/50 focus:ring-2 focus:ring-amber-400"
-              />
-
-              <div className="flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  onClick={() => handleGenerateAiContent('caption')}
-                  disabled={isGeneratingAi}
-                  className="px-3.5 py-2 bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-bold rounded-xl hover:from-amber-400 hover:to-amber-500 transition-all shadow-md flex items-center gap-1.5 disabled:opacity-50"
-                >
-                  <Wand2 className="w-3.5 h-3.5" />
-                  <span>Generate Full Caption</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => handleGenerateAiContent('hashtags')}
-                  disabled={isGeneratingAi}
-                  className="px-3.5 py-2 bg-purple-800/80 hover:bg-purple-700 text-white font-bold rounded-xl transition-all border border-purple-600/50 flex items-center gap-1.5 disabled:opacity-50"
-                >
-                  <Hash className="w-3.5 h-3.5 text-amber-400" />
-                  <span>Generate Hashtag Cluster</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => handleGenerateAiContent('hook')}
-                  disabled={isGeneratingAi}
-                  className="px-3.5 py-2 bg-purple-800/80 hover:bg-purple-700 text-white font-bold rounded-xl transition-all border border-purple-600/50 flex items-center gap-1.5 disabled:opacity-50"
-                >
-                  <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                  <span>Generate Engaging Hook</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Generated Output Box */}
-            {aiOutput && (
-              <div className="p-4 bg-slate-900/90 border border-purple-700/60 rounded-xl space-y-3 animate-in fade-in">
-                <div className="flex items-center justify-between text-xs font-mono text-purple-300">
-                  <span>Generated Content Output</span>
-                  <span className="text-amber-300 font-bold">-10 AI Credits Deducted</span>
-                </div>
-
-                <div className="text-xs leading-relaxed text-slate-200 whitespace-pre-wrap font-sans bg-slate-950/60 p-3 rounded-lg border border-slate-800">
-                  {aiOutput}
-                </div>
-
-                <div className="flex justify-end gap-2">
                   <button
                     type="button"
-                    onClick={handleInsertAiOutput}
-                    className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs transition-all shadow-md flex items-center gap-1.5"
+                    onClick={() => setShowAiLogModal(true)}
+                    className="p-2 bg-purple-900/60 hover:bg-purple-800 text-purple-200 rounded-xl text-xs font-bold transition-colors border border-purple-700/50 flex items-center gap-1"
+                    title="View AI Credit Deduction Logs"
                   >
-                    <Plus className="w-4 h-4" />
-                    <span>Insert into Post Content</span>
+                    <History className="w-4 h-4" />
                   </button>
                 </div>
               </div>
-            )}
-          </div>
+
+              {aiNotification && (
+                <div className="p-3 bg-purple-500/20 border border-purple-400/30 rounded-xl text-xs text-amber-300 font-semibold animate-in fade-in">
+                  {aiNotification}
+                </div>
+              )}
+
+              {/* AI Inputs & Quick Presets */}
+              <div className="space-y-3 text-xs">
+                <input
+                  type="text"
+                  value={aiPrompt}
+                  onChange={(e) => setAiPrompt(e.target.value)}
+                  placeholder="Enter topic or keywords (e.g. New Product Launch, Summer Sale, Tech Tips)..."
+                  className="w-full p-3 bg-slate-900/80 border border-purple-700/50 rounded-xl text-xs text-white placeholder-purple-300/50 focus:ring-2 focus:ring-amber-400"
+                />
+
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleGenerateAiContent('caption')}
+                    disabled={isGeneratingAi}
+                    className="px-3.5 py-2 bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-bold rounded-xl hover:from-amber-400 hover:to-amber-500 transition-all shadow-md flex items-center gap-1.5 disabled:opacity-50"
+                  >
+                    <Wand2 className="w-3.5 h-3.5" />
+                    <span>Generate Full Caption</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleGenerateAiContent('hashtags')}
+                    disabled={isGeneratingAi}
+                    className="px-3.5 py-2 bg-purple-800/80 hover:bg-purple-700 text-white font-bold rounded-xl transition-all border border-purple-600/50 flex items-center gap-1.5 disabled:opacity-50"
+                  >
+                    <Hash className="w-3.5 h-3.5 text-amber-400" />
+                    <span>Generate Hashtag Cluster</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleGenerateAiContent('hook')}
+                    disabled={isGeneratingAi}
+                    className="px-3.5 py-2 bg-purple-800/80 hover:bg-purple-700 text-white font-bold rounded-xl transition-all border border-purple-600/50 flex items-center gap-1.5 disabled:opacity-50"
+                  >
+                    <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                    <span>Generate Engaging Hook</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Generated Output Box */}
+              {aiOutput && (
+                <div className="p-4 bg-slate-900/90 border border-purple-700/60 rounded-xl space-y-3 animate-in fade-in">
+                  <div className="flex items-center justify-between text-xs font-mono text-purple-300">
+                    <span>Generated Content Output</span>
+                    <span className="text-amber-300 font-bold">-10 AI Credits Deducted</span>
+                  </div>
+
+                  <div className="text-xs leading-relaxed text-slate-200 whitespace-pre-wrap font-sans bg-slate-950/60 p-3 rounded-lg border border-slate-800">
+                    {aiOutput}
+                  </div>
+
+                  <div className="flex justify-end gap-2">
+                    <button
+                      type="button"
+                      onClick={handleInsertAiOutput}
+                      className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs transition-all shadow-md flex items-center gap-1.5"
+                    >
+                      <Plus className="w-4 h-4" />
+                      <span>Insert into Post Content</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Right Column: Live Smartphone Preview (Collapsible, Instagram Selected by Default) */}

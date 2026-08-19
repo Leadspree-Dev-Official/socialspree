@@ -74,8 +74,8 @@ export const Header: React.FC<HeaderProps> = ({
     },
     {
       id: 'n2',
-      title: 'AI Credits Restocked',
-      message: '1,000 AI Content Credits refreshed for your workspace.',
+      title: 'Calendar Schedule Synced',
+      message: 'Upcoming multi-channel queue synced across all connected profiles.',
       timestamp: '1 hour ago',
       unread: true,
       type: 'info'
@@ -159,18 +159,20 @@ export const Header: React.FC<HeaderProps> = ({
         )}
 
         {/* Voice AI Assistant Trigger Pill */}
-        <button
-          type="button"
-          onClick={onOpenVoiceAssistant}
-          className="flex items-center gap-1.5 px-2.5 py-1.5 bg-gradient-to-r from-purple-50 to-indigo-50 hover:from-purple-100 hover:to-indigo-100 text-[#5D3FD3] border border-purple-200/90 rounded-xl text-xs font-bold transition-all hover:scale-105 active:scale-95 cursor-pointer shadow-2xs"
-          title="Voice AI Assistant (Alt + V)"
-        >
-          <Mic className="w-3.5 h-3.5" />
-          <span className="hidden sm:inline">Voice AI</span>
-          <span className="text-[10px] font-mono bg-purple-200/80 text-purple-900 px-1.5 py-0.2 rounded-md font-bold">
-            Alt+V
-          </span>
-        </button>
+        {onOpenVoiceAssistant && (
+          <button
+            type="button"
+            onClick={onOpenVoiceAssistant}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 bg-gradient-to-r from-purple-50 to-indigo-50 hover:from-purple-100 hover:to-indigo-100 text-[#5D3FD3] border border-purple-200/90 rounded-xl text-xs font-bold transition-all hover:scale-105 active:scale-95 cursor-pointer shadow-2xs"
+            title="Voice AI Assistant (Alt + V)"
+          >
+            <Mic className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Voice AI</span>
+            <span className="text-[10px] font-mono bg-purple-200/80 text-purple-900 px-1.5 py-0.2 rounded-md font-bold">
+              Alt+V
+            </span>
+          </button>
+        )}
 
         {/* Functional Notification Center Bell & Dropdown */}
         <div className="relative" ref={notifRef}>

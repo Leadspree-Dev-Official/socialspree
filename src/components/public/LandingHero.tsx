@@ -80,7 +80,7 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
 
             {/* Subtitle */}
             <p className="text-base sm:text-xl text-slate-600 max-w-3xl mx-auto font-medium leading-relaxed">
-              Multi-tenant B2B social automation built for marketing agencies and brands. Isolated 2-channel API keys, Cloudflare CDN media storage, and AI viral hashtag generators.
+              Multi-tenant B2B social automation built for marketing agencies and brands. Isolated 2-channel API keys, Cloudflare CDN media storage, and visual multi-channel scheduling.
             </p>
 
             {/* CTA Buttons */}

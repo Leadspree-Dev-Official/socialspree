@@ -27,7 +27,9 @@ export const GLOBAL_SYSTEM_SETTINGS: SystemSettings = {
   websiteEnabled: true,
   agencyModeEnabled: false,
   influencerModeEnabled: false,
-  businessModeEnabled: true
+  businessModeEnabled: true,
+  aiCreditsEnabled: false,
+  voiceAssistantEnabled: false
 };
 
 // Global Subscription Plans (Business, Influencer, and Agency Tiers)
@@ -45,14 +47,14 @@ export const INITIAL_PLANS: SubscriptionPlan[] = [
     maxZernioTriggersPerMonth: 2,
     maxStorageMb: 500,
     chatGptConnectorAllowed: false,
-    aiCredits: 50,
+    aiCredits: 0,
     billingCycle: 'monthly',
     targetRole: 'free',
     features: [
       '2 Social Channel Accounts Maximum',
       '2 Post dispatches per month',
       '500 MB Media Storage',
-      '50 AI Credits / month',
+      'Visual Content Calendar',
       'CoreSync & Zenith Engine Support'
     ]
   },
@@ -68,13 +70,13 @@ export const INITIAL_PLANS: SubscriptionPlan[] = [
     maxSocialAccounts: 4,
     maxZernioTriggersPerMonth: 8,
     maxStorageMb: 1000,
-    aiCredits: 500,
+    aiCredits: 0,
     billingCycle: 'monthly',
     targetRole: 'business_user',
     features: [
       '4 Social Accounts',
       '8 Post Dispatches / month',
-      '500 AI Content Credits / mo',
+      'Visual Content Calendar & Queuing',
       'Basic Performance Analytics'
     ]
   },
@@ -88,13 +90,13 @@ export const INITIAL_PLANS: SubscriptionPlan[] = [
     maxSocialAccounts: 4,
     maxZernioTriggersPerMonth: 16,
     maxStorageMb: 2000,
-    aiCredits: 1000,
+    aiCredits: 0,
     billingCycle: 'monthly',
     targetRole: 'business_user',
     features: [
       '4 Social Accounts',
       '16 Post Dispatches / month',
-      '1,000 AI Content Credits / mo',
+      'Parallel Multi-Channel Queuing',
       'Full Performance Analytics'
     ]
   },
@@ -108,15 +110,15 @@ export const INITIAL_PLANS: SubscriptionPlan[] = [
     maxSocialAccounts: 6,
     maxZernioTriggersPerMonth: 20,
     maxStorageMb: 5000,
-    aiCredits: 2500,
+    aiCredits: 0,
     isPopular: true,
     billingCycle: 'monthly',
     targetRole: 'business_user',
     features: [
       '6 Social Accounts',
       '20 Post Dispatches / month',
-      '2,500 AI Content Credits / mo',
-      'Google Review Auto-AI Responder',
+      'Recurring Social Media Queues',
+      'Google Review Sync & Management',
       'Priority Support'
     ]
   },
@@ -130,14 +132,14 @@ export const INITIAL_PLANS: SubscriptionPlan[] = [
     maxSocialAccounts: 6,
     maxZernioTriggersPerMonth: 30,
     maxStorageMb: 10000,
-    aiCredits: 5000,
+    aiCredits: 0,
     billingCycle: 'monthly',
     targetRole: 'business_user',
     features: [
       '6 Social Accounts',
       '30 Post Dispatches / month',
-      '5,000 AI Content Credits / mo',
-      'Priority Dispatch Queue'
+      'Priority Dispatch Queue',
+      'Cloudflare CDN Media Vault'
     ]
   },
   {
@@ -150,13 +152,13 @@ export const INITIAL_PLANS: SubscriptionPlan[] = [
     maxSocialAccounts: 8,
     maxZernioTriggersPerMonth: 30,
     maxStorageMb: 20000,
-    aiCredits: 10000,
+    aiCredits: 0,
     billingCycle: 'monthly',
     targetRole: 'business_user',
     features: [
       '8 Social Accounts',
       '30 Post Dispatches / month',
-      '10,000 AI Content Credits / mo',
+      'High-Velocity Parallel Engines',
       'Multi-Platform CoreSync & Zenith Engines'
     ]
   },

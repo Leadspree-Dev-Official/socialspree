@@ -1004,9 +1004,9 @@ export function App() {
               activeBrand={activeBrand}
               onSelectBrand={setActiveBrand}
               onOpenBrandManager={() => setActiveTab('agency_brands')}
-              onOpenVoiceAssistant={() => {
+              onOpenVoiceAssistant={GLOBAL_SYSTEM_SETTINGS.voiceAssistantEnabled ? () => {
                 window.dispatchEvent(new KeyboardEvent('keydown', { key: 'v', code: 'KeyV', altKey: true }));
-              }}
+              } : undefined}
             />
 
 
@@ -1051,6 +1051,7 @@ export function App() {
                   tenant={currentTenant}
                   accounts={accounts.filter(a => a.tenantId === currentTenant.id)}
                   aiLogs={aiLogs.filter(l => l.tenantId === currentTenant.id)}
+                  aiCreditsEnabled={GLOBAL_SYSTEM_SETTINGS.aiCreditsEnabled ?? false}
                   onDeductAiCredits={(amount, desc) => handleDeductAiCredits(currentTenant.id, amount, desc)}
                   onPostPublished={handlePostPublished}
                   onUpdateTenantCloudinary={handleUpdateTenantCloudinary}
@@ -1186,17 +1187,19 @@ export function App() {
             />
 
             {/* Voice AI Assistant Overlay & Floating Widget with Alt+V shortcut */}
-            <VoiceAssistantOverlay
-              activeTab={activeTab}
-              onNavigateTab={handleSelectTab}
-              tenantName={currentTenant.name}
-              aiCredits={currentTenant.aiCredits ?? 1000}
-              accountsCount={accounts.filter(a => a.tenantId === currentTenant.id).length}
-              postsCount={posts.filter(p => p.tenantId === currentTenant.id).length}
-              onInsertTextIntoComposer={(_text) => {
-                setActiveTab('composer');
-              }}
-            />
+            {GLOBAL_SYSTEM_SETTINGS.voiceAssistantEnabled && (
+              <VoiceAssistantOverlay
+                activeTab={activeTab}
+                onNavigateTab={handleSelectTab}
+                tenantName={currentTenant.name}
+                aiCredits={currentTenant.aiCredits ?? 1000}
+                accountsCount={accounts.filter(a => a.tenantId === currentTenant.id).length}
+                postsCount={posts.filter(p => p.tenantId === currentTenant.id).length}
+                onInsertTextIntoComposer={(_text) => {
+                  setActiveTab('composer');
+                }}
+              />
+            )}
           </div>
         </div>
       ) : (

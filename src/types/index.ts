@@ -125,6 +125,8 @@ export interface SystemSettings {
   agencyModeEnabled?: boolean;
   influencerModeEnabled?: boolean;
   businessModeEnabled?: boolean;
+  aiCreditsEnabled?: boolean;
+  voiceAssistantEnabled?: boolean;
 }
 
 export interface Tenant {

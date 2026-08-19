@@ -3,7 +3,7 @@ import {
   Key, 
   Smartphone, 
   Zap, 
-  Bot, 
+  Calendar, 
   Cloud, 
   CheckCircle2, 
   ArrowRight, 
@@ -67,18 +67,18 @@ export const FeaturesView: React.FC<FeaturesViewProps> = ({
       ]
     },
     {
-      id: 'ai-generator',
-      title: 'AI Viral Content & Hashtags',
-      subtitle: 'Built-in Gemini AI credit engine (10 credits/run) for hooks & tags',
-      icon: Bot,
-      badge: 'AI Automation',
+      id: 'calendar-queue',
+      title: 'Visual Interactive Content Calendar',
+      subtitle: 'Multi-timezone drag-and-drop scheduling & automated queues',
+      icon: Calendar,
+      badge: 'Calendar & Queue',
       color: 'from-pink-500 to-rose-600',
-      description: 'Generate high-converting post captions, viral hashtag clusters, and tailored engagement hooks with real-time tenant credit ledger tracking.',
+      description: 'Effortlessly plan weeks of content in advance with visual monthly/weekly calendar grids, recurring posting slots, and automated background queue workers.',
       highlights: [
-        'Gemini API prompt engineering',
-        'Deducts exactly 10 AI credits per run',
-        'Auto-inserts into composer editor',
-        'AI credit refill console in Super Admin'
+        'Interactive calendar drag-and-drop',
+        'Custom recurring time slot rules',
+        'Automated background cron triggers',
+        'Multi-timezone client sync'
       ]
     },
     {

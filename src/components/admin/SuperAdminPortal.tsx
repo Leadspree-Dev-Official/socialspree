@@ -104,6 +104,8 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
   const [agencyModeEnabled, setAgencyModeEnabled] = useState<boolean>(GLOBAL_SYSTEM_SETTINGS.agencyModeEnabled ?? false);
   const [influencerModeEnabled, setInfluencerModeEnabled] = useState<boolean>(GLOBAL_SYSTEM_SETTINGS.influencerModeEnabled ?? false);
   const [businessModeEnabled, setBusinessModeEnabled] = useState<boolean>(GLOBAL_SYSTEM_SETTINGS.businessModeEnabled ?? true);
+  const [aiCreditsEnabled, setAiCreditsEnabled] = useState<boolean>(GLOBAL_SYSTEM_SETTINGS.aiCreditsEnabled ?? false);
+  const [voiceAssistantEnabled, setVoiceAssistantEnabled] = useState<boolean>(GLOBAL_SYSTEM_SETTINGS.voiceAssistantEnabled ?? false);
 
   const [settingsNotification, setSettingsNotification] = useState<string | null>(null);
 
@@ -238,6 +240,8 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
     GLOBAL_SYSTEM_SETTINGS.agencyModeEnabled = agencyModeEnabled;
     GLOBAL_SYSTEM_SETTINGS.influencerModeEnabled = influencerModeEnabled;
     GLOBAL_SYSTEM_SETTINGS.businessModeEnabled = businessModeEnabled;
+    GLOBAL_SYSTEM_SETTINGS.aiCreditsEnabled = aiCreditsEnabled;
+    GLOBAL_SYSTEM_SETTINGS.voiceAssistantEnabled = voiceAssistantEnabled;
 
     if (aiApiKeyInput.trim() && tenants[0]) {
       const { error } = await supabase.functions.invoke('manage-credentials', { body: { tenantId: tenants[0].id, provider: 'openai', label: 'global', secret: aiApiKeyInput.trim() } });
@@ -1321,6 +1325,71 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
                     className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${businessModeEnabled ? 'bg-emerald-600' : 'bg-slate-300'}`}
                   >
                     <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${businessModeEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* AI & VOICE FEATURE TOGGLES */}
+          <div className="border-t border-slate-100 pt-5 space-y-4">
+            <div>
+              <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-amber-500" />
+                <span>AI & Voice Engine Feature Controls</span>
+              </h3>
+              <p className="text-xs text-slate-500 mt-1">
+                Instantly turn ON or OFF experimental AI features for regular workspace users. When OFF, features and balances are completely hidden from user views.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* TOGGLE 5: AI CREDITS & SETTINGS */}
+              <div className={`p-4 rounded-xl border transition-all ${aiCreditsEnabled ? 'bg-amber-50 border-amber-300' : 'bg-slate-50 border-slate-200'}`}>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Coins className={`w-5 h-5 ${aiCreditsEnabled ? 'text-amber-600' : 'text-slate-400'}`} />
+                    <div>
+                      <div className="font-bold text-slate-900 text-xs flex items-center gap-1.5">
+                        <span>AI Content Credits & Settings</span>
+                        <span className={`text-[9px] font-bold px-1.5 py-0.2 rounded ${aiCreditsEnabled ? 'bg-amber-500 text-slate-950' : 'bg-slate-200 text-slate-600'}`}>
+                          {aiCreditsEnabled ? 'ACTIVE (USER VISIBLE)' : 'DISABLED (HIDDEN)'}
+                        </span>
+                      </div>
+                      <div className="text-[10px] text-slate-500">Unpublish/hide AI credits & generation from regular users</div>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setAiCreditsEnabled(prev => !prev)}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${aiCreditsEnabled ? 'bg-amber-500' : 'bg-slate-300'}`}
+                  >
+                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${aiCreditsEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
+                  </button>
+                </div>
+              </div>
+
+              {/* TOGGLE 6: VOICE AI ASSISTANT */}
+              <div className={`p-4 rounded-xl border transition-all ${voiceAssistantEnabled ? 'bg-purple-50 border-purple-300' : 'bg-slate-50 border-slate-200'}`}>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Zap className={`w-5 h-5 ${voiceAssistantEnabled ? 'text-purple-600' : 'text-slate-400'}`} />
+                    <div>
+                      <div className="font-bold text-slate-900 text-xs flex items-center gap-1.5">
+                        <span>Voice AI Assistant (Web Speech API)</span>
+                        <span className={`text-[9px] font-bold px-1.5 py-0.2 rounded ${voiceAssistantEnabled ? 'bg-purple-600 text-white' : 'bg-slate-200 text-slate-600'}`}>
+                          {voiceAssistantEnabled ? 'ACTIVE (USER VISIBLE)' : 'DISABLED (HIDDEN)'}
+                        </span>
+                      </div>
+                      <div className="text-[10px] text-slate-500">Enable/disable floating voice assistant widget and Alt+V shortcut</div>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setVoiceAssistantEnabled(prev => !prev)}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${voiceAssistantEnabled ? 'bg-purple-600' : 'bg-slate-300'}`}
+                  >
+                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${voiceAssistantEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
                   </button>
                 </div>
               </div>
