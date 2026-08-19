@@ -36,6 +36,11 @@ export const PublicFooter: React.FC<PublicFooterProps> = ({
     setSubscribed(true);
   };
 
+  const scrollToAnchor = (id: string) => {
+    const el = document.getElementById(id);
+    if (el) el.scrollIntoView({ behavior: 'smooth' });
+  };
+
   return (
     <footer className="bg-slate-950 text-slate-400 py-16 px-4 sm:px-6 lg:px-8 border-t border-slate-900 font-['Inter']">
       <div className="max-w-7xl mx-auto space-y-12">
@@ -100,41 +105,56 @@ export const PublicFooter: React.FC<PublicFooterProps> = ({
             </div>
           </div>
 
-          {/* Platform Navigation (3 Cols) */}
+          {/* Platform Navigation (3 Cols): Overview, Pricing, About & More */}
           <div className="md:col-span-3 space-y-3">
             <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-slate-200">
-              Platform Overview
+              Platform Navigation
             </h4>
             <ul className="space-y-2 text-xs list-none p-0 m-0">
               <li>
-                <Link to="/" className="hover:text-purple-400 transition-colors no-underline text-slate-400">
-                  Home Overview
-                </Link>
+                <button
+                  type="button"
+                  onClick={() => scrollToAnchor('overview')}
+                  className="hover:text-purple-400 transition-colors text-slate-400 cursor-pointer bg-transparent border-0 p-0 text-left"
+                >
+                  Overview & Engine
+                </button>
               </li>
               <li>
-                <Link to="/features" className="hover:text-purple-400 transition-colors no-underline text-slate-400">
+                <button
+                  type="button"
+                  onClick={() => scrollToAnchor('features')}
+                  className="hover:text-purple-400 transition-colors text-slate-400 cursor-pointer bg-transparent border-0 p-0 text-left"
+                >
                   6 Core Feature Pillars
-                </Link>
+                </button>
               </li>
               <li>
-                <Link to="/pricing" className="hover:text-purple-400 transition-colors no-underline text-slate-400">
-                  Multi-Currency Pricing Table
-                </Link>
+                <button
+                  type="button"
+                  onClick={() => scrollToAnchor('pricing')}
+                  className="hover:text-purple-400 transition-colors text-slate-400 cursor-pointer bg-transparent border-0 p-0 text-left"
+                >
+                  Pricing & Capacity Calculator
+                </button>
               </li>
               <li>
-                <Link to="/testimonials" className="hover:text-purple-400 transition-colors no-underline text-slate-400">
+                <button
+                  type="button"
+                  onClick={() => scrollToAnchor('reviews')}
+                  className="hover:text-purple-400 transition-colors text-slate-400 cursor-pointer bg-transparent border-0 p-0 text-left"
+                >
                   Agency Reviews & FAQs
-                </Link>
+                </button>
               </li>
               <li>
-                <Link to="/docs" className="hover:text-purple-400 transition-colors no-underline text-slate-400">
-                  Developer API & Webhooks
-                </Link>
-              </li>
-              <li>
-                <Link to="/about" className="hover:text-purple-400 transition-colors no-underline text-slate-400">
-                  About & Direct Support
-                </Link>
+                <button
+                  type="button"
+                  onClick={() => scrollToAnchor('about')}
+                  className="hover:text-purple-400 transition-colors text-slate-400 cursor-pointer bg-transparent border-0 p-0 text-left"
+                >
+                  About & More (Direct Support)
+                </button>
               </li>
             </ul>
           </div>
@@ -194,7 +214,13 @@ export const PublicFooter: React.FC<PublicFooterProps> = ({
             © {new Date().getFullYear()} SocialSpree PRO Engine. All rights reserved. Built with React 19 & Tailwind v4.
           </div>
           <div className="flex items-center gap-4 text-[11px]">
-            <Link to="/about" className="hover:text-slate-400 no-underline text-slate-500">Contact Us</Link>
+            <button 
+              type="button" 
+              onClick={() => scrollToAnchor('about')}
+              className="hover:text-slate-400 text-slate-500 cursor-pointer bg-transparent border-0 p-0"
+            >
+              Contact Us
+            </button>
             <span>•</span>
             <span className="hover:text-slate-400 cursor-pointer">Privacy Policy</span>
             <span>•</span>

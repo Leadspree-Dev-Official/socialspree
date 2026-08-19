@@ -49,7 +49,6 @@ import { FeaturesView } from './components/public/FeaturesView';
 import { PricingView } from './components/public/PricingView';
 import { TestimonialsView } from './components/public/TestimonialsView';
 import { AboutContactView } from './components/public/AboutContactView';
-import { DocsView } from './components/public/DocsView';
 import { PublicFooter } from './components/public/PublicFooter';
 import { CheckoutPage } from './components/payment/CheckoutPage';
 import { AuthGate } from './components/auth/AuthGate';
@@ -915,14 +914,9 @@ export function App() {
                 <LandingHero
                   onNavigate={(view) => navigate(`/${view === 'landing' ? '' : view}`)}
                   onLaunchApp={handleLaunchApp}
-                  onOpenCheckout={(planId) => handleOpenCheckout(planId)}
+                  onOpenCheckout={(planId, cycle, curr, sym) => handleOpenCheckout(planId, cycle, curr, sym)}
                   onInstantDemoLogin={handleInstantDemoLogin}
-                />
-              } />
-              <Route path="/features" element={
-                <FeaturesView
-                  onOpenCheckout={(planId) => handleOpenCheckout(planId)}
-                  onLaunchApp={handleLaunchApp}
+                  plans={getStoredPlans()}
                 />
               } />
               <Route path="/pricing" element={
@@ -931,8 +925,13 @@ export function App() {
                   onOpenCheckout={(planId, cycle, curr, sym) => handleOpenCheckout(planId, cycle, curr, sym)}
                 />
               } />
+              <Route path="/features" element={
+                <FeaturesView
+                  onOpenCheckout={(planId) => handleOpenCheckout(planId)}
+                  onLaunchApp={handleLaunchApp}
+                />
+              } />
               <Route path="/testimonials" element={<TestimonialsView />} />
-              <Route path="/docs" element={<DocsView />} />
               <Route path="/about" element={<AboutContactView />} />
               <Route path="/checkout" element={
                 <CheckoutPage

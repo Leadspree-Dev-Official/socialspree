@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { NavLink, Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Show, SignInButton, SignUpButton, UserButton } from '@clerk/react';
 import { 
   Sparkles, 
@@ -11,12 +11,8 @@ import {
   Shield, 
   Building2, 
   User, 
-  ChevronDown, 
-  Globe,
-  Radio
+  ChevronDown 
 } from 'lucide-react';
-
-export type PublicSubView = 'landing' | 'features' | 'pricing' | 'testimonials' | 'about' | 'docs';
 
 interface PublicNavbarProps {
   onLaunchApp: () => void;
@@ -24,13 +20,11 @@ interface PublicNavbarProps {
   onInstantDemoLogin?: (role?: 'business_user' | 'super_admin' | 'agency' | 'influencer') => void;
 }
 
-const navItems: { path: string; label: string }[] = [
-  { path: '/', label: 'Overview' },
-  { path: '/features', label: 'Features & Architecture' },
-  { path: '/pricing', label: 'Pricing & Plans' },
-  { path: '/testimonials', label: 'Reviews & FAQ' },
-  { path: '/docs', label: 'Developer Docs' },
-  { path: '/about', label: 'About & Support' },
+// Exactly 3 Nav items requested: Overview, Pricing, About & More
+const navItems: { label: string; href: string }[] = [
+  { label: 'Overview', href: '#overview' },
+  { label: 'Pricing', href: '#pricing' },
+  { label: 'About & More', href: '#about' },
 ];
 
 export const PublicNavbar: React.FC<PublicNavbarProps> = ({
@@ -42,6 +36,7 @@ export const PublicNavbar: React.FC<PublicNavbarProps> = ({
   const [demoDropdownOpen, setDemoDropdownOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -51,17 +46,26 @@ export const PublicNavbar: React.FC<PublicNavbarProps> = ({
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Close mobile menu on route change
-  useEffect(() => {
+  // Handle smooth scroll or navigation to anchor
+  const handleNavClick = (href: string) => {
     setMobileMenuOpen(false);
-    setDemoDropdownOpen(false);
-  }, [location.pathname]);
+    if (location.pathname !== '/') {
+      navigate('/' + href);
+    } else {
+      const element = document.querySelector(href);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth' });
+      } else {
+        navigate('/' + href);
+      }
+    }
+  };
 
   return (
     <header className={`sticky top-0 z-50 font-['Inter'] transition-all duration-300 ${
       scrolled 
-        ? 'bg-white/90 dark:bg-slate-950/90 backdrop-blur-2xl border-b border-slate-200/80 dark:border-slate-800/80 shadow-md shadow-purple-500/5 py-2.5' 
-        : 'bg-white/70 backdrop-blur-xl border-b border-slate-200/60 py-3.5'
+        ? 'bg-white/90 dark:bg-slate-950/90 backdrop-blur-2xl border-b border-slate-200/80 shadow-md shadow-purple-500/5 py-2.5' 
+        : 'bg-white/75 backdrop-blur-xl border-b border-slate-200/60 py-3.5'
     }`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-14 sm:h-16">
@@ -69,6 +73,11 @@ export const PublicNavbar: React.FC<PublicNavbarProps> = ({
           {/* Brand Identity & Logo */}
           <Link 
             to="/"
+            onClick={() => {
+              if (location.pathname === '/') {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }
+            }}
             className="flex items-center gap-3 cursor-pointer group no-underline shrink-0"
           >
             <div className="relative">
@@ -106,23 +115,17 @@ export const PublicNavbar: React.FC<PublicNavbarProps> = ({
             </div>
           </Link>
 
-          {/* Desktop Navigation Links */}
-          <nav className="hidden lg:flex items-center gap-1 bg-slate-100/80 p-1.5 rounded-2xl border border-slate-200/80 backdrop-blur-md">
+          {/* Desktop Navigation Links: Overview, Pricing, About & More */}
+          <nav className="hidden md:flex items-center gap-1.5 bg-slate-100/80 p-1.5 rounded-2xl border border-slate-200/80 backdrop-blur-md">
             {navItems.map((item) => (
-              <NavLink
-                key={item.path}
-                to={item.path}
-                end={item.path === '/'}
-                className={({ isActive }) =>
-                  `px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer no-underline flex items-center gap-1.5 ${
-                    isActive
-                      ? 'bg-white text-[#5D3FD3] shadow-xs border border-purple-200/70 font-extrabold scale-102'
-                      : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
-                  }`
-                }
+              <button
+                key={item.label}
+                type="button"
+                onClick={() => handleNavClick(item.href)}
+                className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:text-slate-950 hover:bg-white/80 transition-all cursor-pointer border border-transparent hover:border-purple-200/50"
               >
                 {item.label}
-              </NavLink>
+              </button>
             ))}
           </nav>
 
@@ -233,7 +236,7 @@ export const PublicNavbar: React.FC<PublicNavbarProps> = ({
           </div>
 
           {/* Mobile Menu Hamburger */}
-          <div className="flex lg:hidden items-center gap-2">
+          <div className="flex md:hidden items-center gap-2">
             <Show when="signed-out">
               <SignInButton mode="modal">
                 <button 
@@ -264,25 +267,18 @@ export const PublicNavbar: React.FC<PublicNavbarProps> = ({
 
       {/* Mobile Drawer Menu */}
       {mobileMenuOpen && (
-        <div className="lg:hidden bg-white/95 backdrop-blur-2xl border-b border-slate-200 px-4 py-5 space-y-4 shadow-2xl animate-in slide-in-from-top-2 duration-200">
+        <div className="md:hidden bg-white/95 backdrop-blur-2xl border-b border-slate-200 px-4 py-5 space-y-4 shadow-2xl animate-in slide-in-from-top-2 duration-200">
           <div className="flex flex-col gap-1.5">
             {navItems.map((item) => (
-              <NavLink
-                key={item.path}
-                to={item.path}
-                end={item.path === '/'}
-                onClick={() => setMobileMenuOpen(false)}
-                className={({ isActive }) =>
-                  `px-4 py-2.5 rounded-xl text-xs font-bold transition-all no-underline flex items-center justify-between ${
-                    isActive
-                      ? 'bg-purple-50 text-[#5D3FD3] border border-purple-200 font-extrabold'
-                      : 'text-slate-700 hover:bg-slate-50'
-                  }`
-                }
+              <button
+                key={item.label}
+                type="button"
+                onClick={() => handleNavClick(item.href)}
+                className="w-full px-4 py-2.5 rounded-xl text-xs font-bold text-slate-700 hover:bg-purple-50 hover:text-[#5D3FD3] transition-all flex items-center justify-between text-left cursor-pointer"
               >
                 <span>{item.label}</span>
                 <ArrowRight className="w-3.5 h-3.5 opacity-50" />
-              </NavLink>
+              </button>
             ))}
           </div>
 
