@@ -1,28 +1,14 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { 
   Key, 
   Smartphone, 
   Zap, 
   Bot, 
   Cloud, 
-  FileText, 
   CheckCircle2, 
   ArrowRight, 
-  Sparkles, 
-  ShieldCheck, 
-  Server, 
-  Layers,
-  Database,
-  Star,
-  RefreshCw,
-  Sliders,
-  Send,
-  Building2,
-  Lock,
-  Globe2,
-  Cpu,
-  Share2,
-  HardDrive
+  Building2, 
+  Cpu 
 } from 'lucide-react';
 
 interface FeaturesViewProps {
@@ -34,20 +20,6 @@ export const FeaturesView: React.FC<FeaturesViewProps> = ({
   onOpenCheckout,
   onLaunchApp,
 }) => {
-  const [selectedSlotCount, setSelectedSlotCount] = useState<number>(3);
-  const [aiPromptDemo, setAiPromptDemo] = useState('Create an agency announcement post for client onboarding');
-  const [aiResultDemo, setAiResultDemo] = useState<string | null>(null);
-  const [aiGenerating, setAiGenerating] = useState(false);
-  const [activePreviewPlatform, setActivePreviewPlatform] = useState<'instagram' | 'tiktok' | 'linkedin' | 'x'>('instagram');
-
-  const handleSimulateAi = () => {
-    setAiGenerating(true);
-    setTimeout(() => {
-      setAiResultDemo(`🚀 Excited to onboard our newest enterprise brand to SocialSpree! 100% automated multi-channel publishing with isolated API slot governance and Cloudflare CDN video delivery. ⚡\n\n#DigitalAgency #MarketingAutomation #SaaS #SocialGrowth`);
-      setAiGenerating(false);
-    }, 700);
-  };
-
   const featurePillars = [
     {
       id: 'api-slots',
@@ -143,27 +115,23 @@ export const FeaturesView: React.FC<FeaturesViewProps> = ({
 
   return (
     <div className="py-16 sm:py-24 bg-gradient-to-b from-purple-50/40 via-white to-slate-50 font-['Inter']">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-20">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16">
         
-        {/* ========================================================================= */}
-        {/* SECTION HEADER */}
-        {/* ========================================================================= */}
+        {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto space-y-4">
           <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-purple-100 text-[#5D3FD3] text-xs font-bold font-mono">
             <Cpu className="w-3.5 h-3.5" />
             <span>ENTERPRISE ARCHITECTURE</span>
           </div>
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-slate-900 tracking-tight">
+          <h2 className="text-4xl sm:text-5xl lg:text-6xl font-black text-slate-900 tracking-tight">
             Built for Extreme Throughput & Complete Tenant Isolation
-          </h1>
+          </h2>
           <p className="text-slate-600 font-medium text-base sm:text-lg leading-relaxed">
             Discover the 6 core pillars that make SocialSpree the premier multi-tenant publishing platform for digital agencies and high-velocity creators.
           </p>
         </div>
 
-        {/* ========================================================================= */}
-        {/* 6-PILLAR FEATURE BENTO GRID */}
-        {/* ========================================================================= */}
+        {/* 6-Pillar Feature Bento Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {featurePillars.map((pillar) => {
             const Icon = pillar.icon;
@@ -215,96 +183,6 @@ export const FeaturesView: React.FC<FeaturesViewProps> = ({
               </div>
             );
           })}
-        </div>
-
-        {/* ========================================================================= */}
-        {/* INTERACTIVE FEATURE PLAYGROUND: API SLOT CALCULATOR */}
-        {/* ========================================================================= */}
-        <div className="bg-slate-900 text-white rounded-3xl p-6 sm:p-10 border border-slate-800 shadow-2xl overflow-hidden relative">
-          <div className="absolute top-0 right-0 w-96 h-96 bg-[#5D3FD3]/20 rounded-full blur-3xl -z-0 pointer-events-none" />
-          
-          <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-            
-            {/* Left Column: Interactive Slider */}
-            <div className="lg:col-span-6 space-y-6">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/20 text-purple-300 text-xs font-mono font-bold border border-purple-500/30">
-                <Key className="w-3.5 h-3.5 text-amber-300" />
-                <span>INTERACTIVE 2-CHANNEL SLOT CALCULATOR</span>
-              </div>
-
-              <h2 className="text-2xl sm:text-4xl font-black text-white tracking-tight">
-                Scale API Slot Capacity in Real Time
-              </h2>
-
-              <p className="text-xs sm:text-sm text-slate-300 font-medium leading-relaxed">
-                Move the slider to see how Super Admin provisions isolated 2-channel slot groups for client organizations.
-              </p>
-
-              {/* Slider Input */}
-              <div className="space-y-3 p-5 bg-slate-950/70 rounded-2xl border border-slate-800">
-                <div className="flex items-center justify-between text-xs font-mono font-bold">
-                  <span className="text-slate-400">ALLOCATED API SLOTS:</span>
-                  <span className="text-purple-400 text-base">{selectedSlotCount} Slots</span>
-                </div>
-
-                <input
-                  type="range"
-                  min={1}
-                  max={10}
-                  value={selectedSlotCount}
-                  onChange={(e) => setSelectedSlotCount(Number(e.target.value))}
-                  className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-[#5D3FD3]"
-                />
-
-                <div className="flex items-center justify-between text-[10px] font-mono text-slate-500">
-                  <span>1 Slot (2 Accounts)</span>
-                  <span>5 Slots (10 Accounts)</span>
-                  <span>10 Slots (20 Accounts)</span>
-                </div>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => onOpenCheckout()}
-                className="px-6 py-3.5 rounded-xl bg-[#5D3FD3] hover:bg-purple-600 text-white font-bold text-xs shadow-lg shadow-purple-500/25 transition-all flex items-center gap-2 cursor-pointer"
-              >
-                <Sparkles className="w-4 h-4 text-amber-300" />
-                <span>Provision {selectedSlotCount} Slots for Your Agency</span>
-                <ArrowRight className="w-4 h-4" />
-              </button>
-            </div>
-
-            {/* Right Column: Dynamic Slot Grid Preview */}
-            <div className="lg:col-span-6 bg-slate-950/90 p-6 rounded-2xl border border-slate-800 space-y-4">
-              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                <span className="text-xs font-mono font-bold text-slate-400">
-                  PROVISIONED SLOT CAPACITY BREAKDOWN:
-                </span>
-                <span className="text-xs font-bold text-emerald-400 font-mono">
-                  {selectedSlotCount * 2} Parallel Social Channels
-                </span>
-              </div>
-
-              {/* Dynamic Slots Pills Grid */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 max-h-56 overflow-y-auto pr-1">
-                {[...Array(selectedSlotCount)].map((_, idx) => (
-                  <div key={idx} className="p-3 rounded-xl bg-slate-900 border border-purple-500/30 text-xs space-y-1">
-                    <div className="flex items-center justify-between">
-                      <span className="font-mono font-bold text-purple-300 text-[11px]">SLOT #{idx + 1}</span>
-                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                    </div>
-                    <div className="text-[10px] text-slate-400 font-medium">2 Active Channels</div>
-                    <div className="text-[9px] font-mono text-slate-500">Key: ••••••••••••••••</div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="pt-2 text-[11px] text-slate-400 leading-relaxed font-sans">
-                💡 <strong>White-Label Guarantee:</strong> End client users connect social profiles directly into each assigned slot without ever seeing raw engine credentials.
-              </div>
-            </div>
-
-          </div>
         </div>
 
       </div>
