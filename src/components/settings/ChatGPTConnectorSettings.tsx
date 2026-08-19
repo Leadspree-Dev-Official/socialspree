@@ -59,7 +59,7 @@ export const ChatGPTConnectorSettings: React.FC<ChatGPTConnectorSettingsProps> =
     openapi: "3.1.0",
     info: {
       title: "SocialSpree ChatGPT Publishing & Scheduling API",
-      description: "Enables ChatGPT to schedule DALL-E images and posts directly into SocialSpree.",
+      description: "Enables ChatGPT to schedule images and posts directly into SocialSpree.",
       version: "2.1.0"
     },
     servers: [
@@ -76,7 +76,7 @@ export const ChatGPTConnectorSettings: React.FC<ChatGPTConnectorSettingsProps> =
           }
         },
         post: {
-          summary: "Schedule or Publish Post with DALL-E Image",
+          summary: "Schedule or Publish Post with Image",
           description: "Schedules post directly in SocialSpree queue without opening dashboard.",
           operationId: "scheduleSocialPost",
           requestBody: {
@@ -87,7 +87,7 @@ export const ChatGPTConnectorSettings: React.FC<ChatGPTConnectorSettingsProps> =
                   type: "object",
                   required: ["caption"],
                   properties: {
-                    imageUrl: { type: "string", description: "Public HTTPS URL of generated DALL-E image" },
+                    imageUrl: { type: "string", description: "Public HTTPS URL of image" },
                     caption: { type: "string", description: "Post text and hashtags" },
                     scheduledAt: { type: "string", description: "ISO 8601 Timestamp (e.g. 2026-08-20T18:00:00Z)" },
                     targetChannels: { 
@@ -195,11 +195,11 @@ export const ChatGPTConnectorSettings: React.FC<ChatGPTConnectorSettingsProps> =
             <div className="flex items-center gap-2">
               <h2 className="text-xl font-bold tracking-tight text-white">ChatGPT Plugin & Action Connector</h2>
               <span className="bg-emerald-400 text-slate-950 text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full uppercase">
-                DALL-E & SCHEDULING READY
+                IMAGE SCHEDULING READY
               </span>
             </div>
             <p className="text-xs text-slate-300 mt-1">
-              Generate images in ChatGPT with DALL-E, then ask ChatGPT to schedule directly to your Instagram, LinkedIn, X, and TikTok accounts without visiting SocialSpree manually.
+              Generate or provide images in ChatGPT, then ask ChatGPT to schedule directly to your Instagram, LinkedIn, X, and TikTok accounts without visiting SocialSpree manually.
             </p>
           </div>
         </div>
@@ -239,9 +239,9 @@ export const ChatGPTConnectorSettings: React.FC<ChatGPTConnectorSettingsProps> =
 
           <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/80 space-y-2">
             <div className="w-6 h-6 rounded-full bg-blue-100 text-blue-700 font-bold flex items-center justify-center font-mono">3</div>
-            <div className="font-bold text-slate-900">Generate Image & Schedule</div>
+            <div className="font-bold text-slate-900">Provide Image & Schedule</div>
             <p className="text-slate-500 leading-relaxed">
-              In ChatGPT, type: <em>"Create an image for our new sneaker drop and schedule it on Instagram & LinkedIn for tomorrow at 6 PM on SocialSpree."</em>
+              In ChatGPT, type: <em>"Here is an image for our new sneaker drop, schedule it on Instagram & LinkedIn for tomorrow at 6 PM on SocialSpree."</em>
             </p>
           </div>
         </div>
@@ -263,12 +263,18 @@ export const ChatGPTConnectorSettings: React.FC<ChatGPTConnectorSettingsProps> =
           {keys.map((k) => (
             <div key={k.id} className="p-4 bg-slate-50 rounded-xl border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
               <div>
-                <div className="font-bold text-slate-900">{k.keyLabel}</div>
+                <div className="font-bold text-slate-900 flex items-center gap-2">
+                  <span>{k.keyLabel}</span>
+                  <span className="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    <span>ACTIVE</span>
+                  </span>
+                </div>
                 <div className="font-mono text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-200 mt-1 inline-block">
                   {k.apiKey}
                 </div>
                 <div className="text-[10px] text-slate-400 font-mono mt-1">
-                  Created: {new Date(k.createdAt).toLocaleDateString()} {k.lastUsedAt && `| Last used: ${new Date(k.lastUsedAt).toLocaleTimeString()}`}
+                  Created: {new Date(k.createdAt).toLocaleDateString()} {k.lastUsedAt && `| Last verified: ${new Date(k.lastUsedAt).toLocaleTimeString()}`}
                 </div>
               </div>
 
@@ -298,32 +304,31 @@ export const ChatGPTConnectorSettings: React.FC<ChatGPTConnectorSettingsProps> =
 
       {/* Schema Import URL & JSON */}
       <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
           <div>
             <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
-              <FileCode className="w-4 h-4 text-blue-600" />
-              <span>OpenAI Custom GPT Action Schema</span>
+              <FileCode className="w-4 h-4 text-purple-600" />
+              <span>Public OpenAPI 3.1.0 Schema Definition</span>
             </h3>
-            <p className="text-xs text-slate-500">Import via Schema URL or paste the OpenAPI 3.1 JSON directly into GPT Builder</p>
+            <p className="text-xs text-slate-500">Copy this URL or JSON into Custom GPT Action definition</p>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             <button
               type="button"
               onClick={handleCopySchemaUrl}
-              className="px-3 py-1.5 bg-purple-50 text-[#5D3FD3] border border-purple-200 rounded-xl font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow-xs"
+              className="px-3 py-1.5 bg-purple-50 text-[#5D3FD3] border border-purple-200 hover:bg-purple-100 rounded-lg font-bold text-xs flex items-center gap-1.5 cursor-pointer"
             >
-              {copiedSchemaUrl ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Globe className="w-3.5 h-3.5 text-[#5D3FD3]" />}
-              <span>{copiedSchemaUrl ? 'URL Copied' : 'Copy Schema URL'}</span>
+              {copiedSchemaUrl ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Globe className="w-3.5 h-3.5" />}
+              <span>{copiedSchemaUrl ? 'URL Copied!' : 'Copy Schema URL'}</span>
             </button>
-
             <button
               type="button"
               onClick={handleCopySchema}
-              className="px-3 py-1.5 bg-blue-50 text-blue-900 border border-blue-200 rounded-xl font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow-xs"
+              className="px-3 py-1.5 bg-slate-900 text-white hover:bg-slate-800 rounded-lg font-bold text-xs flex items-center gap-1.5 cursor-pointer"
             >
-              {copiedSchema ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5 text-blue-600" />}
-              <span>{copiedSchema ? 'JSON Copied' : 'Copy JSON Schema'}</span>
+              {copiedSchema ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+              <span>{copiedSchema ? 'JSON Copied!' : 'Copy Raw JSON'}</span>
             </button>
           </div>
         </div>
@@ -344,13 +349,13 @@ export const ChatGPTConnectorSettings: React.FC<ChatGPTConnectorSettingsProps> =
       <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs space-y-4">
         <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2 border-b border-slate-100 pb-3">
           <Zap className="w-4 h-4 text-purple-600" />
-          <span>Test Live DALL-E Image & Caption Scheduling</span>
+          <span>Test Live Image & Caption Scheduling</span>
         </h3>
 
         <form onSubmit={handleTestConnectorCall} className="space-y-4 text-xs">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block font-semibold text-slate-700 mb-1">DALL-E Image URL (Public HTTPS)</label>
+              <label className="block font-semibold text-slate-700 mb-1">Image URL (Public HTTPS)</label>
               <input
                 type="url"
                 required
@@ -360,7 +365,7 @@ export const ChatGPTConnectorSettings: React.FC<ChatGPTConnectorSettingsProps> =
               />
             </div>
             <div>
-              <label className="block font-semibold text-slate-700 mb-1">Post Caption & Viral Hashtags</label>
+              <label className="block font-semibold text-slate-700 mb-1">Post Caption & Hashtags</label>
               <input
                 type="text"
                 required
@@ -372,7 +377,8 @@ export const ChatGPTConnectorSettings: React.FC<ChatGPTConnectorSettingsProps> =
           </div>
 
           {testResult && (
-            <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-900 rounded-xl text-xs font-bold font-mono animate-in fade-in">
+            <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-900 rounded-xl text-xs font-bold font-mono animate-in fade-in flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
               {testResult}
             </div>
           )}

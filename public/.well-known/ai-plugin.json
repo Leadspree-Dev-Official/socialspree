@@ -2,8 +2,8 @@
   "schema_version": "v1",
   "name_for_human": "SocialSpree Scheduler",
   "name_for_model": "socialspree",
-  "description_for_human": "Generate DALL-E images and schedule social media posts directly across Instagram, LinkedIn, X, TikTok, and YouTube.",
-  "description_for_model": "Plugin for scheduling social media posts and DALL-E images directly to SocialSpree. Use listConnectedAccounts to see user's connected social platforms, and scheduleSocialPost to schedule or publish image and caption posts.",
+  "description_for_human": "Schedule images and social media posts directly across Instagram, LinkedIn, X, TikTok, and YouTube.",
+  "description_for_model": "Plugin for scheduling social media posts and images directly to SocialSpree. Use listConnectedAccounts to see user's connected social platforms, and scheduleSocialPost to schedule or publish image and caption posts.",
   "auth": {
     "type": "service_http",
     "authorization_type": "bearer",
