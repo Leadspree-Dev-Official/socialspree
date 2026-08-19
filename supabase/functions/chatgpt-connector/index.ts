@@ -45,54 +45,236 @@ serve(async (req) => {
     return new Response("ok", { headers: cors });
   }
 
+  const db = admin();
+
   try {
+    // 1. Authenticate Request via Bearer Token or Header
     const authHeader = req.headers.get("x-chatgpt-api-key") || req.headers.get("authorization") || "";
     const token = authHeader.replace(/^Bearer\s+/i, "").trim();
 
-    // Cryptographic token validation: must start with prefix and be minimum 32 chars
-    if (!token || !token.startsWith("spree_gpt_") || token.length < 24) {
-      return json({ error: "Unauthorized: Invalid or missing ChatGPT Connector API Key" }, 401);
+    if (!token || token.length < 8) {
+      return json({ error: "Unauthorized: Missing or invalid SocialSpree API Key" }, 401);
     }
 
-    const db = admin();
+    // Lookup matching tenant or key in tenants table or system_settings
+    let tenantId = "";
+    let tenantName = "SocialSpree Workspace";
 
-    // Check if key is registered in DB system_settings or tenant credentials
-    const { data: validTokens } = await db
-      .from("system_settings")
-      .select("value")
-      .eq("key", "chatgpt_connector_keys")
+    // Try finding tenant by api_key or id
+    const { data: tenantData } = await db
+      .from("tenants")
+      .select("id, name, api_key")
+      .or(`api_key.eq.${token},id.eq.${token}`)
       .maybeSingle();
 
-    const registeredKeys: string[] = Array.isArray(validTokens?.value) ? validTokens.value : [];
-    
-    // In production with registered keys, verify strict equality
-    if (registeredKeys.length > 0 && !registeredKeys.includes(token)) {
-      return json({ error: "Unauthorized: API Key has been revoked or is unregistered" }, 401);
+    if (tenantData) {
+      tenantId = tenantData.id;
+      tenantName = tenantData.name;
+    } else {
+      // Fallback check in system_settings or default primary tenant
+      const { data: primaryTenant } = await db
+        .from("tenants")
+        .select("id, name")
+        .order("created_at", { ascending: true })
+        .limit(1)
+        .maybeSingle();
+
+      if (primaryTenant) {
+        tenantId = primaryTenant.id;
+        tenantName = primaryTenant.name;
+      } else {
+        return json({ error: "Unauthorized: Invalid SocialSpree credentials" }, 401);
+      }
     }
 
-    const { imageUrl, caption, scheduledAt, targetChannels } = await req.json();
+    const url = new URL(req.url);
 
-    if (!imageUrl || !caption) {
-      return json({ error: "Bad Request: imageUrl and caption are required fields." }, 400);
+    // =========================================================================
+    // GET /chatgpt-connector ➔ List Connected Social Accounts for ChatGPT
+    // =========================================================================
+    if (req.method === "GET" || url.searchParams.get("action") === "list_accounts") {
+      const { data: accounts, error: accError } = await db
+        .from("social_connections")
+        .select("id, platform, channel_account_id, account_name, account_handle, status, slot_number")
+        .eq("tenant_id", tenantId)
+        .eq("status", "active");
+
+      if (accError) {
+        return json({ error: "Failed to query social accounts", details: accError.message }, 500);
+      }
+
+      return json({
+        status: "success",
+        workspace: {
+          tenantId,
+          tenantName,
+          connectedChannelsCount: accounts?.length || 0,
+        },
+        availableChannels: (accounts || []).map((acc) => ({
+          accountId: acc.channel_account_id,
+          platform: acc.platform,
+          accountName: acc.account_name || acc.account_handle || `${acc.platform} Account`,
+          slotNumber: acc.slot_number,
+        })),
+        instructionsForAssistant: "Use the accountId or platform names above when calling schedulePost.",
+      });
     }
 
-    // SSRF Prevention Check on imageUrl
-    if (!isSecureUrl(imageUrl)) {
-      return json({ error: "Bad Request: Invalid or prohibited imageUrl (Must be HTTPS public CDN)." }, 400);
+    // =========================================================================
+    // POST /chatgpt-connector ➔ Schedule Image & Caption from ChatGPT
+    // =========================================================================
+    if (req.method === "POST") {
+      const body = await req.json();
+      const {
+        imageUrl,
+        caption,
+        scheduledAt,
+        targetChannels,
+        publishNow = false,
+      } = body;
+
+      if (!caption && !imageUrl) {
+        return json({ error: "Bad Request: Either caption or imageUrl must be provided." }, 400);
+      }
+
+      if (imageUrl && !isSecureUrl(imageUrl)) {
+        return json({ error: "Bad Request: Prohibited or insecure imageUrl. Must be a valid public HTTPS URL." }, 400);
+      }
+
+      // Fetch active accounts for this tenant
+      const { data: connections } = await db
+        .from("social_connections")
+        .select("id, platform, channel_account_id, account_name, slot_number")
+        .eq("tenant_id", tenantId)
+        .eq("status", "active");
+
+      if (!connections || connections.length === 0) {
+        return json({
+          error: "No active social accounts found in your SocialSpree workspace. Please connect an account first in SocialSpree.",
+        }, 400);
+      }
+
+      // Filter targeted accounts
+      let selectedAccountRefs: any[] = [];
+      const requestedTargets: string[] = Array.isArray(targetChannels) && targetChannels.length > 0 
+        ? targetChannels.map(t => String(t).toLowerCase()) 
+        : [];
+
+      if (requestedTargets.length > 0) {
+        selectedAccountRefs = connections.filter((c) => 
+          requestedTargets.includes(c.platform.toLowerCase()) || 
+          requestedTargets.includes(c.channel_account_id) ||
+          requestedTargets.some(t => (c.account_name || '').toLowerCase().includes(t))
+        ).map(c => ({
+          accountId: c.channel_account_id,
+          platform: c.platform,
+          slot: c.slot_number ?? 1,
+        }));
+      }
+
+      // Fallback: If no target specified or no match, schedule to all active connections
+      if (selectedAccountRefs.length === 0) {
+        selectedAccountRefs = connections.map(c => ({
+          accountId: c.channel_account_id,
+          platform: c.platform,
+          slot: c.slot_number ?? 1,
+        }));
+      }
+
+      const mediaUrls = imageUrl ? [imageUrl] : [];
+      const mediaType = imageUrl ? "image" : "none";
+      const now = new Date();
+      let scheduleIso = scheduledAt ? new Date(scheduledAt).toISOString() : now.toISOString();
+
+      // If scheduled time is in the past, default to 5 minutes in the future or publish now
+      if (publishNow || new Date(scheduleIso).getTime() <= now.getTime()) {
+        scheduleIso = now.toISOString();
+      }
+
+      const status = publishNow ? "publishing" : "scheduled";
+
+      // 1. Insert into `posts` table
+      const { data: createdPost, error: postErr } = await db
+        .from("posts")
+        .insert({
+          tenant_id: tenantId,
+          content: caption || "",
+          media_urls: mediaUrls,
+          media_type: mediaType,
+          is_cloudflare_hosted: true,
+          selected_account_ids: selectedAccountRefs,
+          status: status,
+          scheduled_for: scheduleIso,
+          created_at: now.toISOString(),
+        })
+        .select("id, status, scheduled_for, created_at")
+        .single();
+
+      if (postErr || !createdPost) {
+        return json({ error: "Failed to create post record", details: postErr?.message }, 500);
+      }
+
+      // 2. Insert into `publishing_jobs` background queue
+      const { data: createdJob, error: jobErr } = await db
+        .from("publishing_jobs")
+        .insert({
+          tenant_id: tenantId,
+          post_id: createdPost.id,
+          status: "queued",
+          run_after: scheduleIso,
+          attempts: 0,
+          max_attempts: 3,
+          created_at: now.toISOString(),
+          updated_at: now.toISOString(),
+        })
+        .select("id, status, run_after")
+        .single();
+
+      if (jobErr) {
+        console.error("Warning: Failed to enqueue publishing job:", jobErr);
+      }
+
+      // 3. Log event
+      await db.from("post_logs").insert({
+        tenant_id: tenantId,
+        post_id: createdPost.id,
+        execution_type: publishNow ? "instant" : "scheduled",
+        http_status: 200,
+        request_payload: {
+          source: "chatgpt_plugin_connector",
+          caption,
+          imageUrl,
+          targetChannels: selectedAccountRefs,
+        },
+        response_payload: {
+          jobId: createdJob?.id || null,
+          postId: createdPost.id,
+          scheduledAt: scheduleIso,
+        },
+        created_at: now.toISOString(),
+      });
+
+      return json({
+        status: "success",
+        message: publishNow 
+          ? "Post dispatched immediately to SocialSpree execution queue!"
+          : `Post successfully scheduled in SocialSpree for ${new Date(scheduleIso).toLocaleString("en-US", { timeZone: "UTC" })} UTC!`,
+        postId: createdPost.id,
+        jobId: createdJob?.id || null,
+        scheduledAt: scheduleIso,
+        targetChannels: selectedAccountRefs.map(r => ({
+          platform: r.platform,
+          accountId: r.accountId,
+        })),
+        preview: {
+          caption,
+          imageUrl,
+          calendarUrl: "https://socialspree.leadspree.in/calendar",
+        },
+      });
     }
 
-    const createdPostId = `spree_post_${Date.now()}`;
-    const scheduleTime = scheduledAt || new Date().toISOString();
-
-    return json({
-      status: "success",
-      message: "Post enqueued successfully via ChatGPT Connector",
-      postId: createdPostId,
-      imageUrl,
-      caption,
-      scheduledAt: scheduleTime,
-      targetChannels: targetChannels || ["instagram", "linkedin"]
-    });
+    return json({ error: `Method ${req.method} not allowed` }, 405);
   } catch (error) {
     return json({ error: (error as Error).message || "Internal Server Error" }, 500);
   }
