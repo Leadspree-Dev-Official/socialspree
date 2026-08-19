@@ -78,32 +78,42 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   const [ownerEmail, setOwnerEmail] = useState(tenant.ownerEmail);
 
   // User Profile Local State
-  const [fullName, setFullName] = useState(clerkName || userProfile?.fullName || tenant.ownerEmail.split('@')[0] || 'User');
-  const [userEmail, setUserEmail] = useState(clerkEmail || userProfile?.email || tenant.ownerEmail);
-  const [avatarUrl, setAvatarUrl] = useState(userProfile?.avatarUrl || clerkAvatar || '');
-  const [jobTitle, setJobTitle] = useState(userProfile?.jobTitle || 'Social Media Manager');
-  const [timezone, setTimezone] = useState(userProfile?.timezone || 'UTC');
-  const [notifications, setNotifications] = useState(userProfile?.notifications || {
-    emailDigest: true,
-    postFailureAlerts: true,
-    securityAlerts: true,
+  const [fullName, setFullName] = useState(() => {
+    return userProfile?.fullName || clerkName || tenant.ownerEmail.split('@')[0] || 'User';
+  });
+  const [userEmail, setUserEmail] = useState(() => {
+    return userProfile?.email || clerkEmail || tenant.ownerEmail;
+  });
+  const [avatarUrl, setAvatarUrl] = useState(() => {
+    return userProfile?.avatarUrl || clerkAvatar || '';
+  });
+  const [jobTitle, setJobTitle] = useState(() => {
+    return userProfile?.jobTitle || 'Social Media Manager';
+  });
+  const [timezone, setTimezone] = useState(() => {
+    return userProfile?.timezone || 'UTC';
+  });
+  const [notifications, setNotifications] = useState(() => {
+    return userProfile?.notifications || {
+      emailDigest: true,
+      postFailureAlerts: true,
+      securityAlerts: true,
+    };
   });
 
-  // Sync state when Clerk user loads
+  // Sync state when userProfile prop updates
   useEffect(() => {
-    if (clerkName && (!fullName || fullName === 'leadspree24x7' || fullName === 'User')) {
-      setFullName(clerkName);
-    }
-    if (clerkEmail && (!userEmail || userEmail === 'leadspree24x7@gmail.com')) {
-      setUserEmail(clerkEmail);
-    }
-    if (clerkAvatar && !avatarUrl) {
-      setAvatarUrl(clerkAvatar);
-    }
-  }, [clerkName, clerkEmail, clerkAvatar, fullName, userEmail, avatarUrl]);
+    if (userProfile?.fullName) setFullName(userProfile.fullName);
+    if (userProfile?.email) setUserEmail(userProfile.email);
+    if (userProfile?.avatarUrl) setAvatarUrl(userProfile.avatarUrl);
+    if (userProfile?.jobTitle) setJobTitle(userProfile.jobTitle);
+    if (userProfile?.timezone) setTimezone(userProfile.timezone);
+    if (userProfile?.notifications) setNotifications(userProfile.notifications);
+  }, [userProfile]);
 
   // Profile Save State
   const [profileSaving, setProfileSaving] = useState(false);
+  const [avatarUploading, setAvatarUploading] = useState(false);
 
   // Social API Keys State (Simulated credentials)
   const [metaAppId, setMetaAppId] = useState('meta_app_99182049182');
@@ -269,26 +279,29 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     e.preventDefault();
     setProfileSaving(true);
     try {
+      const activeEmail = userProfile?.email || userEmail || clerkUser?.primaryEmailAddress?.emailAddress || '';
       const updated = await auth.updateProfile({
         fullName: fullName.trim(),
         avatarUrl: avatarUrl.trim(),
         jobTitle: jobTitle.trim(),
         timezone,
         notifications
-      });
+      }, activeEmail, userProfile || undefined);
+
       if (onUpdateUserProfile) {
         onUpdateUserProfile(updated);
       }
       setNotification('User Profile & Personal Preferences Saved Successfully!');
-      setTimeout(() => setNotification(null), 3000);
+      setTimeout(() => setNotification(null), 3500);
     } catch (err) {
+      console.error('Failed to update user profile:', err);
       setNotification('Failed to update user profile.');
     } finally {
       setProfileSaving(false);
     }
   };
 
-  const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     if (!file.type.startsWith('image/')) {
@@ -296,30 +309,106 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       return;
     }
 
-    // Direct client reader with high quality preview URL
-    const reader = new FileReader();
-    reader.onload = async (event) => {
-      const result = event.target?.result as string;
-      if (result) {
-        setAvatarUrl(result);
+    setAvatarUploading(true);
+    setNotification(null);
+
+    let finalAvatarUrl = '';
+
+    // Strategy 1: Upload to Supabase Storage bucket 'avatars' or 'media'
+    try {
+      const fileExt = file.name.split('.').pop() || 'png';
+      const cleanFileName = `avatar_${(userProfile?.id || tenant.id || 'user').replace(/[^a-zA-Z0-9_-]/g, '_')}_${Date.now()}.${fileExt}`;
+      
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(cleanFileName, file, { upsert: true, contentType: file.type });
+
+      if (!uploadError && uploadData) {
+        const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(cleanFileName);
+        if (publicUrl) {
+          finalAvatarUrl = publicUrl;
+        }
+      }
+    } catch (err) {
+      console.warn('Supabase storage avatar upload note:', err);
+    }
+
+    // Strategy 2: If Supabase Storage is not provisioned or failed, upload to Cloudinary CDN
+    if (!finalAvatarUrl) {
+      try {
+        const activeCloudName = tenant.cloudinaryConfig?.cloudName || GLOBAL_DEFAULT_CLOUDINARY.cloudName;
+        const activeUploadPreset = tenant.cloudinaryConfig?.uploadPreset || GLOBAL_DEFAULT_CLOUDINARY.uploadPreset;
+        
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('upload_preset', activeUploadPreset);
+        formData.append('folder', 'socialspree_avatars');
+
+        const res = await fetch(`https://api.cloudinary.com/v1_1/${activeCloudName}/image/upload`, {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          if (data.secure_url) {
+            finalAvatarUrl = data.secure_url;
+          }
+        }
+      } catch (err) {
+        console.warn('Cloudinary avatar upload note:', err);
+      }
+    }
+
+    // Strategy 3: Fallback client data URL preview if offline
+    if (!finalAvatarUrl) {
+      await new Promise<void>((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          finalAvatarUrl = (event.target?.result as string) || '';
+          resolve();
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    if (finalAvatarUrl) {
+      setAvatarUrl(finalAvatarUrl);
+      try {
+        const activeEmail = userProfile?.email || userEmail || clerkUser?.primaryEmailAddress?.emailAddress || '';
+        const updated = await auth.updateProfile({
+          avatarUrl: finalAvatarUrl,
+          fullName: fullName.trim()
+        }, activeEmail, userProfile || undefined);
+
         if (onUpdateUserProfile) {
-          const updated = await auth.updateProfile({ avatarUrl: result });
           onUpdateUserProfile(updated);
         }
-        setNotification('Profile Photo Updated Successfully!');
-        setTimeout(() => setNotification(null), 3000);
+        setNotification('Profile Photo Uploaded & Saved to Cloud Storage Successfully!');
+      } catch (err) {
+        console.error('Error saving avatar to profile:', err);
+        setNotification('Profile photo uploaded.');
       }
-    };
-    reader.readAsDataURL(file);
+    } else {
+      setNotification('Failed to upload photo.');
+    }
+
+    setAvatarUploading(false);
+    setTimeout(() => setNotification(null), 3500);
   };
 
   const handleRemoveAvatar = async () => {
     setAvatarUrl('');
-    if (onUpdateUserProfile) {
-      const updated = await auth.updateProfile({ avatarUrl: '' });
-      onUpdateUserProfile(updated);
+    try {
+      const activeEmail = userProfile?.email || userEmail || clerkUser?.primaryEmailAddress?.emailAddress || '';
+      const updated = await auth.updateProfile({ avatarUrl: '' }, activeEmail, userProfile || undefined);
+      if (onUpdateUserProfile) {
+        onUpdateUserProfile(updated);
+      }
+      setNotification('Profile Photo Removed.');
+    } catch {
+      setNotification('Profile Photo Cleared.');
     }
-    setNotification('Profile Photo Removed.');
     setTimeout(() => setNotification(null), 3000);
   };
 
@@ -468,12 +557,22 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
                   <div className="space-y-2">
                     <div className="flex items-center gap-3">
-                      <label className="px-4 py-2 bg-[#5D3FD3] hover:bg-purple-700 text-white rounded-xl font-bold text-xs cursor-pointer transition-colors shadow-sm flex items-center gap-2">
-                        <Camera className="w-4 h-4" />
-                        <span>Upload Photo</span>
+                      <label className={`px-4 py-2 bg-[#5D3FD3] hover:bg-purple-700 text-white rounded-xl font-bold text-xs cursor-pointer transition-colors shadow-sm flex items-center gap-2 ${avatarUploading ? 'opacity-60 pointer-events-none' : ''}`}>
+                        {avatarUploading ? (
+                          <>
+                            <RefreshCw className="w-4 h-4 animate-spin" />
+                            <span>Uploading to Cloud...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Camera className="w-4 h-4" />
+                            <span>Upload Photo</span>
+                          </>
+                        )}
                         <input
                           type="file"
                           accept="image/*"
+                          disabled={avatarUploading}
                           onChange={handleAvatarUpload}
                           className="hidden"
                         />

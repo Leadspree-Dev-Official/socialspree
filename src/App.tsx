@@ -103,7 +103,14 @@ export function App() {
 
   // Public vs App View Mode Router State
   const [viewMode, setViewMode] = useState<'public' | 'auth' | 'app'>(initialRoute.view);
-  const [profile, setProfile] = useState<Profile | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(() => {
+    try {
+      const raw = localStorage.getItem('socialspree_user_profile_v1');
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  });
   const [cloudLoading, setCloudLoading] = useState(false);
   const [cloudError, setCloudError] = useState('');
   const [cloudReady, setCloudReady] = useState(false);
@@ -209,8 +216,8 @@ export function App() {
       try {
         const { data: provisionData } = await supabase.rpc('ensure_clerk_profile', {
           p_email: primaryEmail,
-          p_full_name: user.fullName || user.firstName || 'User',
-          p_avatar_url: user.imageUrl || null,
+          p_full_name: user.fullName || user.firstName || null,
+          p_avatar_url: null,
         });
         if (provisionData) {
           userProfile = mapProfile(Array.isArray(provisionData) ? provisionData[0] : provisionData);
@@ -222,6 +229,30 @@ export function App() {
       if (!userProfile) {
         userProfile = await auth.getProfile(primaryEmail);
       }
+
+      // Check if user previously saved a custom name or avatar in localStorage
+      try {
+        const savedRaw = localStorage.getItem('socialspree_user_profile_v1');
+        if (savedRaw) {
+          const saved = JSON.parse(savedRaw);
+          if (saved && saved.email?.toLowerCase() === primaryEmail.toLowerCase()) {
+            if (userProfile) {
+              if (saved.fullName && (!userProfile.fullName || userProfile.fullName === primaryEmail.split('@')[0])) {
+                userProfile.fullName = saved.fullName;
+              }
+              if (saved.avatarUrl && !userProfile.avatarUrl) {
+                userProfile.avatarUrl = saved.avatarUrl;
+              }
+              if (saved.jobTitle && !userProfile.jobTitle) {
+                userProfile.jobTitle = saved.jobTitle;
+              }
+              if (saved.timezone && (!userProfile.timezone || userProfile.timezone === 'UTC')) {
+                userProfile.timezone = saved.timezone;
+              }
+            }
+          }
+        }
+      } catch { /* ignore */ }
 
       if (!userProfile) {
         const emailLower = primaryEmail.toLowerCase().trim();
@@ -258,6 +289,10 @@ export function App() {
           } catch { /* ignore */ }
         })();
       }
+
+      try {
+        localStorage.setItem('socialspree_user_profile_v1', JSON.stringify(userProfile));
+      } catch { /* ignore */ }
       const isSuperAdmin = userProfile.isSuperAdmin;
 
       const cloud = await hydrateFromCloud().catch(() => ({
@@ -1196,7 +1231,12 @@ export function App() {
                 <SettingsView
                   tenant={currentTenant}
                   userProfile={profile}
-                  onUpdateUserProfile={setProfile}
+                  onUpdateUserProfile={(updated) => {
+                    setProfile(updated);
+                    try {
+                      localStorage.setItem('socialspree_user_profile_v1', JSON.stringify(updated));
+                    } catch { /* ignore */ }
+                  }}
                   onUpdateTenantCloudinary={handleUpdateTenantCloudinary}
                   onUpdateTenantProfile={handleUpdateTenantProfile}
                 />

@@ -57,8 +57,8 @@ export const Header: React.FC<HeaderProps> = ({
   const clerkEmail = user?.primaryEmailAddress?.emailAddress;
   const clerkName = user?.fullName || (user?.firstName ? `${user.firstName}${user.lastName ? ' ' + user.lastName : ''}` : undefined) || user?.username;
 
-  const activeEmail = clerkEmail || userEmail || currentTenant.ownerEmail;
-  const displayName = clerkName || userProfile?.fullName || (activeEmail ? activeEmail.split('@')[0] : 'User');
+  const activeEmail = userEmail || clerkEmail || currentTenant.ownerEmail;
+  const displayName = userProfile?.fullName || clerkName || (activeEmail ? activeEmail.split('@')[0] : 'User');
   const avatarUrl = userProfile?.avatarUrl || user?.imageUrl;
 
   // Notification Center State

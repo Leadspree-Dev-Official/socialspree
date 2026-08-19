@@ -86,8 +86,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const clerkEmail = user?.primaryEmailAddress?.emailAddress;
   const clerkName = user?.fullName || (user?.firstName ? `${user.firstName}${user.lastName ? ' ' + user.lastName : ''}` : undefined) || user?.username;
 
-  const displayName = clerkName || userFullName || (isSuperAdmin ? 'Super Admin' : 'Workspace User');
-  const displayEmail = clerkEmail || userEmail || (isSuperAdmin ? 'admin@leadspree.io' : 'user@socialspree.io');
+  const displayName = userFullName || clerkName || (isSuperAdmin ? 'Super Admin' : 'Workspace User');
+  const displayEmail = userEmail || clerkEmail || (isSuperAdmin ? 'admin@leadspree.io' : 'user@socialspree.io');
   const effectiveAvatar = avatarUrl || user?.imageUrl;
 
   const getRoleLabel = () => {
