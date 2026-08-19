@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { NavLink, Link } from 'react-router-dom';
 import { Show, SignInButton, SignUpButton, UserButton } from '@clerk/react';
-import { Sparkles, Menu, X, ArrowRight, LayoutDashboard, BookOpen } from 'lucide-react';
+import { Sparkles, Menu, X, ArrowRight, LayoutDashboard, Zap } from 'lucide-react';
 
 
 export type PublicSubView = 'landing' | 'features' | 'pricing' | 'testimonials' | 'about' | 'docs';
@@ -9,6 +9,7 @@ export type PublicSubView = 'landing' | 'features' | 'pricing' | 'testimonials' 
 interface PublicNavbarProps {
   onLaunchApp: () => void;
   onOpenCheckout: (planId?: string) => void;
+  onInstantDemoLogin?: (role?: 'business_user' | 'super_admin' | 'agency' | 'influencer') => void;
 }
 
 const navItems: { path: string; label: string }[] = [
@@ -23,6 +24,7 @@ const navItems: { path: string; label: string }[] = [
 export const PublicNavbar: React.FC<PublicNavbarProps> = ({
   onLaunchApp,
   onOpenCheckout,
+  onInstantDemoLogin,
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -78,7 +80,16 @@ export const PublicNavbar: React.FC<PublicNavbarProps> = ({
           </nav>
 
           {/* Desktop Right CTAs */}
-          <div className="hidden md:flex items-center gap-3">
+          <div className="hidden md:flex items-center gap-2.5">
+            <button
+              onClick={() => onInstantDemoLogin ? onInstantDemoLogin('business_user') : onLaunchApp()}
+              className="px-3.5 py-2.5 rounded-xl bg-gradient-to-r from-purple-50 to-indigo-50 hover:from-purple-100 hover:to-indigo-100 text-[#5D3FD3] border border-purple-300 text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer shadow-xs hover:scale-105 active:scale-95"
+              title="Instant 1-Click Demo Login"
+            >
+              <Zap className="w-3.5 h-3.5 fill-[#5D3FD3] text-[#5D3FD3]" />
+              <span>Instant Demo</span>
+            </button>
+
             <Show when="signed-out">
               <SignInButton mode="modal">
                 <button
@@ -112,6 +123,13 @@ export const PublicNavbar: React.FC<PublicNavbarProps> = ({
 
           {/* Mobile Menu Button */}
           <div className="md:hidden flex items-center gap-2">
+            <button
+              onClick={() => onInstantDemoLogin ? onInstantDemoLogin('business_user') : onLaunchApp()}
+              className="px-2.5 py-1.5 text-xs font-black bg-purple-100 text-[#5D3FD3] border border-purple-300 rounded-lg flex items-center gap-1 cursor-pointer"
+            >
+              <Zap className="w-3 h-3 fill-[#5D3FD3]" />
+              Demo
+            </button>
             <Show when="signed-out">
               <SignInButton mode="modal">
                 <button className="px-3 py-1.5 text-xs font-bold bg-[#5D3FD3] text-white rounded-lg">

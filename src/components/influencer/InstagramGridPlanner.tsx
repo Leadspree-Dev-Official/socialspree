@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { MediaAsset, Post } from '../../types';
 import { 
   Grid, 
@@ -33,6 +33,12 @@ export const InstagramGridPlanner: React.FC<InstagramGridPlannerProps> = ({
     // Initial feed grid preview combining existing images/videos
     return mediaAssets.slice(0, 12);
   });
+
+  useEffect(() => {
+    if (mediaAssets.length > 0) {
+      setGridItems(mediaAssets.slice(0, 12));
+    }
+  }, [mediaAssets]);
 
   const [activeTab, setActiveTab] = useState<'grid' | 'reels' | 'saved'>('grid');
   const [selectedItem, setSelectedItem] = useState<MediaAsset | null>(null);

@@ -41,6 +41,7 @@ import { AnalyticsView } from './components/analytics/AnalyticsView';
 import { SuperAdminPortal, SuperAdminSubTab } from './components/admin/SuperAdminPortal';
 import { SettingsView } from './components/settings/SettingsView';
 import { HelpCenterView } from './components/help/HelpCenterView';
+import { VoiceAssistantOverlay } from './components/assistant/VoiceAssistantOverlay';
 
 import { PublicNavbar } from './components/public/PublicNavbar';
 import { LandingHero } from './components/public/LandingHero';
@@ -56,7 +57,8 @@ import { SetNewPasswordView } from './components/auth/SetNewPasswordView';
 import { clearAuthenticatedCache, hydrateFromCloud, mapProfile, type Profile } from './lib/api';
 import { auth } from './lib/api';
 import { setClerkTokenProvider, supabase } from './lib/supabase';
-import { tenants as cloudTenants, socialConnections as cloudAccounts, posts as cloudPosts, postLogs as cloudLogs, aiCreditLogs as cloudAiLogs, mediaAssets as cloudMedia } from './lib/api';
+import { tenants as cloudTenants, socialConnections as cloudAccounts, posts as cloudPosts, postLogs as cloudLogs, aiCreditLogs as cloudAiLogs, mediaAssets as cloudMedia, agencyBrands } from './lib/api';
+import { executePublishing } from './lib/zernio';
 
 
 export function App() {
@@ -174,6 +176,7 @@ export function App() {
     };
     setBrands(prev => [created, ...prev]);
     setActiveBrand(created);
+    void agencyBrands.save(created).catch(() => {});
   };
 
   const handleDeleteBrand = (brandId: string) => {
@@ -181,6 +184,7 @@ export function App() {
     if (activeBrand?.id === brandId) {
       setActiveBrand(null);
     }
+    void agencyBrands.delete(brandId).catch(() => {});
   };
 
   const loadAuthenticatedWorkspace = async () => {
@@ -252,12 +256,14 @@ export function App() {
 
       const cloud = await hydrateFromCloud().catch(() => ({
         tenants: [],
+        plans: [],
         accounts: [],
         posts: [],
         logs: [],
         reviews: [],
         aiLogs: [],
-        media: []
+        media: [],
+        brands: []
       }));
 
       const cloudList = cloud.tenants || [];
@@ -365,6 +371,8 @@ export function App() {
       setLogs(cloud.logs);
       setAiLogs(cloud.aiLogs);
       setMediaAssets(cloud.media);
+      if (cloud.reviews && cloud.reviews.length > 0) setReviews(cloud.reviews);
+      if (cloud.brands && cloud.brands.length > 0) setBrands(cloud.brands);
       setCloudReady(true);
       setIsSuperAdminMode(isSuperAdmin);
       if (isSuperAdmin && ['composer', 'calendar', 'connections', 'autoresponder', 'media'].includes(activeTab)) {
@@ -379,6 +387,41 @@ export function App() {
     }
   };
 
+  const [isDemoSession, setIsDemoSession] = useState<boolean>(false);
+
+  const handleInstantDemoLogin = (role: 'business_user' | 'super_admin' | 'agency' | 'influencer' = 'business_user') => {
+    setIsDemoSession(true);
+    const demoEmail = role === 'super_admin' ? SUPER_ADMIN_EMAIL : `${role}.demo@socialspree.com`;
+    const demoProfile: Profile = {
+      id: `demo-${role}-${Date.now()}`,
+      email: demoEmail,
+      fullName: role === 'super_admin' ? 'Master Super Admin (Demo)' : role === 'agency' ? 'Apex Agency Director (Demo)' : role === 'influencer' ? 'Creator Studio (Demo)' : 'Demo Growth Leader',
+      avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+      jobTitle: role === 'super_admin' ? 'Platform Executive' : 'Brand Director',
+      phoneNumber: '+1 (555) 019-2834',
+      timezone: 'America/New_York',
+      notifications: { emailDigest: true, postFailureAlerts: true, securityAlerts: true },
+      tenantId: tenants[0]?.id || INITIAL_TENANTS[0].id,
+      isSuperAdmin: role === 'super_admin',
+      role: role,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+
+    setProfile(demoProfile);
+    setIsSuperAdminMode(role === 'super_admin');
+    setCurrentTenant(tenants[0] || INITIAL_TENANTS[0]);
+    if (role === 'super_admin') {
+      setActiveTab('admin');
+      setAdminSubTab('dashboard');
+    } else {
+      setActiveTab('dashboard');
+    }
+    setCloudReady(true);
+    setViewMode('app');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   useEffect(() => {
     if (!isClerkLoaded) return;
 
@@ -386,24 +429,18 @@ export function App() {
       void loadAuthenticatedWorkspace();
     } else {
       setCloudLoading(false);
-      if (viewMode === 'app' && !profile) {
+      if (viewMode === 'app' && !profile && !isDemoSession) {
         setViewMode('auth');
       }
     }
-  }, [isClerkLoaded, isSignedIn, user, session]);
+  }, [isClerkLoaded, isSignedIn, user, session, isDemoSession]);
 
-  // Sync state to storage
-  useEffect(() => { if (cloudReady && isSignedIn) void cloudTenants.saveAll(tenants).catch((e: any) => setCloudError(e.message)); }, [tenants, cloudReady, isSignedIn]);
-
-  useEffect(() => { if (cloudReady && isSignedIn) void Promise.all(accounts.map(a => cloudAccounts.save(a))).catch((e: any) => setCloudError(e.message)); }, [accounts, cloudReady, isSignedIn]);
-
-  useEffect(() => { if (cloudReady && isSignedIn) void Promise.all(posts.map(p => cloudPosts.save(p))).catch((e: any) => setCloudError(e.message)); }, [posts, cloudReady, isSignedIn]);
-
-  useEffect(() => { if (cloudReady && isSignedIn) void Promise.all(logs.map(l => cloudLogs.create(l))).catch((e: any) => setCloudError(e.message)); }, [logs, cloudReady, isSignedIn]);
-
-  useEffect(() => { if (cloudReady && isSignedIn) void Promise.all(aiLogs.map(l => cloudAiLogs.create(l))).catch((e: any) => setCloudError(e.message)); }, [aiLogs, cloudReady, isSignedIn]);
-
-  useEffect(() => { if (cloudReady && isSignedIn) void Promise.all(mediaAssets.map(m => cloudMedia.create(m))).catch((e: any) => setCloudError(e.message)); }, [mediaAssets, cloudReady, isSignedIn]);
+  // Sync local cache state safely without triggering premature cross-tenant RLS writes
+  useEffect(() => {
+    if (cloudReady) {
+      saveStoredTenants(tenants);
+    }
+  }, [tenants, cloudReady]);
 
 
   const handleAddMediaAsset = (asset: Omit<MediaAsset, 'id' | 'createdAt'>) => {
@@ -438,9 +475,12 @@ export function App() {
   };
 
   const handleSignOut = async () => {
-    await clerkSignOut();
+    if (isSignedIn) {
+      await clerkSignOut().catch(() => {});
+    }
     setClerkTokenProvider(null);
     clearAuthenticatedCache();
+    setIsDemoSession(false);
     setProfile(null);
     setCloudReady(false);
     setIsSuperAdminMode(false);
@@ -814,14 +854,35 @@ export function App() {
     }));
   };
 
-  const handleRetryPublish = (log: PostLog) => {
-    const retryLog: PostLog = {
-      ...log,
-      id: crypto.randomUUID(),
-      httpStatus: 200,
-      createdAt: new Date().toISOString()
-    };
-    setLogs([retryLog, ...logs]);
+  const handleRetryPublish = async (log: PostLog) => {
+    const post = posts.find(p => p.id === log.postId);
+    if (!post) {
+      const retryLog: PostLog = {
+        ...log,
+        id: crypto.randomUUID(),
+        httpStatus: 404,
+        responsePayload: { error: 'Original post not found for retry' },
+        createdAt: new Date().toISOString()
+      };
+      setLogs([retryLog, ...logs]);
+      return;
+    }
+
+    try {
+      const targetTenant = tenants.find(t => t.id === log.tenantId) || currentTenant;
+      const { post: updatedPost, log: retryLog } = await executePublishing(post, targetTenant);
+      setPosts(posts.map(p => p.id === updatedPost.id ? updatedPost : p));
+      setLogs([retryLog, ...logs]);
+    } catch (err: any) {
+      const failedLog: PostLog = {
+        ...log,
+        id: crypto.randomUUID(),
+        httpStatus: 500,
+        responsePayload: { error: err?.message || 'Publishing retry failed' },
+        createdAt: new Date().toISOString()
+      };
+      setLogs([failedLog, ...logs]);
+    }
   };
 
   return (
@@ -834,6 +895,8 @@ export function App() {
             {cloudError && <div className="fixed top-4 left-1/2 z-50 -translate-x-1/2 rounded-xl bg-red-50 px-4 py-3 text-sm font-semibold text-red-700 shadow">{cloudError}</div>}
             <AuthGate
               onCancel={() => { setCloudError(''); setViewMode('public'); navigate('/'); }}
+              onInstantDemoLogin={handleInstantDemoLogin}
+              onContinueToWorkspace={() => { setCloudError(''); setViewMode('app'); setActiveTab('dashboard'); }}
             />
           </div>
         )
@@ -843,6 +906,7 @@ export function App() {
           <PublicNavbar
             onLaunchApp={handleLaunchApp}
             onOpenCheckout={(planId) => handleOpenCheckout(planId)}
+            onInstantDemoLogin={handleInstantDemoLogin}
           />
 
           <main className="flex-1">
@@ -852,6 +916,7 @@ export function App() {
                   onNavigate={(view) => navigate(`/${view === 'landing' ? '' : view}`)}
                   onLaunchApp={handleLaunchApp}
                   onOpenCheckout={(planId) => handleOpenCheckout(planId)}
+                  onInstantDemoLogin={handleInstantDemoLogin}
                 />
               } />
               <Route path="/features" element={
@@ -940,6 +1005,9 @@ export function App() {
               activeBrand={activeBrand}
               onSelectBrand={setActiveBrand}
               onOpenBrandManager={() => setActiveTab('agency_brands')}
+              onOpenVoiceAssistant={() => {
+                window.dispatchEvent(new KeyboardEvent('keydown', { key: 'v', code: 'KeyV', altKey: true }));
+              }}
             />
 
 
@@ -958,6 +1026,7 @@ export function App() {
 
               {activeTab === 'agency_brands' && (
                 <AgencyBrandManager
+                  tenantId={currentTenant.id}
                   brands={brands}
                   activeBrand={activeBrand}
                   onSelectBrand={setActiveBrand}
@@ -1116,10 +1185,27 @@ export function App() {
               setActiveTab={setActiveTab}
               isSuperAdmin={isSuperAdminMode}
             />
+
+            {/* Voice AI Assistant Overlay & Floating Widget with Alt+V shortcut */}
+            <VoiceAssistantOverlay
+              activeTab={activeTab}
+              onNavigateTab={handleSelectTab}
+              tenantName={currentTenant.name}
+              aiCredits={currentTenant.aiCredits ?? 1000}
+              accountsCount={accounts.filter(a => a.tenantId === currentTenant.id).length}
+              postsCount={posts.filter(p => p.tenantId === currentTenant.id).length}
+              onInsertTextIntoComposer={(_text) => {
+                setActiveTab('composer');
+              }}
+            />
           </div>
         </div>
       ) : (
-        <AuthGate onCancel={() => { setCloudError(''); setViewMode('public'); navigate('/'); }} />
+        <AuthGate
+          onCancel={() => { setCloudError(''); setViewMode('public'); navigate('/'); }}
+          onInstantDemoLogin={handleInstantDemoLogin}
+          onContinueToWorkspace={() => { setCloudError(''); setViewMode('app'); setActiveTab('dashboard'); }}
+        />
       )}
     </div>
   );

@@ -20,7 +20,7 @@ export const DocsView: React.FC = () => {
     {
       id: 'integration-guides',
       title: 'Integration Guides',
-      description: 'Composio, Zernio, Cloudinary setup instructions.',
+      description: 'CoreSync, Publishing Engine API, Cloudinary setup instructions.',
       icon: <Plug className="w-6 h-6 text-white" />,
       color: 'from-orange-500 to-amber-600'
     },

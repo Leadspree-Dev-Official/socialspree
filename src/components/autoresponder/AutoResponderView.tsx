@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Tenant, SocialAccount, AutoResponderRule, LiveCommentTriggerLog, MediaAsset } from '../../types';
+import { autoResponderRules, liveCommentTriggerLogs } from '../../lib/api';
 import { 
   MessageSquareCode, 
   Plus, 
@@ -18,14 +19,21 @@ import {
   ShieldCheck, 
   Play, 
   RefreshCw, 
-  X,
-  Copy,
-  Link as LinkIcon,
-  Image,
-  Film,
-  Cloud,
-  Check,
-  Globe
+  X, 
+  Copy, 
+  Link as LinkIcon, 
+  Image, 
+  Film, 
+  Cloud, 
+  Check, 
+  Globe,
+  Sliders,
+  Layers,
+  Settings,
+  AlertCircle,
+  HelpCircle,
+  Smartphone,
+  Repeat
 } from 'lucide-react';
 
 interface AutoResponderViewProps {
@@ -44,15 +52,28 @@ export const AutoResponderView: React.FC<AutoResponderViewProps> = ({
     {
       id: 'rule-1',
       tenantId: tenant.id,
-      name: 'Universal Reel Price & Buy Link DM Bot',
+      name: 'Universal Price & Buy Link DM Bot',
       platform: 'both',
+      targetPostScope: 'all_posts',
+      triggerType: 'keyword',
       triggerKeywords: ['price', 'cost', 'how much', 'buy', 'link', 'deal'],
       matchType: 'contains',
       actionType: 'both',
       publicReplyTemplate: 'Hi @{username}! Check your DMs for the exclusive link & price 📩🚀',
+      publicReplyTemplates: [
+        'Hi @{username}! Check your DMs for the exclusive link & price 📩🚀',
+        'Hey @{username}, just sent the pricing & checkout details to your DM! ✨',
+        'Sent you a direct message with all the details @{username} 🎉'
+      ],
       privateDmTemplate: 'Hey {username}! Thanks for reaching out. Here is the link to purchase at 20% off: https://socialspree.io/deal',
+      privateDmTemplates: [
+        'Hey {username}! Thanks for reaching out. Here is the link to purchase at 20% off: https://socialspree.io/deal',
+        'Hi {username}! You can grab your exclusive discount code here: https://socialspree.io/deal. Let us know if you have questions!'
+      ],
       attachedMediaUrl: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=600&auto=format&fit=crop&q=80',
       useAiContext: true,
+      aiPersonaPrompt: 'Friendly social commerce assistant that answers pricing questions and shares discount links.',
+      rateLimitMinutes: 60,
       isActive: true,
       triggerCount: 68,
       createdAt: new Date().toISOString()
@@ -60,21 +81,29 @@ export const AutoResponderView: React.FC<AutoResponderViewProps> = ({
     {
       id: 'rule-2',
       tenantId: tenant.id,
-      name: 'Facebook Page Promo & Info Responder',
-      platform: 'facebook',
-      triggerKeywords: ['info', 'details', 'promo', 'discount', 'coupon'],
+      name: 'Universal Catch-All Engagement Booster',
+      platform: 'both',
+      targetPostScope: 'all_posts',
+      triggerType: 'all_comments',
+      triggerKeywords: ['*'],
       matchType: 'contains',
-      actionType: 'both',
-      publicReplyTemplate: 'Thanks for commenting @{username}! We just sent you a private message with full details 🎉',
-      privateDmTemplate: 'Hi {username}! Here is your secret promo code: SPREE2026. Use it at checkout!',
+      actionType: 'comment_reply',
+      publicReplyTemplate: 'Thank you for stopping by and sharing your thoughts @{username}! ❤️',
+      publicReplyTemplates: [
+        'Thank you for stopping by and sharing your thoughts @{username}! ❤️',
+        'Appreciate the support @{username}! Have an amazing week 🚀',
+        'Love having you in our community @{username}! 🙌'
+      ],
+      privateDmTemplate: '',
       useAiContext: true,
+      rateLimitMinutes: 120,
       isActive: true,
-      triggerCount: 19,
+      triggerCount: 34,
       createdAt: new Date().toISOString()
     }
   ]);
 
-  // Live Webhook Simulation Logs
+  // Live Logs State
   const [logs, setLogs] = useState<LiveCommentTriggerLog[]>([
     {
       id: 'log-1',
@@ -106,76 +135,148 @@ export const AutoResponderView: React.FC<AutoResponderViewProps> = ({
 
   // Modal & Form States
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showWebhookGuide, setShowWebhookGuide] = useState(false);
+  const [copiedField, setCopiedField] = useState<string | null>(null);
+  
+  // Rule Form Fields
   const [ruleNameInput, setRuleNameInput] = useState('');
   const [platformInput, setPlatformInput] = useState<'instagram' | 'facebook' | 'both'>('both');
+  const [targetScopeInput, setTargetScopeInput] = useState<'all_posts' | 'specific_posts'>('all_posts');
+  const [triggerTypeInput, setTriggerTypeInput] = useState<'keyword' | 'all_comments' | 'sentiment'>('keyword');
   const [keywordsInput, setKeywordsInput] = useState('');
-  const [publicReplyInput, setPublicReplyInput] = useState('Hi @{username}! Check your DMs for the link 🚀');
-  const [privateDmInput, setPrivateDmInput] = useState('Hey {username}! Here is the link: https://socialspree.io/deal');
+  const [matchTypeInput, setMatchTypeInput] = useState<'contains' | 'exact'>('contains');
+  const [actionTypeInput, setActionTypeInput] = useState<'both' | 'comment_reply' | 'private_dm'>('both');
+  
+  // Multi-Template Rotation Lists
+  const [publicTemplates, setPublicTemplates] = useState<string[]>([
+    'Hi @{username}! Check your DMs for the exclusive details 📩🚀',
+    'Hey @{username}, just sent the link to your direct messages! ✨'
+  ]);
+  const [privateTemplates, setPrivateTemplates] = useState<string[]>([
+    'Hey {username}! Thanks for reaching out. Here is the link: https://socialspree.io/deal'
+  ]);
+  
   const [attachedMediaUrlInput, setAttachedMediaUrlInput] = useState('');
   const [useAiInput, setUseAiInput] = useState(true);
+  const [aiPersonaInput, setAiPersonaInput] = useState('Friendly and enthusiastic brand assistant.');
+  const [rateLimitMinutesInput, setRateLimitMinutesInput] = useState(60);
   const [showCloudinaryPicker, setShowCloudinaryPicker] = useState(false);
   const [notification, setNotification] = useState<string | null>(null);
 
   // Simulator Test State
-  const [simComment, setSimComment] = useState('How much is the price? Send me link please!');
-  const [simUsername, setSimUsername] = useState('tech_enthusiast');
+  const [simPlatform, setSimPlatform] = useState<'instagram' | 'facebook'>('instagram');
+  const [simComment, setSimComment] = useState('How much is the price? Send me the link please!');
+  const [simUsername, setSimUsername] = useState('alex_marketing');
   const [isSimulating, setIsSimulating] = useState(false);
+  const [lastSimResult, setLastSimResult] = useState<{
+    matchedRule: string;
+    triggerType: string;
+    keyword: string;
+    publicReply: string;
+    privateDm?: string;
+  } | null>(null);
 
-  const handleToggleRule = (id: string) => {
-    setRules(rules.map(r => r.id === id ? { ...r, isActive: !r.isActive } : r));
+  // Cloud Hydration
+  useEffect(() => {
+    let isMounted = true;
+    const fetchRules = async () => {
+      try {
+        const cloudList = await autoResponderRules.list();
+        if (cloudList && cloudList.length > 0 && isMounted) {
+          setRules(cloudList);
+        }
+      } catch { /* fallback to local initial rules */ }
+    };
+    void fetchRules();
+    return () => { isMounted = false; };
+  }, [tenant.id]);
+
+  const copyToClipboard = (text: string, fieldId: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedField(fieldId);
+    setTimeout(() => setCopiedField(null), 2500);
   };
 
-  const handleDeleteRule = (id: string) => {
+  const handleToggleRule = async (id: string) => {
+    const updated = rules.map(r => r.id === id ? { ...r, isActive: !r.isActive } : r);
+    setRules(updated);
+    const target = updated.find(r => r.id === id);
+    if (target) {
+      void autoResponderRules.save(target).catch(() => {});
+    }
+  };
+
+  const handleDeleteRule = async (id: string) => {
     setRules(rules.filter(r => r.id !== id));
+    void autoResponderRules.delete(id).catch(() => {});
     setNotification('🗑️ Auto-Responder rule deleted.');
     setTimeout(() => setNotification(null), 3000);
   };
 
-  // 1-Click Duplicate Rule for FB / IG Cross-Posting
-  const handleDuplicateRule = (rule: AutoResponderRule) => {
+  const handleDuplicateRule = async (rule: AutoResponderRule) => {
     const duplicatedRule: AutoResponderRule = {
       ...rule,
       id: crypto.randomUUID(),
       name: `${rule.name} (FB/IG Duplicate)`,
-      platform: 'both', // Upgrade to Dual Platform (Instagram + Facebook)
+      platform: 'both',
+      targetPostScope: 'all_posts',
       triggerCount: 0,
       createdAt: new Date().toISOString()
     };
 
     setRules([duplicatedRule, ...rules]);
+    void autoResponderRules.save(duplicatedRule).catch(() => {});
     setNotification(`👯 Duplicated rule "${rule.name}" for both Instagram & Facebook!`);
     setTimeout(() => setNotification(null), 3500);
   };
 
-  const handleCreateRule = (e: React.FormEvent) => {
+  const handleCreateRule = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!ruleNameInput.trim() || !keywordsInput.trim()) return;
+    if (!ruleNameInput.trim()) return;
 
-    const keywords = keywordsInput.split(',').map(k => k.trim().toLowerCase()).filter(Boolean);
+    const keywords = triggerTypeInput === 'all_comments'
+      ? ['*']
+      : keywordsInput.split(',').map(k => k.trim().toLowerCase()).filter(Boolean);
+
+    if (triggerTypeInput === 'keyword' && keywords.length === 0) {
+      setNotification('⚠️ Please enter at least one trigger keyword.');
+      return;
+    }
+
+    const cleanPublicTemplates = publicTemplates.map(t => t.trim()).filter(Boolean);
+    const cleanPrivateTemplates = privateTemplates.map(t => t.trim()).filter(Boolean);
 
     const newRule: AutoResponderRule = {
       id: crypto.randomUUID(),
       tenantId: tenant.id,
       name: ruleNameInput.trim(),
       platform: platformInput,
+      targetPostScope: targetScopeInput,
+      triggerType: triggerTypeInput,
       triggerKeywords: keywords,
-      matchType: 'contains',
-      actionType: 'both',
-      publicReplyTemplate: publicReplyInput.trim(),
-      privateDmTemplate: privateDmInput.trim(),
+      matchType: matchTypeInput,
+      actionType: actionTypeInput,
+      publicReplyTemplate: cleanPublicTemplates[0] || 'Hi @{username}! Thanks for reaching out 🚀',
+      publicReplyTemplates: cleanPublicTemplates.length > 0 ? cleanPublicTemplates : ['Hi @{username}! Thanks for reaching out 🚀'],
+      privateDmTemplate: cleanPrivateTemplates[0] || '',
+      privateDmTemplates: cleanPrivateTemplates,
       attachedMediaUrl: attachedMediaUrlInput.trim() || undefined,
       useAiContext: useAiInput,
+      aiPersonaPrompt: aiPersonaInput.trim() || undefined,
+      rateLimitMinutes: rateLimitMinutesInput,
       isActive: true,
       triggerCount: 0,
       createdAt: new Date().toISOString()
     };
 
     setRules([newRule, ...rules]);
+    void autoResponderRules.save(newRule).catch(() => {});
+
     setShowAddModal(false);
     setRuleNameInput('');
     setKeywordsInput('');
     setAttachedMediaUrlInput('');
-    setNotification(`✅ Created Auto-Reply Rule "${newRule.name}" (${newRule.platform === 'both' ? 'IG + FB Cross-Posted' : newRule.platform.toUpperCase()})!`);
+    setNotification(`✅ Created Universal Auto-Reply Rule "${newRule.name}" (${newRule.platform === 'both' ? 'IG + FB Universal' : newRule.platform.toUpperCase()})!`);
     setTimeout(() => setNotification(null), 3500);
   };
 
@@ -184,79 +285,131 @@ export const AutoResponderView: React.FC<AutoResponderViewProps> = ({
     if (!simComment.trim()) return;
 
     setIsSimulating(true);
+    setLastSimResult(null);
 
     setTimeout(() => {
       const textLower = simComment.toLowerCase();
       
       // Find matching rule
-      const matchedRule = rules.find(r => 
-        r.isActive && r.triggerKeywords.some(kw => textLower.includes(kw))
-      );
+      const matchedRule = rules.find(r => {
+        if (!r.isActive) return false;
+        if (r.platform !== 'both' && r.platform !== simPlatform) return false;
+
+        if (r.triggerType === 'all_comments') return true;
+        if (r.triggerType === 'sentiment') {
+          return simComment.includes('?') || textLower.includes('how') || textLower.includes('where') || textLower.includes('price');
+        }
+        return r.triggerKeywords.some(kw => 
+          r.matchType === 'exact' ? textLower === kw : textLower.includes(kw)
+        );
+      });
 
       if (matchedRule) {
-        const foundKw = matchedRule.triggerKeywords.find(kw => textLower.includes(kw)) || matchedRule.triggerKeywords[0];
-        const pubReply = matchedRule.publicReplyTemplate.replace('{username}', simUsername);
-        let dmReply = matchedRule.privateDmTemplate.replace('{username}', simUsername);
+        const foundKw = matchedRule.triggerType === 'all_comments'
+          ? 'all_comments (Universal Catch-All)'
+          : matchedRule.triggerType === 'sentiment'
+          ? 'sentiment (Inquiry Intent)'
+          : matchedRule.triggerKeywords.find(kw => textLower.includes(kw)) || matchedRule.triggerKeywords[0];
 
-        if (matchedRule.attachedMediaUrl) {
-          dmReply += `\n\n📎 Attached Cloudinary File: ${matchedRule.attachedMediaUrl}`;
+        // Template Rotation: pick a random template from array
+        const pTemplates = (matchedRule.publicReplyTemplates && matchedRule.publicReplyTemplates.length > 0)
+          ? matchedRule.publicReplyTemplates
+          : [matchedRule.publicReplyTemplate || 'Hi @{username}! Thanks for reaching out 🚀'];
+        const randomPub = pTemplates[Math.floor(Math.random() * pTemplates.length)];
+        const pubReply = randomPub.replace(/\{username\}/gi, simUsername);
+
+        const dmTemplates = (matchedRule.privateDmTemplates && matchedRule.privateDmTemplates.length > 0)
+          ? matchedRule.privateDmTemplates
+          : (matchedRule.privateDmTemplate ? [matchedRule.privateDmTemplate] : []);
+        
+        let dmReply = '';
+        if (matchedRule.actionType !== 'comment_reply' && dmTemplates.length > 0) {
+          const randomDm = dmTemplates[Math.floor(Math.random() * dmTemplates.length)];
+          dmReply = randomDm.replace(/\{username\}/gi, simUsername);
+          if (matchedRule.attachedMediaUrl) {
+            dmReply += `\n\n📎 Attached Asset: ${matchedRule.attachedMediaUrl}`;
+          }
         }
 
         const newLog: LiveCommentTriggerLog = {
           id: crypto.randomUUID(),
           tenantId: tenant.id,
-          platform: matchedRule.platform === 'both' ? 'instagram' : matchedRule.platform,
-          mediaTitle: 'Simulated Cross-Posted Reel Comment',
+          platform: simPlatform,
+          mediaTitle: 'Universal Post (Any Reel/Post)',
           senderUsername: simUsername,
           commentText: simComment,
           matchedKeyword: foundKw,
-          publicReplySent: pubReply,
-          privateDmSent: dmReply,
+          publicReplySent: matchedRule.actionType !== 'private_dm' ? pubReply : undefined,
+          privateDmSent: matchedRule.actionType !== 'comment_reply' ? dmReply : undefined,
           status: 'replied',
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         };
 
         setLogs(prevLogs => [newLog, ...prevLogs]);
+        void liveCommentTriggerLogs.create(newLog).catch(() => {});
+
         setRules(prevRules => prevRules.map(r => r.id === matchedRule.id ? { ...r, triggerCount: r.triggerCount + 1 } : r));
-        setNotification(`⚡ Webhook Triggered! Matched Keyword "${foundKw.toUpperCase()}". Public comment reply & Private DM dispatched!`);
+        
+        setLastSimResult({
+          matchedRule: matchedRule.name,
+          triggerType: matchedRule.triggerType || 'keyword',
+          keyword: foundKw,
+          publicReply: matchedRule.actionType !== 'private_dm' ? pubReply : '',
+          privateDm: matchedRule.actionType !== 'comment_reply' ? dmReply : undefined
+        });
+
+        setNotification(`⚡ Simulated Webhook Dispatched! Rule: "${matchedRule.name}" matched.`);
       } else {
-        setNotification(`ℹ️ Comment received, but no active rule matched keywords in "${simComment}".`);
+        setNotification(`ℹ️ Comment received on ${simPlatform.toUpperCase()}, but no active rule matched "${simComment}".`);
       }
 
       setIsSimulating(false);
       setTimeout(() => setNotification(null), 4000);
-    }, 1000);
+    }, 900);
   };
 
+  const webhookEndpointUrl = `https://qglhbesenigpspgkgbac.supabase.co/functions/v1/meta-comment-webhook`;
+  const webhookVerifyToken = `socialspree_meta_autoresponder_token_2026`;
+
   return (
-    <div className="max-w-7xl mx-auto space-y-6 font-['Inter'] pb-20 md:pb-8">
+    <div className="max-w-7xl mx-auto space-y-6 font-['Inter'] pb-20 md:pb-8 animate-in fade-in">
       
-      {/* Header Banner */}
+      {/* Universal Header Banner */}
       <div className="bg-gradient-to-r from-slate-900 via-purple-950 to-slate-900 text-white p-6 rounded-2xl border border-purple-800/50 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#5D3FD3] to-purple-400 text-white flex items-center justify-center font-black shadow-lg shadow-purple-900/50">
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#5D3FD3] to-purple-400 text-white flex items-center justify-center font-black shadow-lg shadow-purple-900/50 shrink-0">
             <MessageSquareCode className="w-7 h-7 text-amber-300" />
           </div>
           <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-xl font-bold tracking-tight">Instagram & Facebook Comment Auto-Responder</h2>
+            <div className="flex items-center gap-2 flex-wrap">
+              <h2 className="text-xl font-bold tracking-tight">Universal Instagram & Facebook Comment Auto-Responder</h2>
               <span className="bg-emerald-400 text-slate-950 text-[10px] font-mono font-black px-2.5 py-0.5 rounded-full uppercase">
-                DUAL IG + FB CROSS-POSTING ENGINE
+                ANY POST MONITORING
               </span>
             </div>
             <p className="text-xs text-slate-300 mt-1">
-              Create 1 auto-reply rule that automatically runs on cross-posted videos/reels across both Instagram & Facebook simultaneously.
+              Automatically monitors and responds to incoming comments on <strong>any post</strong> (existing posts, scheduled reels, and native uploads) across Instagram & Facebook simultaneously.
             </p>
           </div>
         </div>
 
-        <button
-          onClick={() => setShowAddModal(true)}
-          className="px-4 py-2.5 bg-[#5D3FD3] hover:bg-purple-600 text-white rounded-xl font-bold text-xs shadow-md transition-all flex items-center gap-2 shrink-0 active:scale-95"
-        >
-          <Plus className="w-4 h-4" />
-          <span>+ Create Auto-Reply Rule</span>
-        </button>
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            onClick={() => setShowWebhookGuide(true)}
+            className="px-3.5 py-2.5 bg-slate-800 hover:bg-slate-700 text-purple-200 rounded-xl font-bold text-xs border border-purple-800/60 shadow-xs transition-all flex items-center gap-1.5"
+          >
+            <Settings className="w-4 h-4 text-purple-400" />
+            <span>Meta Webhook Setup</span>
+          </button>
+
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="px-4 py-2.5 bg-[#5D3FD3] hover:bg-purple-600 text-white rounded-xl font-bold text-xs shadow-md transition-all flex items-center gap-2 active:scale-95 cursor-pointer"
+          >
+            <Plus className="w-4 h-4" />
+            <span>+ Create Auto-Reply Rule</span>
+          </button>
+        </div>
       </div>
 
       {notification && (
@@ -271,341 +424,592 @@ export const AutoResponderView: React.FC<AutoResponderViewProps> = ({
         </div>
       )}
 
-      {/* Grid: Left Column Rules & Simulator (7 cols), Right Column Webhook Logs (5 cols) */}
+      {/* Grid: Left Column Rules & Interactive Simulator (7 cols), Right Column Real-Time Logs (5 cols) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         
-        {/* Left Column: Active Rules List */}
+        {/* Left Column: Active Rules List & Simulator */}
         <div className="lg:col-span-7 space-y-6">
           
+          {/* Active Rules Card */}
           <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <h3 className="font-bold text-sm text-slate-900 flex items-center gap-2">
                 <Zap className="w-4 h-4 text-[#5D3FD3]" />
-                <span>Active Keyword Trigger Rules ({rules.length})</span>
+                <span>Active Auto-Responder Rules ({rules.length})</span>
               </h3>
-              <span className="text-xs text-slate-500 font-mono">Meta Webhooks & Cloudinary CDN Active</span>
+              <span className="text-xs text-slate-500 font-mono">Meta Graph Webhook Active</span>
             </div>
 
-            <div className="space-y-4">
-              {rules.map(rule => (
-                <div
-                  key={rule.id}
-                  className={`p-4 rounded-2xl border transition-all ${
-                    rule.isActive ? 'bg-white border-slate-200 shadow-xs' : 'bg-slate-50 border-slate-200 opacity-60'
-                  }`}
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-center gap-2.5">
-                      {rule.platform === 'both' ? (
-                        <div className="flex items-center gap-1 bg-gradient-to-r from-purple-900 to-blue-900 p-2 rounded-xl text-white shadow-xs">
-                          <Instagram className="w-4 h-4 text-pink-400" />
-                          <span className="text-[10px] font-bold">+</span>
-                          <Facebook className="w-4 h-4 text-blue-400" />
-                        </div>
-                      ) : (
-                        <div className={`p-2 rounded-xl text-white ${rule.platform === 'instagram' ? 'bg-gradient-to-tr from-amber-500 via-pink-600 to-purple-600' : 'bg-blue-600'}`}>
-                          {rule.platform === 'instagram' ? <Instagram className="w-4 h-4" /> : <Facebook className="w-4 h-4" />}
-                        </div>
-                      )}
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h4 className="font-bold text-slate-900 text-xs">{rule.name}</h4>
-                          {rule.platform === 'both' && (
-                            <span className="px-2 py-0.5 bg-gradient-to-r from-purple-100 to-blue-100 text-purple-900 border border-purple-200 font-mono text-[9px] font-bold rounded-full">
-                              IG + FB BOTH PLATFORMS
-                            </span>
-                          )}
-                        </div>
-                        <div className="text-[10px] text-slate-500 font-mono mt-0.5 flex items-center gap-2">
-                          <span>Platform: {rule.platform === 'both' ? 'INSTAGRAM & FACEBOOK' : rule.platform.toUpperCase()}</span>
-                          <span>•</span>
-                          <span>Triggers: {rule.triggerCount} times</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-1.5">
-                      <button
-                        onClick={() => handleDuplicateRule(rule)}
-                        className="px-2.5 py-1 bg-purple-50 hover:bg-purple-100 text-[#5D3FD3] border border-purple-200 rounded-lg text-[10px] font-bold flex items-center gap-1 transition-all"
-                        title="Duplicate rule for both IG & FB"
-                      >
-                        <Copy className="w-3 h-3" />
-                        <span>Duplicate</span>
-                      </button>
-
-                      <button
-                        onClick={() => handleToggleRule(rule.id)}
-                        className="text-slate-500 hover:text-slate-900 ml-1"
-                        title={rule.isActive ? 'Pause Rule' : 'Activate Rule'}
-                      >
-                        {rule.isActive ? (
-                          <ToggleRight className="w-6 h-6 text-emerald-600" />
+            {rules.length === 0 ? (
+              <div className="text-center py-12 text-slate-400 text-xs italic">
+                No active auto-responder rules configured. Click &quot;+ Create Auto-Reply Rule&quot; to begin.
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {rules.map(rule => (
+                  <div
+                    key={rule.id}
+                    className={`p-4 rounded-2xl border transition-all ${
+                      rule.isActive ? 'bg-white border-slate-200 shadow-xs' : 'bg-slate-50 border-slate-200 opacity-60'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-center gap-2.5">
+                        {rule.platform === 'both' ? (
+                          <div className="flex items-center gap-1 bg-gradient-to-r from-purple-900 to-blue-900 p-2 rounded-xl text-white shadow-xs">
+                            <Instagram className="w-4 h-4 text-pink-400" />
+                            <span className="text-[10px] font-bold">+</span>
+                            <Facebook className="w-4 h-4 text-blue-400" />
+                          </div>
                         ) : (
-                          <ToggleLeft className="w-6 h-6 text-slate-400" />
-                        )}
-                      </button>
-
-                      <button
-                        onClick={() => handleDeleteRule(rule.id)}
-                        className="p-1 text-slate-400 hover:text-red-600 rounded"
-                        title="Delete Rule"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Trigger Keywords Chips */}
-                  <div className="mt-3 flex flex-wrap gap-1.5 items-center">
-                    <span className="text-[10px] font-mono text-slate-400 uppercase font-bold">Trigger Keywords:</span>
-                    {rule.triggerKeywords.map((kw, idx) => (
-                      <span key={idx} className="px-2 py-0.5 bg-purple-50 text-[#5D3FD3] border border-purple-200 rounded-md font-mono text-[10px] font-bold">
-                        "{kw}"
-                      </span>
-                    ))}
-                  </div>
-
-                  {/* Reply Templates Preview */}
-                  <div className="mt-3 p-3 bg-slate-50 rounded-xl space-y-2 text-xs font-sans">
-                    <div className="flex items-start gap-2 text-slate-700">
-                      <MessageCircle className="w-3.5 h-3.5 text-[#5D3FD3] shrink-0 mt-0.5" />
-                      <div>
-                        <span className="font-bold text-[10px] text-slate-500 block uppercase font-mono">Public Comment Reply:</span>
-                        <p className="text-slate-800 text-[11px] mt-0.5">{rule.publicReplyTemplate}</p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-start gap-2 text-slate-700 pt-2 border-t border-slate-200/60">
-                      <Mail className="w-3.5 h-3.5 text-blue-600 shrink-0 mt-0.5" />
-                      <div className="w-full">
-                        <span className="font-bold text-[10px] text-slate-500 block uppercase font-mono">Private DM Response:</span>
-                        <p className="text-slate-800 text-[11px] mt-0.5">{rule.privateDmTemplate}</p>
-                        
-                        {rule.attachedMediaUrl && (
-                          <div className="mt-2 p-2 bg-white border border-purple-200 rounded-xl flex items-center justify-between gap-2">
-                            <div className="flex items-center gap-2 min-w-0">
-                              <img src={rule.attachedMediaUrl} alt="Attached Cloudinary Media" className="w-8 h-8 rounded-lg object-cover border shrink-0" />
-                              <div className="truncate">
-                                <span className="text-[10px] font-mono font-bold text-purple-900 block">Cloudinary Media Attached</span>
-                                <span className="text-[9px] text-slate-500 font-mono truncate block">{rule.attachedMediaUrl}</span>
-                              </div>
-                            </div>
-                            <a href={rule.attachedMediaUrl} target="_blank" rel="noreferrer" className="p-1 text-purple-700 hover:text-purple-900">
-                              <LinkIcon className="w-3.5 h-3.5" />
-                            </a>
+                          <div className={`p-2 rounded-xl text-white ${rule.platform === 'instagram' ? 'bg-gradient-to-tr from-amber-500 via-pink-600 to-purple-600' : 'bg-blue-600'}`}>
+                            {rule.platform === 'instagram' ? <Instagram className="w-4 h-4" /> : <Facebook className="w-4 h-4" />}
                           </div>
                         )}
+                        <div>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <h4 className="font-bold text-slate-900 text-xs">{rule.name}</h4>
+                            {rule.targetPostScope === 'all_posts' && (
+                              <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 font-mono text-[9px] font-bold rounded-full">
+                                ANY POST (UNIVERSAL)
+                              </span>
+                            )}
+                            {rule.triggerType === 'all_comments' && (
+                              <span className="px-2 py-0.5 bg-amber-50 text-amber-800 border border-amber-200 font-mono text-[9px] font-bold rounded-full">
+                                CATCH-ALL
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-[10px] text-slate-500 font-mono mt-0.5 flex items-center gap-2 flex-wrap">
+                            <span>Platform: {rule.platform === 'both' ? 'IG & FB DUAL' : rule.platform.toUpperCase()}</span>
+                            <span>•</span>
+                            <span>Triggers: {rule.triggerCount} times</span>
+                            <span>•</span>
+                            <span>Rate Limit: {rule.rateLimitMinutes || 60}m</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          onClick={() => handleDuplicateRule(rule)}
+                          className="px-2.5 py-1 bg-purple-50 hover:bg-purple-100 text-[#5D3FD3] border border-purple-200 rounded-lg text-[10px] font-bold flex items-center gap-1 transition-all"
+                          title="Duplicate rule for both IG & FB"
+                        >
+                          <Copy className="w-3 h-3" />
+                          <span>Duplicate</span>
+                        </button>
+
+                        <button
+                          onClick={() => handleToggleRule(rule.id)}
+                          className="text-slate-500 hover:text-slate-900 ml-1"
+                          title={rule.isActive ? 'Pause Rule' : 'Activate Rule'}
+                        >
+                          {rule.isActive ? (
+                            <ToggleRight className="w-6 h-6 text-emerald-600" />
+                          ) : (
+                            <ToggleLeft className="w-6 h-6 text-slate-400" />
+                          )}
+                        </button>
+
+                        <button
+                          onClick={() => handleDeleteRule(rule.id)}
+                          className="p-1 text-slate-400 hover:text-red-600 rounded"
+                          title="Delete Rule"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
                       </div>
                     </div>
+
+                    {/* Trigger Badges & Keywords */}
+                    <div className="mt-3 flex flex-wrap gap-1.5 items-center">
+                      <span className="text-[10px] font-mono text-slate-400 uppercase font-bold">Trigger:</span>
+                      {rule.triggerType === 'all_comments' ? (
+                        <span className="px-2 py-0.5 bg-purple-50 text-[#5D3FD3] border border-purple-200 rounded-md font-mono text-[10px] font-bold">
+                          ✨ Any comment on any post
+                        </span>
+                      ) : rule.triggerType === 'sentiment' ? (
+                        <span className="px-2 py-0.5 bg-blue-50 text-blue-700 border border-blue-200 rounded-md font-mono text-[10px] font-bold">
+                          💡 Question / Inquiries Intent
+                        </span>
+                      ) : (
+                        rule.triggerKeywords.map((kw, idx) => (
+                          <span key={idx} className="px-2 py-0.5 bg-purple-50 text-[#5D3FD3] border border-purple-200 rounded-md font-mono text-[10px] font-bold">
+                            &quot;{kw}&quot;
+                          </span>
+                        ))
+                      )}
+                    </div>
+
+                    {/* Reply Templates Preview */}
+                    <div className="mt-3 p-3 bg-slate-50 rounded-xl space-y-2 text-xs font-sans">
+                      {rule.actionType !== 'private_dm' && (
+                        <div className="flex items-start gap-2 text-slate-700">
+                          <MessageCircle className="w-3.5 h-3.5 text-[#5D3FD3] shrink-0 mt-0.5" />
+                          <div className="w-full">
+                            <div className="flex items-center justify-between">
+                              <span className="font-bold text-[10px] text-slate-500 uppercase font-mono">Public Comment Reply:</span>
+                              {(rule.publicReplyTemplates && rule.publicReplyTemplates.length > 1) && (
+                                <span className="text-[9px] font-mono bg-purple-100 text-purple-800 px-1.5 py-0.5 rounded font-bold">
+                                  Rotating {rule.publicReplyTemplates.length} Anti-Spam Variants
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-slate-800 text-[11px] mt-0.5 font-medium">{rule.publicReplyTemplate}</p>
+                          </div>
+                        </div>
+                      )}
+
+                      {rule.actionType !== 'comment_reply' && (
+                        <div className={`flex items-start gap-2 text-slate-700 ${rule.actionType === 'both' ? 'pt-2 border-t border-slate-200/60' : ''}`}>
+                          <Mail className="w-3.5 h-3.5 text-blue-600 shrink-0 mt-0.5" />
+                          <div className="w-full">
+                            <div className="flex items-center justify-between">
+                              <span className="font-bold text-[10px] text-slate-500 uppercase font-mono">Private DM Response:</span>
+                              {(rule.privateDmTemplates && rule.privateDmTemplates.length > 1) && (
+                                <span className="text-[9px] font-mono bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded font-bold">
+                                  Rotating {rule.privateDmTemplates.length} DM Variants
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-slate-800 text-[11px] mt-0.5 font-medium">{rule.privateDmTemplate || '(Default DM Template)'}</p>
+                            
+                            {rule.attachedMediaUrl && (
+                              <div className="mt-2 p-2 bg-white border border-purple-200 rounded-xl flex items-center justify-between gap-2">
+                                <div className="flex items-center gap-2 min-w-0">
+                                  <img src={rule.attachedMediaUrl} alt="Attached Media" className="w-8 h-8 rounded-lg object-cover border shrink-0" />
+                                  <div className="truncate">
+                                    <span className="text-[10px] font-mono font-bold text-purple-900 block">Cloudinary Media Attached</span>
+                                    <span className="text-[9px] text-slate-500 font-mono truncate block">{rule.attachedMediaUrl}</span>
+                                  </div>
+                                </div>
+                                <a href={rule.attachedMediaUrl} target="_blank" rel="noreferrer" className="p-1 text-purple-700 hover:text-purple-900">
+                                  <LinkIcon className="w-3.5 h-3.5" />
+                                </a>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Interactive Webhook Simulator Card */}
+          <div className="bg-gradient-to-br from-slate-900 to-purple-950 text-white rounded-2xl p-5 border border-purple-800/60 shadow-lg space-y-4">
+            <div className="flex items-center justify-between border-b border-purple-800/60 pb-3">
+              <div className="flex items-center gap-2">
+                <Smartphone className="w-4 h-4 text-emerald-400" />
+                <h3 className="font-bold text-sm text-white">Live Webhook Simulator & Sandbox</h3>
+              </div>
+              <span className="text-[10px] font-mono bg-emerald-400/20 text-emerald-300 px-2 py-0.5 rounded border border-emerald-400/30 font-bold">
+                TEST ANY POST
+              </span>
+            </div>
+
+            <p className="text-xs text-purple-200">
+              Test how your auto-responder handles incoming comments on any post before publishing live.
+            </p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-[11px] font-bold text-purple-200 mb-1">Simulated Platform</label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setSimPlatform('instagram')}
+                    className={`py-2 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
+                      simPlatform === 'instagram'
+                        ? 'bg-gradient-to-tr from-amber-500 to-pink-600 text-white shadow-md'
+                        : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                    }`}
+                  >
+                    <Instagram className="w-3.5 h-3.5" />
+                    <span>Instagram</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setSimPlatform('facebook')}
+                    className={`py-2 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
+                      simPlatform === 'facebook'
+                        ? 'bg-blue-600 text-white shadow-md'
+                        : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                    }`}
+                  >
+                    <Facebook className="w-3.5 h-3.5" />
+                    <span>Facebook</span>
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-purple-200 mb-1">Simulated Commenter Handle</label>
+                <input
+                  type="text"
+                  value={simUsername}
+                  onChange={(e) => setSimUsername(e.target.value)}
+                  className="w-full bg-slate-800 border border-purple-700/60 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-400 font-mono focus:outline-none focus:border-purple-400"
+                  placeholder="e.g. social_fan_99"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-bold text-purple-200 mb-1">Simulated Comment Text on Any Post</label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={simComment}
+                  onChange={(e) => setSimComment(e.target.value)}
+                  className="flex-1 bg-slate-800 border border-purple-700/60 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-400 font-mono focus:outline-none focus:border-purple-400"
+                  placeholder="e.g. Can you share the price link?"
+                />
+                <button
+                  type="button"
+                  onClick={handleRunSimulation}
+                  disabled={isSimulating || !simComment.trim()}
+                  className="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-slate-950 font-bold rounded-xl text-xs shadow-md transition-all flex items-center gap-1.5 shrink-0"
+                >
+                  <Play className={`w-3.5 h-3.5 ${isSimulating ? 'animate-spin' : ''}`} />
+                  <span>{isSimulating ? 'Dispatched...' : 'Simulate Event'}</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Simulation Output Card */}
+            {lastSimResult && (
+              <div className="p-3 bg-slate-950/80 rounded-xl border border-emerald-500/40 space-y-2 animate-in fade-in">
+                <div className="flex items-center justify-between text-[10px] font-mono">
+                  <span className="text-emerald-400 font-bold">✅ MATCHED: {lastSimResult.matchedRule}</span>
+                  <span className="text-purple-300 font-bold uppercase">{lastSimResult.keyword}</span>
+                </div>
+                {lastSimResult.publicReply && (
+                  <div className="text-xs text-slate-200 bg-slate-900 p-2 rounded-lg border border-slate-800">
+                    <span className="text-[10px] font-mono text-purple-400 font-bold block uppercase">Dispatched Public Reply:</span>
+                    {lastSimResult.publicReply}
+                  </div>
+                )}
+                {lastSimResult.privateDm && (
+                  <div className="text-xs text-slate-200 bg-slate-900 p-2 rounded-lg border border-slate-800">
+                    <span className="text-[10px] font-mono text-blue-400 font-bold block uppercase">Dispatched Private DM:</span>
+                    {lastSimResult.privateDm}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Right Column: Real-Time Webhook Logs Feed */}
+        <div className="lg:col-span-5 space-y-6">
+          <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h3 className="font-bold text-sm text-slate-900 flex items-center gap-2">
+                <MessageSquareCode className="w-4 h-4 text-emerald-600" />
+                <span>Live Webhook Ingestion Log ({logs.length})</span>
+              </h3>
+              <span className="text-[10px] font-mono bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded font-bold">
+                REAL-TIME STREAM
+              </span>
+            </div>
+
+            <div className="space-y-3 max-h-[640px] overflow-y-auto pr-1">
+              {logs.map((log) => (
+                <div key={log.id} className="p-3.5 rounded-xl border border-slate-200/80 bg-slate-50 space-y-2 text-xs">
+                  <div className="flex items-center justify-between text-[11px]">
+                    <div className="flex items-center gap-1.5 font-bold text-slate-900">
+                      {log.platform === 'instagram' ? (
+                        <Instagram className="w-3.5 h-3.5 text-pink-600" />
+                      ) : (
+                        <Facebook className="w-3.5 h-3.5 text-blue-600" />
+                      )}
+                      <span>@{log.senderUsername}</span>
+                    </div>
+                    <span className="text-[10px] text-slate-400 font-mono">{log.timestamp}</span>
+                  </div>
+
+                  <div className="p-2 bg-white rounded-lg border border-slate-200/60 font-mono text-[11px] text-slate-800">
+                    &quot;{log.commentText}&quot;
+                  </div>
+
+                  {log.publicReplySent && (
+                    <div className="text-[11px] text-purple-900 bg-purple-50 p-2 rounded-lg border border-purple-100">
+                      <span className="font-bold text-[9px] uppercase font-mono block text-[#5D3FD3]">Public Reply Sent:</span>
+                      {log.publicReplySent}
+                    </div>
+                  )}
+
+                  {log.privateDmSent && (
+                    <div className="text-[11px] text-blue-900 bg-blue-50 p-2 rounded-lg border border-blue-100">
+                      <span className="font-bold text-[9px] uppercase font-mono block text-blue-700">Private DM Dispatched:</span>
+                      {log.privateDmSent}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
           </div>
-
-          {/* Interactive Webhook Simulator Box */}
-          <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-3 font-['Inter']">
-            <h3 className="font-bold text-sm text-slate-900 flex items-center gap-2">
-              <Play className="w-4 h-4 text-emerald-600" />
-              <span>Test Live Comment Webhook Simulator</span>
-            </h3>
-            <p className="text-xs text-slate-500">
-              Type a simulated comment to test keyword detection, public comment replies, and private DM dispatches!
-            </p>
-
-            <div className="space-y-3 pt-2 text-xs">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">Commenter Handle</label>
-                  <input
-                    type="text"
-                    value={simUsername}
-                    onChange={(e) => setSimUsername(e.target.value)}
-                    className="w-full p-2 border rounded-xl font-mono"
-                  />
-                </div>
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">Test Comment Text</label>
-                  <input
-                    type="text"
-                    value={simComment}
-                    onChange={(e) => setSimComment(e.target.value)}
-                    className="w-full p-2 border rounded-xl"
-                  />
-                </div>
-              </div>
-
-              <button
-                onClick={handleRunSimulation}
-                disabled={isSimulating}
-                className="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-md active:scale-95"
-              >
-                {isSimulating ? <RefreshCw className="w-4 h-4 animate-spin text-amber-300" /> : <Play className="w-4 h-4 text-emerald-400" />}
-                <span>Simulate Live Webhook Event</span>
-              </button>
-            </div>
-          </div>
-
         </div>
-
-        {/* Right Column: Real-Time Execution Logs Stream */}
-        <div className="lg:col-span-5 bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-4 h-fit">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-            <h3 className="font-bold text-sm text-slate-900 flex items-center gap-2">
-              <Bot className="w-4 h-4 text-amber-500" />
-              <span>Live Comment Dispatch Logs</span>
-            </h3>
-            <span className="text-[10px] font-mono text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full font-bold">
-              REAL-TIME WEBHOOKS
-            </span>
-          </div>
-
-          <div className="space-y-3 max-h-[580px] overflow-y-auto pr-1">
-            {logs.map(log => (
-              <div key={log.id} className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2 text-xs">
-                <div className="flex items-center justify-between font-mono text-[10px]">
-                  <span className="font-bold text-slate-900 flex items-center gap-1">
-                    {log.platform === 'instagram' ? <Instagram className="w-3 h-3 text-pink-600" /> : <Facebook className="w-3 h-3 text-blue-600" />}
-                    @{log.senderUsername}
-                  </span>
-                  <span className="text-slate-400">{log.timestamp}</span>
-                </div>
-
-                <p className="text-slate-800 text-[11px] font-medium bg-white p-2 border rounded-lg">
-                  "{log.commentText}"
-                </p>
-
-                <div className="flex items-center justify-between text-[10px] font-mono">
-                  <span className="text-purple-900 font-bold bg-purple-100 px-2 py-0.5 rounded">
-                    Keyword: "{log.matchedKeyword}"
-                  </span>
-                  <span className="text-emerald-700 font-bold flex items-center gap-1">
-                    <ShieldCheck className="w-3 h-3" />
-                    REPLIED & DM DISPATCHED
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
       </div>
 
-      {/* CREATE RULE MODAL */}
+      {/* MODAL 1: Create Auto-Reply Rule */}
       {showAddModal && (
-        <div className="fixed inset-0 bg-slate-950/75 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-in fade-in font-['Inter']">
-          <div className="bg-white text-slate-900 rounded-3xl max-w-lg w-full p-6 border border-slate-200 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in">
+          <div className="bg-white rounded-3xl max-w-2xl w-full p-6 shadow-2xl border border-slate-100 max-h-[90vh] overflow-y-auto space-y-5">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h3 className="font-bold text-slate-900 text-base flex items-center gap-2">
-                <Plus className="w-5 h-5 text-[#5D3FD3]" />
-                <span>Create Auto-Reply Rule</span>
-              </h3>
-              <button onClick={() => setShowAddModal(false)} className="text-slate-400 hover:text-slate-900">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-purple-100 text-[#5D3FD3] flex items-center justify-center font-bold">
+                  <Plus className="w-5 h-5" />
+                </div>
+                <h3 className="text-base font-bold text-slate-900">Create Universal Auto-Reply Rule</h3>
+              </div>
+              <button onClick={() => setShowAddModal(false)} className="text-slate-400 hover:text-slate-600">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <form onSubmit={handleCreateRule} className="space-y-3.5 text-xs">
+            <form onSubmit={handleCreateRule} className="space-y-4 text-xs">
               <div>
-                <label className="block font-bold text-slate-700 mb-1">Rule Name / Campaign</label>
+                <label className="block font-bold text-slate-700 mb-1">Rule Name</label>
                 <input
                   type="text"
                   required
                   value={ruleNameInput}
                   onChange={(e) => setRuleNameInput(e.target.value)}
-                  placeholder="e.g. Universal Reel Price & Buy DM Bot"
-                  className="w-full p-2.5 border rounded-xl"
+                  className="w-full p-2.5 border rounded-xl font-medium focus:ring-2 focus:ring-purple-500/20"
+                  placeholder="e.g. Universal Pricing & Checkout DM Bot"
                 />
               </div>
 
-              <div>
-                <label className="block font-bold text-slate-700 mb-1">Target Platform</label>
-                <select
-                  value={platformInput}
-                  onChange={(e) => setPlatformInput(e.target.value as any)}
-                  className="w-full p-2.5 border rounded-xl font-bold bg-white text-slate-900"
-                >
-                  <option value="both">🚀 Instagram & Facebook (Both Platforms - 1 Time Creation)</option>
-                  <option value="instagram">📸 Instagram Account Only</option>
-                  <option value="facebook">📘 Facebook Page Only</option>
-                </select>
-                <p className="text-[10px] text-slate-500 mt-1">
-                  Selecting "Both Platforms" applies this rule to any video or reel cross-posted on both Instagram and Facebook simultaneously.
-                </p>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Platform Coverage</label>
+                  <select
+                    value={platformInput}
+                    onChange={(e) => setPlatformInput(e.target.value as any)}
+                    className="w-full p-2.5 border rounded-xl font-semibold bg-white"
+                  >
+                    <option value="both">Both (Instagram + Facebook)</option>
+                    <option value="instagram">Instagram Only</option>
+                    <option value="facebook">Facebook Only</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Target Post Scope</label>
+                  <select
+                    value={targetScopeInput}
+                    onChange={(e) => setTargetScopeInput(e.target.value as any)}
+                    className="w-full p-2.5 border rounded-xl font-semibold bg-white"
+                  >
+                    <option value="all_posts">All Posts (Universal Monitoring)</option>
+                    <option value="specific_posts">Specific Posts Only</option>
+                  </select>
+                </div>
               </div>
 
-              <div>
-                <label className="block font-bold text-slate-700 mb-1">Trigger Keywords (Comma separated)</label>
-                <input
-                  type="text"
-                  required
-                  value={keywordsInput}
-                  onChange={(e) => setKeywordsInput(e.target.value)}
-                  placeholder="price, cost, how much, buy, link, promo"
-                  className="w-full p-2.5 border rounded-xl font-mono"
-                />
-              </div>
-
-              <div>
-                <label className="block font-bold text-slate-700 mb-1">Public Comment Reply Template</label>
-                <textarea
-                  rows={2}
-                  required
-                  value={publicReplyInput}
-                  onChange={(e) => setPublicReplyInput(e.target.value)}
-                  className="w-full p-2 border rounded-xl"
-                />
-              </div>
-
-              <div>
-                <label className="block font-bold text-slate-700 mb-1">Private DM Response Template</label>
-                <textarea
-                  rows={2}
-                  required
-                  value={privateDmInput}
-                  onChange={(e) => setPrivateDmInput(e.target.value)}
-                  className="w-full p-2 border rounded-xl"
-                />
-              </div>
-
-              {/* Cloudinary Media Attachment Field & Vault Picker */}
-              <div className="p-3 bg-purple-50/70 border border-purple-200 rounded-xl space-y-2">
-                <div className="flex items-center justify-between">
-                  <label className="font-bold text-purple-900 flex items-center gap-1.5">
-                    <Cloud className="w-4 h-4 text-[#5D3FD3]" />
-                    <span>Attach Media / Cloudinary File Link</span>
-                  </label>
+              {/* Trigger Mode */}
+              <div className="space-y-2 p-3 bg-slate-50 rounded-2xl border border-slate-200/80">
+                <label className="block font-bold text-slate-800">Comment Trigger Mode</label>
+                <div className="grid grid-cols-3 gap-2">
                   <button
                     type="button"
-                    onClick={() => setShowCloudinaryPicker(!showCloudinaryPicker)}
-                    className="px-2.5 py-1 bg-white hover:bg-purple-100 text-[#5D3FD3] border border-purple-300 rounded-lg text-[10px] font-bold flex items-center gap-1 transition-all"
+                    onClick={() => setTriggerTypeInput('keyword')}
+                    className={`p-2.5 rounded-xl font-bold text-center border transition-all ${
+                      triggerTypeInput === 'keyword'
+                        ? 'bg-[#5D3FD3] text-white border-[#5D3FD3] shadow-xs'
+                        : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100'
+                    }`}
                   >
-                    <Image className="w-3.5 h-3.5" />
-                    <span>{showCloudinaryPicker ? 'Close Picker' : 'Pick from Cloudinary Vault'}</span>
+                    Keywords
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setTriggerTypeInput('all_comments')}
+                    className={`p-2.5 rounded-xl font-bold text-center border transition-all ${
+                      triggerTypeInput === 'all_comments'
+                        ? 'bg-[#5D3FD3] text-white border-[#5D3FD3] shadow-xs'
+                        : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100'
+                    }`}
+                  >
+                    All Comments (Catch-All)
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setTriggerTypeInput('sentiment')}
+                    className={`p-2.5 rounded-xl font-bold text-center border transition-all ${
+                      triggerTypeInput === 'sentiment'
+                        ? 'bg-[#5D3FD3] text-white border-[#5D3FD3] shadow-xs'
+                        : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100'
+                    }`}
+                  >
+                    Inquiries / Intent
                   </button>
                 </div>
 
-                <input
-                  type="url"
-                  value={attachedMediaUrlInput}
-                  onChange={(e) => setAttachedMediaUrlInput(e.target.value)}
-                  placeholder="https://res.cloudinary.com/... or pick from vault below"
-                  className="w-full p-2 border rounded-xl font-mono text-[11px] bg-white"
-                />
+                {triggerTypeInput === 'keyword' && (
+                  <div className="pt-2">
+                    <label className="block font-semibold text-slate-600 mb-1">Trigger Keywords (comma separated)</label>
+                    <input
+                      type="text"
+                      value={keywordsInput}
+                      onChange={(e) => setKeywordsInput(e.target.value)}
+                      className="w-full p-2.5 border rounded-xl font-mono text-xs bg-white"
+                      placeholder="e.g. price, link, cost, deal, buy"
+                    />
+                  </div>
+                )}
+              </div>
 
-                {/* Cloudinary Media Picker Dropdown Grid */}
-                {showCloudinaryPicker && (
-                  <div className="pt-2 border-t border-purple-200 space-y-2 animate-in fade-in">
-                    <div className="text-[10px] font-mono font-bold text-purple-900 uppercase">
-                      Select Cloudinary Uploaded Asset ({mediaAssets.length} Available):
+              {/* Action Type */}
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Action Dispatched</label>
+                <div className="grid grid-cols-3 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setActionTypeInput('both')}
+                    className={`p-2 rounded-xl font-bold text-center border ${
+                      actionTypeInput === 'both' ? 'bg-purple-50 text-[#5D3FD3] border-[#5D3FD3]' : 'border-slate-200'
+                    }`}
+                  >
+                    Public Reply + DM
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActionTypeInput('comment_reply')}
+                    className={`p-2 rounded-xl font-bold text-center border ${
+                      actionTypeInput === 'comment_reply' ? 'bg-purple-50 text-[#5D3FD3] border-[#5D3FD3]' : 'border-slate-200'
+                    }`}
+                  >
+                    Public Reply Only
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActionTypeInput('private_dm')}
+                    className={`p-2 rounded-xl font-bold text-center border ${
+                      actionTypeInput === 'private_dm' ? 'bg-purple-50 text-[#5D3FD3] border-[#5D3FD3]' : 'border-slate-200'
+                    }`}
+                  >
+                    Private DM Only
+                  </button>
+                </div>
+              </div>
+
+              {/* Multi-Template Public Reply Variants */}
+              {actionTypeInput !== 'private_dm' && (
+                <div className="space-y-2 p-3 bg-purple-50/60 rounded-2xl border border-purple-100">
+                  <div className="flex items-center justify-between">
+                    <label className="font-bold text-purple-950 flex items-center gap-1.5">
+                      <Repeat className="w-3.5 h-3.5 text-[#5D3FD3]" />
+                      <span>Rotating Public Comment Reply Variants (Anti-Spam)</span>
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setPublicTemplates([...publicTemplates, 'Hi @{username}! Thanks for your comment 🎉'])}
+                      className="text-[10px] font-bold text-[#5D3FD3] hover:underline"
+                    >
+                      + Add Variation
+                    </button>
+                  </div>
+                  {publicTemplates.map((tpl, idx) => (
+                    <div key={idx} className="flex gap-2 items-center">
+                      <input
+                        type="text"
+                        value={tpl}
+                        onChange={(e) => {
+                          const next = [...publicTemplates];
+                          next[idx] = e.target.value;
+                          setPublicTemplates(next);
+                        }}
+                        className="flex-1 p-2 bg-white border border-purple-200 rounded-xl text-xs"
+                        placeholder="Use {username} as placeholder"
+                      />
+                      {publicTemplates.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => setPublicTemplates(publicTemplates.filter((_, i) => i !== idx))}
+                          className="p-1.5 text-slate-400 hover:text-red-600"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
                     </div>
-                    {mediaAssets.length === 0 ? (
-                      <div className="text-[11px] text-slate-500 italic p-2 bg-white rounded-lg border">
-                        No media assets found in Cloudinary vault. Upload images/videos in Media Vault tab first.
-                      </div>
-                    ) : (
-                      <div className="grid grid-cols-3 gap-2 max-h-36 overflow-y-auto p-1">
+                  ))}
+                </div>
+              )}
+
+              {/* Multi-Template Private DM Variants */}
+              {actionTypeInput !== 'comment_reply' && (
+                <div className="space-y-2 p-3 bg-blue-50/60 rounded-2xl border border-blue-100">
+                  <div className="flex items-center justify-between">
+                    <label className="font-bold text-blue-950 flex items-center gap-1.5">
+                      <Mail className="w-3.5 h-3.5 text-blue-600" />
+                      <span>Rotating Private DM Message Variants</span>
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setPrivateTemplates([...privateTemplates, 'Hi {username}! Here are the details you requested.'])}
+                      className="text-[10px] font-bold text-blue-600 hover:underline"
+                    >
+                      + Add Variation
+                    </button>
+                  </div>
+                  {privateTemplates.map((tpl, idx) => (
+                    <div key={idx} className="flex gap-2 items-center">
+                      <textarea
+                        rows={2}
+                        value={tpl}
+                        onChange={(e) => {
+                          const next = [...privateTemplates];
+                          next[idx] = e.target.value;
+                          setPrivateTemplates(next);
+                        }}
+                        className="flex-1 p-2 bg-white border border-blue-200 rounded-xl text-xs"
+                        placeholder="Use {username} as placeholder"
+                      />
+                      {privateTemplates.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => setPrivateTemplates(privateTemplates.filter((_, i) => i !== idx))}
+                          className="p-1.5 text-slate-400 hover:text-red-600"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+
+                  {/* Cloudinary Media Attachment */}
+                  <div className="pt-2">
+                    <label className="block font-semibold text-slate-700 mb-1">Attached Media Vault URL (Optional)</label>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={attachedMediaUrlInput}
+                        onChange={(e) => setAttachedMediaUrlInput(e.target.value)}
+                        className="flex-1 p-2 bg-white border border-slate-200 rounded-xl text-xs font-mono"
+                        placeholder="https://res.cloudinary.com/..."
+                      />
+                      {mediaAssets.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => setShowCloudinaryPicker(!showCloudinaryPicker)}
+                          className="px-3 py-2 bg-purple-100 text-[#5D3FD3] font-bold rounded-xl text-xs hover:bg-purple-200"
+                        >
+                          Media Vault
+                        </button>
+                      )}
+                    </div>
+
+                    {showCloudinaryPicker && (
+                      <div className="grid grid-cols-4 gap-2 p-2 bg-white border rounded-xl mt-2 max-h-32 overflow-y-auto">
                         {mediaAssets.map((asset) => (
                           <div
                             key={asset.id}
@@ -613,47 +1017,149 @@ export const AutoResponderView: React.FC<AutoResponderViewProps> = ({
                               setAttachedMediaUrlInput(asset.url);
                               setShowCloudinaryPicker(false);
                             }}
-                            className={`p-1.5 bg-white border rounded-xl cursor-pointer hover:border-[#5D3FD3] transition-all flex flex-col items-center gap-1 text-center ${
-                              attachedMediaUrlInput === asset.url ? 'border-2 border-[#5D3FD3] bg-purple-50' : 'border-slate-200'
-                            }`}
+                            className="aspect-square rounded-lg border overflow-hidden cursor-pointer hover:border-purple-500"
                           >
-                            <img src={asset.url} alt={asset.title} className="w-full h-14 object-cover rounded-lg" />
-                            <span className="text-[9px] font-bold truncate w-full">{asset.title}</span>
+                            <img src={asset.url} alt={asset.title} className="w-full h-full object-cover" />
                           </div>
                         ))}
                       </div>
                     )}
                   </div>
-                )}
+                </div>
+              )}
 
-                {/* Attached Preview */}
-                {attachedMediaUrlInput && (
-                  <div className="flex items-center gap-2 p-2 bg-white border rounded-lg text-[11px]">
-                    <img src={attachedMediaUrlInput} alt="Preview" className="w-7 h-7 rounded object-cover border" />
-                    <span className="font-mono text-purple-900 font-bold truncate flex-1">{attachedMediaUrlInput}</span>
-                    <button type="button" onClick={() => setAttachedMediaUrlInput('')} className="text-red-500 hover:text-red-700">
-                      <X className="w-3.5 h-3.5" />
-                    </button>
+              {/* Anti-Spam Rate Limit Setting */}
+              <div className="grid grid-cols-2 gap-3 pt-1">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Per-User Cooldown Rate Limit</label>
+                  <select
+                    value={rateLimitMinutesInput}
+                    onChange={(e) => setRateLimitMinutesInput(Number(e.target.value))}
+                    className="w-full p-2.5 border rounded-xl font-semibold bg-white"
+                  >
+                    <option value={15}>15 Minutes Cooldown</option>
+                    <option value={30}>30 Minutes Cooldown</option>
+                    <option value={60}>60 Minutes (Recommended)</option>
+                    <option value={1440}>24 Hours</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">AI Context & Sentiment</label>
+                  <div className="flex items-center gap-2 h-10">
+                    <input
+                      type="checkbox"
+                      id="aiContextToggle"
+                      checked={useAiInput}
+                      onChange={(e) => setUseAiInput(e.target.checked)}
+                      className="w-4 h-4 text-[#5D3FD3] rounded"
+                    />
+                    <label htmlFor="aiContextToggle" className="font-semibold text-slate-800">
+                      Enable Context Intelligence
+                    </label>
                   </div>
-                )}
+                </div>
               </div>
 
-              <div className="pt-3 flex justify-end gap-2 border-t border-slate-100">
+              <div className="pt-4 flex justify-end gap-2 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={() => setShowAddModal(false)}
-                  className="px-4 py-2 bg-slate-100 text-slate-700 rounded-xl font-bold"
+                  className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 bg-[#5D3FD3] text-white font-bold rounded-xl shadow-md"
+                  className="px-5 py-2.5 bg-[#5D3FD3] hover:bg-purple-600 text-white font-bold rounded-xl shadow-md cursor-pointer"
                 >
                   Save & Activate Rule
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 2: Meta Webhook Setup Drawer */}
+      {showWebhookGuide && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in">
+          <div className="bg-white rounded-3xl max-w-xl w-full p-6 shadow-2xl border border-slate-100 space-y-5">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center font-bold">
+                  <Globe className="w-5 h-5" />
+                </div>
+                <h3 className="text-base font-bold text-slate-900">Meta Graph Webhook Setup</h3>
+              </div>
+              <button onClick={() => setShowWebhookGuide(false)} className="text-slate-400 hover:text-slate-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <p className="text-xs text-slate-600 leading-relaxed">
+              Connect this Webhook URL inside your Meta App Developer Portal (Instagram Graph API & Page Webhooks) to enable instant comment and DM auto-dispatches.
+            </p>
+
+            <div className="space-y-3 text-xs">
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Callback URL (Webhook Endpoint)</label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    readOnly
+                    value={webhookEndpointUrl}
+                    className="flex-1 p-2.5 bg-slate-50 border rounded-xl font-mono text-[11px] text-slate-800"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => copyToClipboard(webhookEndpointUrl, 'url')}
+                    className="px-3 py-2 bg-[#5D3FD3] text-white font-bold rounded-xl text-xs flex items-center gap-1 shrink-0"
+                  >
+                    {copiedField === 'url' ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                    <span>{copiedField === 'url' ? 'Copied' : 'Copy'}</span>
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Verify Token</label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    readOnly
+                    value={webhookVerifyToken}
+                    className="flex-1 p-2.5 bg-slate-50 border rounded-xl font-mono text-[11px] text-slate-800"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => copyToClipboard(webhookVerifyToken, 'token')}
+                    className="px-3 py-2 bg-slate-900 text-white font-bold rounded-xl text-xs flex items-center gap-1 shrink-0"
+                  >
+                    {copiedField === 'token' ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                    <span>{copiedField === 'token' ? 'Copied' : 'Copy'}</span>
+                  </button>
+                </div>
+              </div>
+
+              <div className="p-3 bg-blue-50 rounded-xl border border-blue-200 text-blue-900 space-y-1">
+                <span className="font-bold text-[11px] block">Subscribed Webhook Fields:</span>
+                <p className="text-[11px] font-mono">
+                  • Instagram: <code>comments</code>, <code>mentions</code>, <code>messages</code><br />
+                  • Facebook Page: <code>feed</code> (item: comment), <code>messages</code>
+                </p>
+              </div>
+            </div>
+
+            <div className="pt-3 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setShowWebhookGuide(false)}
+                className="px-5 py-2 bg-[#5D3FD3] text-white font-bold rounded-xl text-xs"
+              >
+                Done
+              </button>
+            </div>
           </div>
         </div>
       )}

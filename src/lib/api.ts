@@ -12,7 +12,8 @@ import { supabase } from './supabase';
 import type {
   Tenant, SocialAccount, Post, PostLog, GoogleReview, MediaAsset,
   AiCreditLog, SubscriptionPlan, ApiAllocationSlot, CloudinaryConfig,
-  AutoResponderRule, LiveCommentTriggerLog, SocialPlatform, CurrencyCode
+  AutoResponderRule, LiveCommentTriggerLog, SocialPlatform, CurrencyCode,
+  AgencyBrand, EngineProvider
 } from '../types';
 
 export interface ProfileNotifications {
@@ -50,6 +51,7 @@ export const CACHE_KEYS = {
   AI_LOGS: 'socialspree_ai_logs_v1',
   MEDIA: 'socialspree_media_v1',
   REVIEWS: 'socialspree_reviews_v1',
+  BRANDS: 'socialspree_brands_v1',
   USER_PROFILE: 'socialspree_user_profile_v1',
 };
 
@@ -197,8 +199,10 @@ function mapPlan(r: any): SubscriptionPlan {
     id: r.id,
     name: r.name,
     priceMonthly: r.price_monthly != null ? Number(r.price_monthly) : 0,
+    priceYearly: r.price_yearly != null ? Number(r.price_yearly) : undefined,
     currency: (r.currency ?? 'USD') as CurrencyCode,
     currencySymbol: r.currency_symbol ?? '$',
+    targetRole: (r.target_role ?? 'business_user') as SubscriptionPlan['targetRole'],
     allocatedApiSlots: r.allocated_api_slots ?? 1,
     maxSocialAccounts: r.max_social_accounts ?? 2,
     aiCredits: r.ai_credits ?? 500,
@@ -209,8 +213,8 @@ function mapPlan(r: any): SubscriptionPlan {
 function planToRow(p: SubscriptionPlan): any {
   return {
     id: p.id, name: p.name, price_monthly: p.priceMonthly,
-    currency: p.currency, currency_symbol: p.currencySymbol,
-    allocated_api_slots: p.allocatedApiSlots, max_social_accounts: p.maxSocialAccounts,
+    price_yearly: p.priceYearly, currency: p.currency, currency_symbol: p.currencySymbol,
+    target_role: p.targetRole, allocated_api_slots: p.allocatedApiSlots, max_social_accounts: p.maxSocialAccounts,
     ai_credits: p.aiCredits, features: p.features, is_popular: p.isPopular ?? false,
   };
 }
@@ -220,6 +224,7 @@ function mapSlot(r: any): ApiAllocationSlot {
     id: r.id,
     slotNumber: r.slot_number,
     slotName: r.slot_name ?? '',
+    provider: (r.provider ?? 'zernio') as EngineProvider,
     apiKey: '', // never expose; provider tokens live in Edge Function secrets
     maxChannels: r.max_channels ?? 2,
     connectedAccountIds: Array.isArray(r.connected_account_ids) ? r.connected_account_ids.map(String) : [],
@@ -228,6 +233,7 @@ function mapSlot(r: any): ApiAllocationSlot {
 function slotToRow(tid: string, s: ApiAllocationSlot): any {
   return {
     tenant_id: tid, slot_number: s.slotNumber, slot_name: s.slotName,
+    provider: s.provider ?? 'zernio',
     max_channels: s.maxChannels, connected_account_ids: s.connectedAccountIds,
   };
 }
@@ -253,6 +259,11 @@ function mapTenant(r: any, slots: ApiAllocationSlot[] = []): Tenant {
     aiCredits: r.ai_credits ?? 0,
     apiSlotDetails: slots,
     cloudinaryConfig: cloudinaryConfig ?? ({} as CloudinaryConfig),
+    customZernioDailyLimit: r.custom_zernio_daily_limit ?? undefined,
+    customZernioMonthlyLimit: r.custom_zernio_monthly_limit ?? undefined,
+    zernioDailyDispatchCount: r.zernio_daily_dispatch_count ?? 0,
+    zernioMonthlyDispatchCount: r.zernio_monthly_dispatch_count ?? 0,
+    customStorageLimitMb: r.custom_storage_limit_mb ?? undefined,
     status: r.status ?? 'active',
     paymentStatus: r.payment_status ?? 'trial',
     renewalDate: r.renewal_date ?? undefined,
@@ -271,7 +282,13 @@ function tenantToRow(t: Tenant): any {
     agency_max_brands: t.agencyMaxBrands ?? 10,
     allocated_api_slots: t.allocatedApiSlots,
     max_social_accounts: t.maxSocialAccounts, ai_credits: t.aiCredits,
-    cloudinary_config: t.cloudinaryConfig, status: t.status,
+    cloudinary_config: t.cloudinaryConfig,
+    custom_zernio_daily_limit: t.customZernioDailyLimit,
+    custom_zernio_monthly_limit: t.customZernioMonthlyLimit,
+    zernio_daily_dispatch_count: t.zernioDailyDispatchCount,
+    zernio_monthly_dispatch_count: t.zernioMonthlyDispatchCount,
+    custom_storage_limit_mb: t.customStorageLimitMb,
+    status: t.status,
     payment_status: t.paymentStatus, renewal_date: t.renewalDate,
     billing_cycle: t.billingCycle, currency: t.currency, currency_symbol: t.currencySymbol,
   };
@@ -354,12 +371,20 @@ function mapRule(r: any): AutoResponderRule {
   return {
     id: r.id, tenantId: r.tenant_id, name: r.name,
     platform: (r.platform ?? 'instagram') as AutoResponderRule['platform'],
+    triggerType: (r.trigger_type ?? 'keyword') as AutoResponderRule['triggerType'],
     triggerKeywords: Array.isArray(r.trigger_keywords) ? r.trigger_keywords.map(String) : [],
     matchType: (r.match_type ?? 'contains') as AutoResponderRule['matchType'],
     actionType: (r.action_type ?? 'both') as AutoResponderRule['actionType'],
     publicReplyTemplate: r.public_reply_template ?? '',
+    publicReplyTemplates: Array.isArray(r.public_reply_templates) ? r.public_reply_templates.map(String) : (r.public_reply_template ? [r.public_reply_template] : []),
     privateDmTemplate: r.private_dm_template ?? '',
+    privateDmTemplates: Array.isArray(r.private_dm_templates) ? r.private_dm_templates.map(String) : (r.private_dm_template ? [r.private_dm_template] : []),
+    attachedMediaUrl: r.attached_media_url ?? undefined,
     useAiContext: r.use_ai_context === true,
+    aiPersonaPrompt: r.ai_persona_prompt ?? undefined,
+    rateLimitMinutes: r.rate_limit_minutes != null ? Number(r.rate_limit_minutes) : 60,
+    targetPostScope: (r.target_post_scope ?? 'all_posts') as AutoResponderRule['targetPostScope'],
+    targetPostIds: Array.isArray(r.target_post_ids) ? r.target_post_ids.map(String) : [],
     isActive: r.is_active === true,
     triggerCount: r.trigger_count ?? 0,
     createdAt: r.created_at,
@@ -631,11 +656,25 @@ export const autoResponderRules = {
   save: async (r: AutoResponderRule): Promise<void> => {
     const row = {
       id: r.id || undefined, tenant_id: r.tenantId, name: r.name, platform: r.platform as any,
+      trigger_type: r.triggerType ?? 'keyword',
       trigger_keywords: r.triggerKeywords, match_type: r.matchType, action_type: r.actionType,
-      public_reply_template: r.publicReplyTemplate, private_dm_template: r.privateDmTemplate,
-      use_ai_context: r.useAiContext, is_active: r.isActive, trigger_count: r.triggerCount,
+      public_reply_template: r.publicReplyTemplate,
+      public_reply_templates: r.publicReplyTemplates ?? (r.publicReplyTemplate ? [r.publicReplyTemplate] : []),
+      private_dm_template: r.privateDmTemplate,
+      private_dm_templates: r.privateDmTemplates ?? (r.privateDmTemplate ? [r.privateDmTemplate] : []),
+      attached_media_url: r.attachedMediaUrl,
+      use_ai_context: r.useAiContext,
+      ai_persona_prompt: r.aiPersonaPrompt,
+      rate_limit_minutes: r.rateLimitMinutes ?? 60,
+      target_post_scope: r.targetPostScope ?? 'all_posts',
+      target_post_ids: r.targetPostIds ?? [],
+      is_active: r.isActive, trigger_count: r.triggerCount,
     };
     const { error } = await supabase.from('auto_responder_rules').upsert(row, { onConflict: 'id' });
+    if (error) throw error;
+  },
+  delete: async (id: string): Promise<void> => {
+    const { error } = await supabase.from('auto_responder_rules').delete().eq('id', id);
     if (error) throw error;
   },
 };
@@ -654,6 +693,55 @@ export const liveCommentTriggerLogs = {
   },
 };
 
+// ---- Agency Brands -----------------------------------------------------------
+function mapBrand(r: any): AgencyBrand {
+  return {
+    id: r.id,
+    agencyTenantId: r.tenant_id,
+    brandName: r.brand_name,
+    logoUrl: r.brand_logo ?? undefined,
+    industry: r.brand_description ?? undefined,
+    connectedAccountIds: Array.isArray(r.social_account_ids) ? r.social_account_ids.map(String) : [],
+    createdAt: r.created_at,
+  };
+}
+function brandToRow(b: AgencyBrand): any {
+  return {
+    tenant_id: b.agencyTenantId,
+    brand_name: b.brandName,
+    brand_logo: b.logoUrl,
+    brand_description: b.industry,
+    social_account_ids: b.connectedAccountIds,
+  };
+}
+
+export const agencyBrands = {
+  list: async (): Promise<AgencyBrand[]> => {
+    const tid = await myTenantId();
+    let q = supabase.from('agency_brands').select('*');
+    if (tid) q = q.eq('tenant_id', tid);
+    const { data, error } = await q.order('created_at', { ascending: false });
+    if (error) throw error;
+    const mapped = (data ?? []).map(mapBrand);
+    cacheSet(CACHE_KEYS.BRANDS, mapped);
+    return mapped;
+  },
+  save: async (b: AgencyBrand): Promise<AgencyBrand> => {
+    const { data, error } = await supabase.from('agency_brands').upsert({ ...brandToRow(b), id: b.id }, { onConflict: 'id' }).select('*').single();
+    if (error) throw error;
+    const mapped = mapBrand(data);
+    const current = cacheGet<AgencyBrand[]>(CACHE_KEYS.BRANDS) ?? [];
+    cacheSet(CACHE_KEYS.BRANDS, current.some(x => x.id === mapped.id) ? current.map(x => x.id === mapped.id ? mapped : x) : [...current, mapped]);
+    return mapped;
+  },
+  delete: async (id: string): Promise<void> => {
+    const { error } = await supabase.from('agency_brands').delete().eq('id', id);
+    if (error) throw error;
+    const current = cacheGet<AgencyBrand[]>(CACHE_KEYS.BRANDS) ?? [];
+    cacheSet(CACHE_KEYS.BRANDS, current.filter(x => x.id !== id));
+  }
+};
+
 // ---- System settings ---------------------------------------------------------
 export const systemSettings = {
   getAll: async (): Promise<Record<string, string>> => {
@@ -670,7 +758,7 @@ export const systemSettings = {
 export async function hydrateFromCloud(): Promise<{
   tenants: Tenant[]; plans: SubscriptionPlan[]; accounts: SocialAccount[];
   posts: Post[]; logs: PostLog[]; aiLogs: AiCreditLog[]; media: MediaAsset[];
-  reviews: GoogleReview[];
+  reviews: GoogleReview[]; brands: AgencyBrand[];
 }> {
   const safeList = async <T>(fn: () => Promise<T[]>, fallbackKey: string): Promise<T[]> => {
     try {
@@ -680,7 +768,7 @@ export async function hydrateFromCloud(): Promise<{
     }
   };
 
-  const [tenantRows, planRows, accountRows, postRows, logRows, aiRows, mediaRows, reviewRows] = await Promise.all([
+  const [tenantRows, planRows, accountRows, postRows, logRows, aiRows, mediaRows, reviewRows, brandRows] = await Promise.all([
     safeList(() => tenants.list(), CACHE_KEYS.TENANTS),
     safeList(() => plans.list(), CACHE_KEYS.PLANS),
     safeList(() => socialConnections.list(), CACHE_KEYS.ACCOUNTS),
@@ -689,6 +777,7 @@ export async function hydrateFromCloud(): Promise<{
     safeList(() => aiCreditLogs.list(), CACHE_KEYS.AI_LOGS),
     safeList(() => mediaAssets.list(), CACHE_KEYS.MEDIA),
     safeList(() => googleReviews.list(), CACHE_KEYS.REVIEWS),
+    safeList(() => agencyBrands.list(), CACHE_KEYS.BRANDS),
   ]);
 
   return {
@@ -700,6 +789,7 @@ export async function hydrateFromCloud(): Promise<{
     aiLogs: aiRows,
     media: mediaRows,
     reviews: reviewRows,
+    brands: brandRows,
   };
 }
 
@@ -738,4 +828,4 @@ function mapMediaReverse(m: MediaAsset): any {
   };
 }
 
-export default { auth, plans, tenants, socialConnections, posts, postLogs, aiCreditLogs, mediaAssets, googleReviews, autoResponderRules, liveCommentTriggerLogs, systemSettings, hydrateFromCloud, migrateLocalStorageToCloud };
+export default { auth, plans, tenants, socialConnections, posts, postLogs, aiCreditLogs, mediaAssets, googleReviews, autoResponderRules, liveCommentTriggerLogs, agencyBrands, systemSettings, hydrateFromCloud, migrateLocalStorageToCloud };

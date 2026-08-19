@@ -36,9 +36,14 @@ export const WhatsAppCheckout: React.FC<WhatsAppCheckoutProps> = ({
     }
   }, [isSignedIn, user]);
 
-  // Compute final yearly amounts
+  // Compute amounts based on selected billing cycle
   const baseMonthly = plan.priceMonthly ?? 49;
-  const totalYearlyAmount = plan.priceYearly ?? (baseMonthly * 12);
+  const isYearly = billingCycle === 'yearly';
+  const totalAmount = isYearly ? (plan.priceYearly ?? (baseMonthly * 12)) : baseMonthly;
+  const cycleLabel = isYearly ? 'Billed Annually (Yearly Payment)' : 'Billed Monthly (Monthly Payment)';
+  const amountLabel = isYearly 
+    ? `${plan.currencySymbol}${totalAmount.toLocaleString()} / year`
+    : `${plan.currencySymbol}${totalAmount.toLocaleString()} / month`;
 
   const sanitizeWhatsAppText = (text: string): string => {
     if (!text) return '';
@@ -55,8 +60,8 @@ export const WhatsAppCheckout: React.FC<WhatsAppCheckoutProps> = ({
   const formattedText = `🛒 *SOCIALSPREE SAAS ORDER INVOICE*
 ----------------------------------
 📋 *Plan:* ${plan.name}
-💳 *Billing Cycle:* Billed Annually (Yearly Payment)
-💰 *Amount Due:* ${plan.currencySymbol}${totalYearlyAmount.toLocaleString()} / year
+💳 *Billing Cycle:* ${cycleLabel}
+💰 *Amount Due:* ${amountLabel}
 🏢 *Organization:* ${sanitizedOrgName || 'N/A'}
 📧 *Email:* ${sanitizedEmail || 'N/A'}
 💳 *Payment Method:* ${paymentChannel}

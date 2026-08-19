@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { UserButton, useUser } from '@clerk/react';
 import { Tenant, AgencyBrand } from '../../types';
 import { SUPER_ADMIN_EMAIL } from '../../lib/store';
-import { Search, Bell, ShieldCheck, Building2, Globe, LogOut, User, CheckCircle2, Sparkles, AlertTriangle, X, Check } from 'lucide-react';
+import { Search, Bell, ShieldCheck, Building2, Globe, LogOut, User, CheckCircle2, Sparkles, AlertTriangle, X, Check, Mic } from 'lucide-react';
 import { BrandSelectorTopbar } from '../agency/BrandSelectorTopbar';
 
 interface NotificationItem {
@@ -31,6 +31,7 @@ interface HeaderProps {
   activeBrand?: AgencyBrand | null;
   onSelectBrand?: (brand: AgencyBrand | null) => void;
   onOpenBrandManager?: () => void;
+  onOpenVoiceAssistant?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -49,7 +50,8 @@ export const Header: React.FC<HeaderProps> = ({
   brands,
   activeBrand,
   onSelectBrand,
-  onOpenBrandManager
+  onOpenBrandManager,
+  onOpenVoiceAssistant
 }) => {
   const { user } = useUser();
   const clerkEmail = user?.primaryEmailAddress?.emailAddress;
@@ -155,6 +157,20 @@ export const Header: React.FC<HeaderProps> = ({
             onOpenBrandManager={onOpenBrandManager}
           />
         )}
+
+        {/* Voice AI Assistant Trigger Pill */}
+        <button
+          type="button"
+          onClick={onOpenVoiceAssistant}
+          className="flex items-center gap-1.5 px-2.5 py-1.5 bg-gradient-to-r from-purple-50 to-indigo-50 hover:from-purple-100 hover:to-indigo-100 text-[#5D3FD3] border border-purple-200/90 rounded-xl text-xs font-bold transition-all hover:scale-105 active:scale-95 cursor-pointer shadow-2xs"
+          title="Voice AI Assistant (Alt + V)"
+        >
+          <Mic className="w-3.5 h-3.5" />
+          <span className="hidden sm:inline">Voice AI</span>
+          <span className="text-[10px] font-mono bg-purple-200/80 text-purple-900 px-1.5 py-0.2 rounded-md font-bold">
+            Alt+V
+          </span>
+        </button>
 
         {/* Functional Notification Center Bell & Dropdown */}
         <div className="relative" ref={notifRef}>

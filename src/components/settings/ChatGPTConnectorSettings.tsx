@@ -148,7 +148,7 @@ export const ChatGPTConnectorSettings: React.FC<ChatGPTConnectorSettingsProps> =
 
     setTimeout(() => {
       setIsTesting(false);
-      setTestResult(`✅ ChatGPT Connector Webhook Triggered Successfully! Post ID: spree_post_${Date.now().toString().slice(-6)} scheduled for Zernio dispatch.`);
+      setTestResult(`✅ ChatGPT Connector Webhook Triggered Successfully! Post ID: spree_post_${Date.now().toString().slice(-6)} scheduled for Cloud Dispatcher.`);
     }, 1200);
   };
 

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useClerk, useUser } from '@clerk/react';
 import { Tenant, CloudinaryConfig, CloudinaryAccountItem } from '../../types';
 import { auth, type Profile } from '../../lib/api';
+import { supabase } from '../../lib/supabase';
 import { 
   GLOBAL_DEFAULT_CLOUDINARY, 
   GLOBAL_CLOUDINARY_POOL 
@@ -239,16 +240,25 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     setTimeout(() => setNotification(null), 3000);
   };
 
-  const handleSaveDeveloperKeys = (e: React.FormEvent) => {
+  const handleSaveDeveloperKeys = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      if (metaAppSecret && metaAppSecret !== '••••••••••••••••••••••••') {
+        await supabase.functions.invoke('manage-credentials', {
+          body: {
+            tenantId: tenant.id,
+            provider: 'facebook',
+            label: 'meta-app-secret',
+            secret: metaAppSecret.trim()
+          }
+        });
+      }
       localStorage.setItem(`dev_keys_${tenant.id}`, JSON.stringify({
         metaAppId: metaAppId.trim(),
-        metaAppSecret: metaAppSecret.trim(),
         linkedInClientId: linkedInClientId.trim(),
         youtubeApiKey: youtubeApiKey.trim()
       }));
-      setNotification('Social API Developer Keys Saved Successfully!');
+      setNotification('Social API Developer Keys Saved Securely!');
     } catch {
       setNotification('Failed to save developer keys.');
     }

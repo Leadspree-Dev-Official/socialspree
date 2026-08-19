@@ -1851,16 +1851,17 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
             </div>
 
             {/* Custom Quota Overrides Form */}
-            <form onSubmit={(e) => {
+            <form onSubmit={async (e) => {
               e.preventDefault();
               onUpdateTenantLimit(inspectingTenant.id, customAccountsInput);
-              setInspectingTenant(prev => prev ? {
-                ...prev,
-                maxSocialAccounts: customAccountsInput,
-                customZernioDailyLimit: customDailyZernioInput,
-                customZernioMonthlyLimit: customMonthlyZernioInput,
-                customStorageLimitMb: customStorageMbInput
-              } : null);
+              try {
+                await supabase.from('tenants').update({
+                  max_social_accounts: customAccountsInput,
+                  custom_zernio_daily_limit: customDailyZernioInput,
+                  custom_zernio_monthly_limit: customMonthlyZernioInput,
+                  custom_storage_limit_mb: customStorageMbInput
+                }).eq('id', inspectingTenant.id);
+              } catch { /* ignore offline */ }
               setInspectingTenant(null);
             }} className="space-y-3 pt-2 text-xs border-t border-slate-100">
               <h4 className="font-bold text-slate-900">Super Admin Custom Quota Overrides</h4>

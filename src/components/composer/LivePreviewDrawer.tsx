@@ -60,6 +60,32 @@ export const LivePreviewDrawer: React.FC<LivePreviewDrawerProps> = ({
 
   const hasMedia = mediaUrls.length > 0 && mediaUrls[0].trim().length > 0;
   const currentMediaUrl = hasMedia ? mediaUrls[0] : 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=80';
+  const isVideoUrl = mediaType === 'video' || Boolean(currentMediaUrl.match(/\.(mp4|webm|mov|ogg)($|\?)/i));
+
+  const renderMedia = (containerClass: string) => {
+    if (isVideoUrl) {
+      return (
+        <div className={`relative ${containerClass} bg-slate-950 flex items-center justify-center overflow-hidden`}>
+          <video
+            src={currentMediaUrl}
+            className="w-full h-full object-cover"
+            autoPlay
+            loop
+            muted
+            playsInline
+          />
+          <div className="absolute inset-0 bg-black/20 pointer-events-none flex items-center justify-center">
+            <Play className="w-8 h-8 text-white fill-white opacity-80" />
+          </div>
+        </div>
+      );
+    }
+    return (
+      <div className={`${containerClass} overflow-hidden`}>
+        <img src={currentMediaUrl} alt="media preview" className="w-full h-full object-cover" />
+      </div>
+    );
+  };
 
   return (
     <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-xs font-['Inter'] space-y-4">
@@ -155,18 +181,7 @@ export const LivePreviewDrawer: React.FC<LivePreviewDrawerProps> = ({
                   </div>
 
                   {/* Post Media Preview */}
-                  <div className="aspect-square bg-slate-100 relative overflow-hidden flex items-center justify-center">
-                    {mediaType === 'video' ? (
-                      <div className="w-full h-full relative">
-                        <img src={currentMediaUrl} alt="video preview" className="w-full h-full object-cover" />
-                        <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
-                          <Play className="w-8 h-8 text-white fill-white opacity-80" />
-                        </div>
-                      </div>
-                    ) : (
-                      <img src={currentMediaUrl} alt="post preview" className="w-full h-full object-cover" />
-                    )}
-                  </div>
+                  {renderMedia("aspect-square bg-slate-100 relative flex items-center justify-center")}
 
                   {/* Actions & Caption */}
                   <div className="p-3 space-y-1.5">
@@ -207,9 +222,7 @@ export const LivePreviewDrawer: React.FC<LivePreviewDrawerProps> = ({
                   {content || 'Post content will be rendered here...'}
                 </div>
 
-                <div className="aspect-video bg-slate-100 rounded-lg overflow-hidden">
-                  <img src={currentMediaUrl} alt="media" className="w-full h-full object-cover" />
-                </div>
+                {renderMedia("aspect-video bg-slate-100 rounded-lg")}
 
                 <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-slate-600 text-[10px] font-semibold">
                   <span className="flex items-center gap-1"><ThumbsUp className="w-3 h-3 text-blue-600" /> Like</span>
@@ -223,9 +236,9 @@ export const LivePreviewDrawer: React.FC<LivePreviewDrawerProps> = ({
             {/* YOUTUBE PREVIEW */}
             {activePlatform === 'youtube' && (
               <div className="space-y-2 flex-1">
-                <div className="aspect-video bg-slate-900 relative">
-                  <img src={currentMediaUrl} alt="youtube thumbnail" className="w-full h-full object-cover" />
-                  <div className="absolute bottom-2 right-2 bg-black/80 text-white text-[9px] px-1.5 py-0.5 rounded font-mono font-bold">
+                <div className="aspect-video bg-slate-900 relative rounded-lg overflow-hidden">
+                  {renderMedia("w-full h-full")}
+                  <div className="absolute bottom-2 right-2 bg-black/80 text-white text-[9px] px-1.5 py-0.5 rounded font-mono font-bold z-10">
                     0:59
                   </div>
                 </div>
@@ -263,9 +276,7 @@ export const LivePreviewDrawer: React.FC<LivePreviewDrawerProps> = ({
                   {content || 'Facebook post text caption...'}
                 </div>
 
-                <div className="aspect-video bg-slate-100 rounded-lg overflow-hidden">
-                  <img src={currentMediaUrl} alt="media" className="w-full h-full object-cover" />
-                </div>
+                {renderMedia("aspect-video bg-slate-100 rounded-lg")}
 
                 <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-slate-600 text-[10px] font-semibold">
                   <span className="flex items-center gap-1"><ThumbsUp className="w-3 h-3 text-blue-600" /> Like</span>
@@ -292,9 +303,7 @@ export const LivePreviewDrawer: React.FC<LivePreviewDrawerProps> = ({
                   {content || 'Update content will be displayed on your Google Business Listing...'}
                 </div>
 
-                <div className="aspect-video bg-slate-100 rounded-lg overflow-hidden">
-                  <img src={currentMediaUrl} alt="media" className="w-full h-full object-cover" />
-                </div>
+                {renderMedia("aspect-video bg-slate-100 rounded-lg")}
               </div>
             )}
 

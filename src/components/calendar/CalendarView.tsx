@@ -67,7 +67,14 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   const tenantAccounts = accounts.filter(a => a.tenantId === tenant.id);
   const tenantPosts = posts.filter(p => p.tenantId === tenant.id);
 
-  const todayIso = new Date().toISOString().split('T')[0];
+  const formatLocalDate = (d: Date) => {
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const todayIso = formatLocalDate(new Date());
 
   const formatShortDate = (d: Date) => {
     const month = String(d.getMonth() + 1).padStart(2, '0');
@@ -177,7 +184,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
 
   // Open Quick Post Modal for a specific date & hour
   const handleOpenSlotModal = (dateObj: Date, hourNum: number = 10) => {
-    const formattedDate = dateObj.toISOString().split('T')[0];
+    const formattedDate = formatLocalDate(dateObj);
     const formattedTime = `${String(hourNum).padStart(2, '0')}:00`;
     setTargetSlotDate(formattedDate);
     setTargetSlotTime(formattedTime);
@@ -226,7 +233,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
 
   // Filter posts for a specific day and hour
   const getPostsForSlot = (dateObj: Date, hourNum: number) => {
-    const dateStr = dateObj.toISOString().split('T')[0];
+    const dateStr = formatLocalDate(dateObj);
     return tenantPosts.filter(p => {
       if (!p.scheduledFor) return false;
       const [pDate, pTime] = p.scheduledFor.split('T');
@@ -244,7 +251,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
 
   // Filter posts for an entire date (used in Month View)
   const getPostsForDay = (dateObj: Date) => {
-    const dateStr = dateObj.toISOString().split('T')[0];
+    const dateStr = formatLocalDate(dateObj);
     return tenantPosts.filter(p => {
       if (!p.scheduledFor) return false;
       const [pDate] = p.scheduledFor.split('T');
@@ -472,7 +479,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                     {weekDays.map((dayObj, idx) => {
                       const dayName = dayObj.toLocaleDateString('en-US', { weekday: 'short' });
                       const dateStr = formatShortDate(dayObj);
-                      const isToday = dayObj.toISOString().split('T')[0] === todayIso;
+                      const isToday = formatLocalDate(dayObj) === todayIso;
 
                       return (
                         <div
@@ -499,7 +506,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                       </div>
 
                       {weekDays.map((dayObj, dayIdx) => {
-                        const cellIso = dayObj.toISOString().split('T')[0];
+                        const cellIso = formatLocalDate(dayObj);
                         const isPassed = cellIso < todayIso;
                         const cellPosts = getPostsForSlot(dayObj, hour);
 
@@ -576,7 +583,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                   </div>
 
                   {hours.map((hour) => {
-                    const cellIso = currentDate.toISOString().split('T')[0];
+                    const cellIso = formatLocalDate(currentDate);
                     const isPassed = cellIso < todayIso;
                     const cellPosts = getPostsForSlot(currentDate, hour);
 
@@ -638,7 +645,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                   {/* Month Grid 35 Cells (5 weeks x 7 days) */}
                   <div className="grid grid-cols-7 border-b border-slate-200">
                     {monthGridDays.map((dayObj, idx) => {
-                      const dayIso = dayObj.toISOString().split('T')[0];
+                      const dayIso = formatLocalDate(dayObj);
                       const isCurrentMonth = dayObj.getMonth() === currentDate.getMonth();
                       const isToday = dayIso === todayIso;
                       const isPassed = dayIso < todayIso;

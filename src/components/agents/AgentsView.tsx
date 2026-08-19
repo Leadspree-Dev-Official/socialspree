@@ -158,6 +158,16 @@ export const AgentsView: React.FC<AgentsViewProps> = ({
     '✨ Create a launch announcement post scheduled for next Monday',
   ];
 
+  // Helper to format local date time as YYYY-MM-DDTHH:mm
+  const formatLocalDateTime = (d: Date) => {
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    const hours = String(d.getHours()).padStart(2, '0');
+    const minutes = String(d.getMinutes()).padStart(2, '0');
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+  };
+
   // Helper to parse date and time from user chat text accurately
   const parseScheduleDateFromPrompt = (text: string): Date => {
     const now = new Date();
@@ -434,7 +444,7 @@ How can I assist you today? 😊`;
 
       if (isRescheduleCommand && lastMsgWithPost && lastMsgWithPost.scheduledPosts) {
         const lastPostInfo = lastMsgWithPost.scheduledPosts[0];
-        const newScheduledIso = baseScheduleDate.toISOString().slice(0, 16);
+        const newScheduledIso = formatLocalDateTime(baseScheduleDate);
 
         const updatedPost: Post = {
           id: lastPostInfo.postId,
@@ -481,7 +491,7 @@ How can I assist you today? 😊`;
       for (let i = 0; i < postCount; i++) {
         const slotDate = new Date(baseScheduleDate);
         slotDate.setDate(slotDate.getDate() + i); // Shift duplicate posts by +1 day each
-        const scheduledIso = slotDate.toISOString().slice(0, 16);
+        const scheduledIso = formatLocalDateTime(slotDate);
 
         const suffix = postCount > 1 ? ` (Day ${i + 1} Sequence)` : '';
         const cleanTitle = text.replace(/change|date|time|reschedule|schedule|book|an|a|post|for|tomorrow|at|with|attached|this|media|duplicate|\d+\s*times/gi, '').trim();

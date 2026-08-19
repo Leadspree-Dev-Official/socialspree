@@ -206,7 +206,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
           </div>
           <div className="text-3xl font-black text-slate-900">{totalEngagement.toLocaleString()}</div>
           <div className="text-[11px] text-slate-500 font-medium">
-            {syncedAt ? `Last synced ${new Date(syncedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : 'No Zernio sync snapshot'}
+            {syncedAt ? `Last synced ${new Date(syncedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : 'No sync snapshot recorded'}
           </div>
         </div>
       </div>
@@ -273,7 +273,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
               <span>Weekly Channel Performance & Engagement Volume</span>
             </h3>
             <p className="text-xs text-slate-500 mt-0.5">
-              Aggregated daily reach metrics returned by Zernio API across all active social channels
+              Aggregated daily reach metrics returned by Cloud Publishing Engine across all active social channels
             </p>
           </div>
 

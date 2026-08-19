@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 
 interface AgencyBrandManagerProps {
+  tenantId?: string;
   brands: AgencyBrand[];
   activeBrand: AgencyBrand | null;
   onSelectBrand: (brand: AgencyBrand | null) => void;
@@ -24,6 +25,7 @@ interface AgencyBrandManagerProps {
 }
 
 export const AgencyBrandManager: React.FC<AgencyBrandManagerProps> = ({
+  tenantId,
   brands,
   activeBrand,
   onSelectBrand,
@@ -49,7 +51,7 @@ export const AgencyBrandManager: React.FC<AgencyBrandManagerProps> = ({
     if (!brandNameInput.trim()) return;
 
     onAddBrand({
-      agencyTenantId: '00000000-0000-0000-0000-000000000001',
+      agencyTenantId: tenantId || '00000000-0000-0000-0000-000000000001',
       brandName: brandNameInput.trim(),
       industry: industryInput.trim(),
       logoUrl: logoUrlInput.trim() || 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=150&auto=format&fit=crop&q=80',

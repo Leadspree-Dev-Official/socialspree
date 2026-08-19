@@ -29,8 +29,11 @@ import {
   Copy,
   Plus,
   Share2,
-  Link as LinkIcon
+  Link as LinkIcon,
+  Mic,
+  MicOff
 } from 'lucide-react';
+import { isSpeechRecognitionSupported, playAudioCue } from '../../lib/speech';
 
 interface PostComposerProps {
   tenant: Tenant;
@@ -40,6 +43,7 @@ interface PostComposerProps {
   onPostPublished: (post: Post, log: any) => void;
   onUpdateTenantCloudinary?: (tenantId: string, config: CloudinaryConfig) => void;
   onNavigateToCalendar?: () => void;
+  initialContent?: string;
 }
 
 export const PostComposer: React.FC<PostComposerProps> = ({
@@ -77,6 +81,57 @@ export const PostComposer: React.FC<PostComposerProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploadingCloudinary, setIsUploadingCloudinary] = useState(false);
   const [showCloudinarySettings, setShowCloudinarySettings] = useState(false);
+
+  // Speech Dictation State
+  const [isDictating, setIsDictating] = useState(false);
+  const composerRecRef = React.useRef<any>(null);
+
+  const toggleDictation = () => {
+    if (!isSpeechRecognitionSupported()) {
+      alert('Speech recognition is not supported in this browser.');
+      return;
+    }
+
+    if (isDictating) {
+      composerRecRef.current?.stop();
+      setIsDictating(false);
+      playAudioCue('stop');
+    } else {
+      const SpeechRec = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      const rec = new SpeechRec();
+      rec.continuous = true;
+      rec.interimResults = true;
+      rec.lang = 'en-US';
+
+      rec.onstart = () => {
+        setIsDictating(true);
+        playAudioCue('start');
+      };
+
+      rec.onresult = (event: any) => {
+        let finalStr = '';
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          if (event.results[i].isFinal) {
+            finalStr += event.results[i][0].transcript;
+          }
+        }
+        if (finalStr) {
+          setContent(prev => (prev ? `${prev} ${finalStr.trim()}` : finalStr.trim()));
+        }
+      };
+
+      rec.onerror = () => {
+        setIsDictating(false);
+      };
+
+      rec.onend = () => {
+        setIsDictating(false);
+      };
+
+      composerRecRef.current = rec;
+      rec.start();
+    }
+  };
 
   // AI Generator Component State
   const [aiPrompt, setAiPrompt] = useState('');
@@ -240,7 +295,14 @@ export const PostComposer: React.FC<PostComposerProps> = ({
 
   const handleSubmitPost = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!content.trim()) return;
+    if (!content.trim() && mediaUrls.length === 0) {
+      setNotification({
+        type: 'error',
+        title: 'Post Content Required',
+        message: 'Please write a caption or attach at least one media asset (image/video).'
+      });
+      return;
+    }
     if (selectedAccounts.length === 0) {
       setNotification({
         type: 'error',
@@ -286,13 +348,15 @@ export const PostComposer: React.FC<PostComposerProps> = ({
       }
     }
 
+    const isCdnHosted = mediaUrls.some(u => u.includes('cloudinary.com') || u.includes('cloudflare') || u.includes('r2.dev'));
+
     const postPayload: Post = {
       id: crypto.randomUUID(),
       tenantId: tenant.id,
       content: content.trim(),
       mediaUrls,
       mediaType,
-      isCloudflareHosted: false,
+      isCloudflareHosted: isCdnHosted,
       selectedAccountIds: selectedAccounts,
       status: isScheduling ? 'scheduled' : 'publishing',
       scheduledFor: isScheduling ? scheduledDate : undefined,
@@ -454,9 +518,27 @@ export const PostComposer: React.FC<PostComposerProps> = ({
             {/* Post Content Input Area */}
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-xs font-bold text-slate-700 uppercase font-mono tracking-wider">
-                  Post Content & Caption Text
-                </label>
+                <div className="flex items-center gap-2">
+                  <label className="block text-xs font-bold text-slate-700 uppercase font-mono tracking-wider">
+                    Post Content & Caption Text
+                  </label>
+                  <button
+                    type="button"
+                    onClick={toggleDictation}
+                    className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                      isDictating
+                        ? 'bg-red-500 text-white animate-pulse shadow-xs'
+                        : 'bg-purple-50 hover:bg-purple-100 text-[#5D3FD3] border border-purple-200'
+                    }`}
+                    title="Voice Dictate into Caption (Alt + V)"
+                  >
+                    {isDictating ? <MicOff className="w-3 h-3 animate-bounce" /> : <Mic className="w-3 h-3" />}
+                    <span>{isDictating ? 'Listening (Click to Stop)' : 'Dictate'}</span>
+                    <span className="text-[9px] font-mono bg-white/60 text-purple-900 px-1 py-0.2 rounded font-bold">
+                      Alt+V
+                    </span>
+                  </button>
+                </div>
                 <div className="text-[11px] font-mono text-slate-400">
                   {content.length} characters
                 </div>
@@ -464,11 +546,13 @@ export const PostComposer: React.FC<PostComposerProps> = ({
 
               <textarea
                 rows={5}
-                required
+                required={mediaUrls.length === 0}
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
-                placeholder="Write your post content, marketing campaign, or announcements here..."
-                className="w-full p-4 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-[#5D3FD3] text-sm leading-relaxed"
+                placeholder="Write your post content, marketing campaign, or announcements here (or click Dictate / press Alt+V to speak)..."
+                className={`w-full p-4 border rounded-2xl focus:ring-2 focus:ring-[#5D3FD3] text-sm leading-relaxed transition-all ${
+                  isDictating ? 'border-red-400 ring-2 ring-red-200 bg-red-50/20' : 'border-slate-200'
+                }`}
               />
             </div>
 

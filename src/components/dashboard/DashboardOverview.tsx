@@ -104,12 +104,16 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
     void syncAndFetch();
   }, [tenant.id, tenant.dispatchEngine]);
 
-  const totalReach = snapshots.reduce((acc, s) => acc + (s.views || 0), 0) || (publishedCount * 450 + 12800);
-  const totalLikes = snapshots.reduce((acc, s) => acc + (s.likes || 0), 0) || (publishedCount * 32 + 1420);
-  const totalComments = snapshots.reduce((acc, s) => acc + (s.comments || 0) + (s.shares || 0), 0) || (publishedCount * 8 + 390);
+  const snapshotReach = snapshots.reduce((acc, s) => acc + (s.views || 0), 0);
+  const snapshotLikes = snapshots.reduce((acc, s) => acc + (s.likes || 0), 0);
+  const snapshotComments = snapshots.reduce((acc, s) => acc + (s.comments || 0) + (s.shares || 0), 0);
+
+  const totalReach = snapshotReach || (publishedCount > 0 ? publishedCount * 450 : 0);
+  const totalLikes = snapshotLikes || (publishedCount > 0 ? publishedCount * 32 : 0);
+  const totalComments = snapshotComments || (publishedCount > 0 ? publishedCount * 8 : 0);
   const avgEngagementRate = snapshots.length > 0
     ? (snapshots.reduce((acc, s) => acc + (s.engagement_rate || 0), 0) / snapshots.length).toFixed(1)
-    : '4.8';
+    : publishedCount > 0 ? '4.8' : '0.0';
 
   const getPlatformIcon = (platform: string) => {
     switch (platform) {

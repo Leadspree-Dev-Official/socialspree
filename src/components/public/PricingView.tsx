@@ -263,7 +263,7 @@ export const PricingView: React.FC<PricingViewProps> = ({
                 {/* CTA Button */}
                 <div className="mt-8 pt-6 border-t border-slate-100">
                   <button
-                    onClick={() => onOpenCheckout(plan.id, 'yearly', selectedCurrency, priceInfo.currSym)}
+                    onClick={() => onOpenCheckout(plan.id, plan.targetRole === 'business_user' ? 'monthly' : 'yearly', selectedCurrency, priceInfo.currSym)}
                     className={`w-full py-4 rounded-2xl font-bold text-xs shadow-lg transition-all flex items-center justify-center gap-2 ${
                       isPro
                         ? 'bg-gradient-to-r from-[#5D3FD3] to-[#0066FF] text-white hover:shadow-purple-500/30 hover:scale-[1.02] active:scale-[0.98]'
