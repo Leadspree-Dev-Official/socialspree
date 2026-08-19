@@ -51,7 +51,8 @@ import {
   History,
   Wand2,
   Cpu,
-  MessageSquareCode
+  MessageSquareCode,
+  ArrowLeft
 } from 'lucide-react';
 
 export type SuperAdminSubTab = 'dashboard' | 'subscriptions' | 'plans' | 'api_allocation' | 'cloudflare' | 'settings' | 'ai_credits' | 'privileges';
@@ -75,6 +76,7 @@ interface SuperAdminPortalProps {
   onUpdateSystemSettings?: (settings: SystemSettings) => void;
   activeSubTab: SuperAdminSubTab;
   onSelectSubTab: (subTab: SuperAdminSubTab) => void;
+  onReturnToWorkspace?: () => void;
 }
 
 export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
@@ -95,7 +97,8 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
   onTopupAiCredits,
   onUpdateSystemSettings,
   activeSubTab,
-  onSelectSubTab
+  onSelectSubTab,
+  onReturnToWorkspace,
 }) => {
   const initialSettings = getStoredSystemSettings();
 
@@ -713,6 +716,37 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
           </div>
         </div>
       )}
+
+      {/* SUPER ADMIN PORTAL TOP SWITCHER BAR */}
+      <div className="bg-gradient-to-r from-purple-950 via-slate-900 to-indigo-950 text-white p-4 rounded-2xl border border-amber-500/40 shadow-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-amber-500 text-slate-950 flex items-center justify-center font-black shadow-md shadow-amber-500/20 shrink-0">
+            <Crown className="w-5 h-5" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="font-extrabold text-sm text-white">Super Admin Governance Suite</span>
+              <span className="bg-amber-400 text-slate-950 text-[9px] font-mono font-black px-2 py-0.5 rounded-full uppercase">
+                /superadmin
+              </span>
+            </div>
+            <p className="text-[11px] text-slate-300">
+              Master organization control, tenant quota provisioning, multi-tenant RBAC, and engine settings.
+            </p>
+          </div>
+        </div>
+
+        {onReturnToWorkspace && (
+          <button
+            type="button"
+            onClick={onReturnToWorkspace}
+            className="px-4 py-2.5 bg-white/10 hover:bg-white/20 border border-white/20 hover:border-white/40 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 cursor-pointer shadow-xs"
+          >
+            <ArrowLeft className="w-4 h-4 text-amber-300" />
+            <span>Return to Workspace Admin (/admin)</span>
+          </button>
+        )}
+      </div>
 
       {/* SUB-VIEW 1: DASHBOARD */}
       {activeSubTab === 'dashboard' && (

@@ -88,11 +88,11 @@ export function App() {
     const path = window.location.pathname.replace(/^\/+|\/+$/g, '');
     if (!path || path === 'features' || path === 'pricing' || path === 'testimonials' || path === 'about' || path === 'docs' || path === 'checkout' || path === 'cart') return { tab: 'dashboard', view: 'public' };
     if (path === 'login' || path === 'auth' || path === 'sign-in' || path === 'reset' || path === 'reset-password' || path === 'set-password') return { tab: 'dashboard', view: 'auth' };
-    if (path === 'admin') return { tab: 'admin', view: 'app' };
-    if (path === 'infludash' || path === 'influencer' || path === 'agency' || path === 'dashboard') {
+    if (path === 'superadmin') return { tab: 'superadmin', view: 'app' };
+    if (path === 'admin' || path === 'dashboard' || path === 'infludash' || path === 'influencer' || path === 'agency') {
       return { tab: 'dashboard', view: 'app' };
     }
-    const validTabs: TabType[] = ['dashboard', 'composer', 'calendar', 'agents', 'media', 'autoresponder', 'connections', 'logs', 'reviews', 'analytics', 'admin', 'settings', 'help'];
+    const validTabs: TabType[] = ['dashboard', 'composer', 'calendar', 'agents', 'media', 'autoresponder', 'connections', 'logs', 'reviews', 'analytics', 'admin', 'superadmin', 'settings', 'help'];
     if (validTabs.includes(path as TabType)) {
       return { tab: path as TabType, view: 'app' };
     }
@@ -145,16 +145,10 @@ export function App() {
       }
     } else if (viewMode === 'app') {
       let targetPath: string;
-      if (activeTab === 'admin' || profile?.isSuperAdmin || profile?.role === 'super_admin') {
-        targetPath = '/admin';
-      } else if (activeTab === 'dashboard') {
-        if (profile?.role === 'influencer') {
-          targetPath = '/infludash';
-        } else if (profile?.role === 'agency') {
-          targetPath = '/agency';
-        } else {
-          targetPath = '/dashboard';
-        }
+      if (activeTab === 'superadmin') {
+        targetPath = '/superadmin';
+      } else if (activeTab === 'dashboard' || activeTab === 'admin') {
+        targetPath = '/admin'; // Normal users and Super Admin both land on /admin for standard workspace
       } else {
         targetPath = `/${activeTab}`;
       }
@@ -387,8 +381,10 @@ export function App() {
       if (cloud.brands && cloud.brands.length > 0) setBrands(cloud.brands);
       setCloudReady(true);
       setIsSuperAdminMode(isSuperAdmin);
-      if (isSuperAdmin && ['composer', 'calendar', 'connections', 'autoresponder', 'media'].includes(activeTab)) {
-        setActiveTab('admin');
+      if (activeTab === 'superadmin' && !isSuperAdmin) {
+        setActiveTab('dashboard');
+      } else if (activeTab === 'admin') {
+        setActiveTab('dashboard');
       }
       setViewMode('app');
     } catch (error) {
@@ -423,12 +419,7 @@ export function App() {
     setProfile(demoProfile);
     setIsSuperAdminMode(role === 'super_admin');
     setCurrentTenant(tenants[0] || INITIAL_TENANTS[0]);
-    if (role === 'super_admin') {
-      setActiveTab('admin');
-      setAdminSubTab('dashboard');
-    } else {
-      setActiveTab('dashboard');
-    }
+    setActiveTab('dashboard'); // Both normal users and super admin land on workspace dashboard (/admin)
     setCloudReady(true);
     setViewMode('app');
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -532,7 +523,8 @@ export function App() {
       case 'logs': return 'Activity Logs';
       case 'reviews': return 'Google Reviews';
       case 'analytics': return 'Analytics Engine';
-      case 'admin': return 'Super Admin Portal';
+      case 'superadmin': return 'Super Admin Platform Portal';
+      case 'admin': return 'Super Admin Platform Portal';
       case 'settings': return 'System Settings';
       case 'help': return 'Help Center & Documentation';
       default: return 'SocialSpree SaaS';
@@ -546,7 +538,7 @@ export function App() {
     setIsSuperAdminMode(nextMode);
     if (nextMode) {
       setCurrentTenant(tenants[0] || INITIAL_TENANTS[0]); // Reset to Master Super Admin
-      setActiveTab('admin');
+      setActiveTab('superadmin');
       setAdminSubTab('dashboard');
     } else {
       setCurrentTenant(tenants[1] || tenants[0]);
@@ -555,8 +547,8 @@ export function App() {
   };
 
   const handleSelectTab = (tab: TabType) => {
-    if (tab === 'admin') {
-      const isAuthorized = profile?.isSuperAdmin === true;
+    if (tab === 'superadmin' || tab === 'admin') {
+      const isAuthorized = profile?.isSuperAdmin === true || isSuperAdminMode;
       if (!isAuthorized) {
         setActiveTab('dashboard');
         return;
@@ -1176,7 +1168,7 @@ export function App() {
                 />
               )}
 
-              {activeTab === 'admin' && (
+              {(activeTab === 'superadmin' || (activeTab === 'admin' && (profile?.isSuperAdmin || isSuperAdminMode))) && (
                 <SuperAdminPortal
                   tenants={tenants}
                   aiLogs={aiLogs}
@@ -1196,6 +1188,7 @@ export function App() {
                   onUpdateSystemSettings={handleUpdateSystemSettings}
                   activeSubTab={adminSubTab}
                   onSelectSubTab={setAdminSubTab}
+                  onReturnToWorkspace={() => setActiveTab('dashboard')}
                 />
               )}
 

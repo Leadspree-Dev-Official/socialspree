@@ -23,7 +23,8 @@ import {
   HardDrive,
   Sparkles,
   Lock,
-  LogOut
+  LogOut,
+  Crown
 } from 'lucide-react';
 import { SuperAdminSubTab } from '../admin/SuperAdminPortal';
 import { GLOBAL_SYSTEM_SETTINGS } from '../../lib/store';
@@ -42,6 +43,7 @@ export type TabType =
   | 'reviews' 
   | 'analytics' 
   | 'admin' 
+  | 'superadmin'
   | 'settings'
   | 'help';
 
@@ -100,7 +102,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   };
 
   const handleAdminSubTabClick = (subTab: SuperAdminSubTab) => {
-    setActiveTab('admin');
+    setActiveTab('superadmin');
     if (onSelectAdminSubTab) {
       onSelectAdminSubTab(subTab);
     }
@@ -123,133 +125,142 @@ export const Sidebar: React.FC<SidebarProps> = ({
       <div className="flex-1 overflow-y-auto px-3 py-4 space-y-6 scrollbar-thin scrollbar-thumb-slate-800">
         
         {/* ========================================================================= */}
-        {/* MODE A: SUPER ADMIN NAVIGATION (STRICTLY SUPER ADMIN DASHBOARD SUBTABS ONLY) */}
+        {/* SUPER ADMIN GOVERNANCE SUITE (EXCLUSIVE TO SUPER ADMINS) */}
         {/* ========================================================================= */}
-        {isSuperAdmin ? (
-          <div className="space-y-1">
-            <div className="px-3 text-[10px] font-mono font-bold uppercase tracking-wider text-amber-400 mb-3 flex items-center justify-between">
-              <span>Governance Suite</span>
-              <span className="bg-amber-400/20 text-amber-300 text-[9px] px-2 py-0.5 rounded font-mono font-bold border border-amber-400/30">
-                SUPER ADMIN
+        {isSuperAdmin && (
+          <div className="space-y-2 p-3 rounded-2xl bg-gradient-to-b from-purple-950/80 via-slate-900 to-purple-950/50 border border-amber-500/40 shadow-xl">
+            <div className="flex items-center justify-between px-1">
+              <div className="flex items-center gap-1.5 text-[10px] font-mono font-black uppercase tracking-wider text-amber-400">
+                <Crown className="w-3.5 h-3.5 text-amber-400" />
+                <span>Super Admin</span>
+              </div>
+              <span className="bg-amber-400 text-slate-950 text-[9px] px-1.5 py-0.2 rounded font-mono font-black">
+                ROOT SUITE
               </span>
             </div>
 
-            {/* Overview & Metrics */}
             <button
-              onClick={() => handleAdminSubTabClick('dashboard')}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-all ${
-                activeTab === 'admin' && activeAdminSubTab === 'dashboard'
-                  ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-900/40'
-                  : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
+              onClick={() => handleNavClick('superadmin')}
+              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                activeTab === 'superadmin' || activeTab === 'admin'
+                  ? 'bg-gradient-to-r from-amber-500 via-purple-600 to-indigo-600 text-white shadow-lg ring-1 ring-amber-300/40'
+                  : 'bg-slate-800/80 hover:bg-slate-800 text-amber-200 hover:text-white'
               }`}
             >
-              <LayoutDashboard className="w-4 h-4 text-purple-400" />
-              <span>Overview & Metrics</span>
-            </button>
-
-            {/* Tenant Accounts */}
-            <button
-              onClick={() => handleAdminSubTabClick('subscriptions')}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-all ${
-                activeTab === 'admin' && activeAdminSubTab === 'subscriptions'
-                  ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-900/40'
-                  : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
-              }`}
-            >
-              <CreditCard className="w-4 h-4 text-purple-400" />
-              <span>Tenant Accounts</span>
-            </button>
-
-            {/* Subscription Tiers */}
-            <button
-              onClick={() => handleAdminSubTabClick('plans')}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-all ${
-                activeTab === 'admin' && activeAdminSubTab === 'plans'
-                  ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-900/40'
-                  : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
-              }`}
-            >
-              <Layers className="w-4 h-4 text-purple-400" />
-              <span>Subscription Tiers</span>
-            </button>
-
-            {/* API Allocation */}
-            <button
-              onClick={() => handleAdminSubTabClick('api_allocation')}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-all ${
-                activeTab === 'admin' && activeAdminSubTab === 'api_allocation'
-                  ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-900/40'
-                  : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
-              }`}
-            >
-              <Key className="w-4 h-4 text-purple-400" />
-              <span>API Allocation & Limits</span>
-            </button>
-
-            {/* Storage & CDN */}
-            <button
-              onClick={() => handleAdminSubTabClick('cloudflare')}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-all ${
-                activeTab === 'admin' && activeAdminSubTab === 'cloudflare'
-                  ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-900/40'
-                  : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
-              }`}
-            >
-              <HardDrive className="w-4 h-4 text-purple-400" />
-              <span>Storage & Cloudflare CDN</span>
-            </button>
-
-            {/* AI Credits & Limits (Only visible when AI Credits is turned ON) */}
-            {aiCreditsEnabled && (
-              <button
-                onClick={() => handleAdminSubTabClick('ai_credits')}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-all ${
-                  activeTab === 'admin' && activeAdminSubTab === 'ai_credits'
-                    ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 shadow-md shadow-amber-900/40 font-extrabold'
-                    : 'text-amber-300 hover:text-amber-200 hover:bg-amber-500/10'
-                }`}
-              >
-                <Sparkles className="w-4 h-4 text-amber-400" />
-                <span>AI Credits & Settings</span>
-              </button>
-            )}
-
-            {/* Server Profile Presets */}
-            <button
-              onClick={() => handleAdminSubTabClick('settings')}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-all ${
-                activeTab === 'admin' && activeAdminSubTab === 'settings'
-                  ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-900/40'
-                  : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
-              }`}
-            >
-              <Settings className="w-4 h-4 text-purple-400" />
-              <span>Server Presets & Mode</span>
-            </button>
-
-            {/* Privilege & Access Control */}
-            <button
-              onClick={() => handleAdminSubTabClick('privileges')}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-all ${
-                activeTab === 'admin' && activeAdminSubTab === 'privileges'
-                  ? 'bg-purple-900 text-amber-300 border border-amber-400/50 shadow-md font-bold'
-                  : 'text-purple-300 hover:text-white hover:bg-purple-900/30'
-              }`}
-            >
-              <Lock className="w-4 h-4 text-amber-400" />
-              <span>Privilege & Access Control</span>
-            </button>
-          </div>
-        ) : (
-          /* ========================================================================= */
-          /* MODE B: STANDARD TENANT USER NAVIGATION (AGENCY, INFLUENCER, BUSINESS USER) */
-          /* ========================================================================= */
-          <>
-            {/* Core Publishing Section */}
-            <div className="space-y-1">
-              <div className="px-3 text-[10px] font-mono font-bold uppercase tracking-wider text-slate-500 mb-2">
-                Publish & Schedule
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="w-4 h-4 text-amber-300 shrink-0" />
+                <span>Super Admin Portal</span>
               </div>
+              <span className="text-[10px] font-mono opacity-80">/superadmin</span>
+            </button>
+
+            {/* If currently viewing superadmin portal, show the sub-navigation pills */}
+            {(activeTab === 'superadmin' || activeTab === 'admin') && (
+              <div className="pt-2 space-y-1 border-t border-purple-900/60 mt-2 animate-in fade-in">
+                <button
+                  onClick={() => handleAdminSubTabClick('dashboard')}
+                  className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-all ${
+                    activeAdminSubTab === 'dashboard'
+                      ? 'bg-purple-600 text-white font-bold'
+                      : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
+                  }`}
+                >
+                  <LayoutDashboard className="w-3.5 h-3.5" />
+                  <span>Overview & Metrics</span>
+                </button>
+                <button
+                  onClick={() => handleAdminSubTabClick('subscriptions')}
+                  className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-all ${
+                    activeAdminSubTab === 'subscriptions'
+                      ? 'bg-purple-600 text-white font-bold'
+                      : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
+                  }`}
+                >
+                  <CreditCard className="w-3.5 h-3.5" />
+                  <span>Tenant Accounts</span>
+                </button>
+                <button
+                  onClick={() => handleAdminSubTabClick('plans')}
+                  className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-all ${
+                    activeAdminSubTab === 'plans'
+                      ? 'bg-purple-600 text-white font-bold'
+                      : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
+                  }`}
+                >
+                  <Layers className="w-3.5 h-3.5" />
+                  <span>Subscription Tiers</span>
+                </button>
+                <button
+                  onClick={() => handleAdminSubTabClick('api_allocation')}
+                  className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-all ${
+                    activeAdminSubTab === 'api_allocation'
+                      ? 'bg-purple-600 text-white font-bold'
+                      : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
+                  }`}
+                >
+                  <Key className="w-3.5 h-3.5" />
+                  <span>API Allocation & Limits</span>
+                </button>
+                <button
+                  onClick={() => handleAdminSubTabClick('cloudflare')}
+                  className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-all ${
+                    activeAdminSubTab === 'cloudflare'
+                      ? 'bg-purple-600 text-white font-bold'
+                      : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
+                  }`}
+                >
+                  <HardDrive className="w-3.5 h-3.5" />
+                  <span>Storage & CDN Pool</span>
+                </button>
+                {aiCreditsEnabled && (
+                  <button
+                    onClick={() => handleAdminSubTabClick('ai_credits')}
+                    className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-all ${
+                      activeAdminSubTab === 'ai_credits'
+                        ? 'bg-amber-500 text-slate-950 font-bold'
+                        : 'text-amber-300 hover:text-amber-200 hover:bg-amber-500/10'
+                    }`}
+                  >
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>AI Credits & Settings</span>
+                  </button>
+                )}
+                <button
+                  onClick={() => handleAdminSubTabClick('settings')}
+                  className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-all ${
+                    activeAdminSubTab === 'settings'
+                      ? 'bg-purple-600 text-white font-bold'
+                      : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
+                  }`}
+                >
+                  <Settings className="w-3.5 h-3.5" />
+                  <span>Server Presets & Mode</span>
+                </button>
+                <button
+                  onClick={() => handleAdminSubTabClick('privileges')}
+                  className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-all ${
+                    activeAdminSubTab === 'privileges'
+                      ? 'bg-purple-600 text-white font-bold'
+                      : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
+                  }`}
+                >
+                  <Lock className="w-3.5 h-3.5" />
+                  <span>Privilege & RBAC</span>
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ========================================================================= */}
+        {/* STANDARD WORKSPACE NAVIGATION (AVAILABLE TO BOTH USERS & SUPER ADMIN) */}
+        {/* ========================================================================= */}
+        <div className="space-y-6">
+          {/* Core Publishing Section */}
+          <div className="space-y-1">
+            <div className="px-3 text-[10px] font-mono font-bold uppercase tracking-wider text-slate-500 mb-2">
+              Publish & Schedule
+            </div>
 
               <button
                 onClick={() => handleNavClick('dashboard')}
@@ -397,8 +408,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <span>Dispatch Audit Logs</span>
               </button>
             </div>
-          </>
-        )}
+          </div>
 
         {/* System Settings & Support & Public Marketing Link */}
         <div className="space-y-1 pt-2 border-t border-slate-800">

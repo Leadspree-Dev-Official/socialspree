@@ -21,7 +21,7 @@ export const MobileNav: React.FC<MobileNavProps> = ({
   ];
 
   if (isSuperAdmin) {
-    tabs.push({ id: 'admin', label: 'Admin', icon: ShieldAlert });
+    tabs.push({ id: 'superadmin', label: 'SuperAdmin', icon: ShieldAlert });
   }
 
   return (
