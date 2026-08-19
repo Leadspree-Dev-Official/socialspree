@@ -29,4 +29,14 @@ assert.match(migration, /CREATE OR REPLACE FUNCTION private\.is_super_admin/, 's
 assert.match(migration, /WHERE id = \(auth\.jwt\(\) ->> 'sub'\)/, 'super-admin helper must use verified subject');
 assert.match(migration, /DELETE FROM public\.system_settings WHERE key = 'super_admin_email'/, 'email bootstrap must be removed');
 
+// Secret Exposure Prevention Regression
+const [appSource, supabaseSource, apiSource] = await Promise.all([
+  read('src/App.tsx'),
+  read('src/lib/supabase.ts'),
+  read('src/lib/api.ts'),
+]);
+assert.doesNotMatch(appSource + supabaseSource + apiSource, /ghp_[a-zA-Z0-9]{20,}/, 'No GitHub PATs in frontend source');
+assert.doesNotMatch(appSource + supabaseSource + apiSource, /service_role/, 'No service role keys in frontend source');
+assert.doesNotMatch(appSource + supabaseSource + apiSource, /RAZORPAY_WEBHOOK_SECRET/, 'No webhook secrets in frontend source');
+
 console.log('Static security regression checks passed.');

@@ -11,6 +11,7 @@
     "test:auth": "node tests/auth-audit.mjs",
     "test:security": "node --env-file=.env tests/security-boundary.mjs",
     "test:security:static": "node tests/static-security-regressions.mjs",
+    "test:adversarial": "node tests/adversarial-integration-suite.mjs",
     "test:audit:all": "node --env-file=.env tests/full-audit-runner.mjs",
     "test:rls": "node --env-file=.env tests/live-rls.mjs"
   },
