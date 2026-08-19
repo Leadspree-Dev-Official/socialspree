@@ -332,7 +332,7 @@ export const INITIAL_PLANS: SubscriptionPlan[] = [
   }
 ];
 
-// Global Pool of Multiple Default Cloudinary Accounts managed by Super Admin
+// Global Pool of Default Cloudinary Accounts managed by Super Admin (Only authentic accounts)
 export const GLOBAL_CLOUDINARY_POOL: CloudinaryAccountItem[] = [
   {
     id: 'cld-master-01',
@@ -341,24 +341,35 @@ export const GLOBAL_CLOUDINARY_POOL: CloudinaryAccountItem[] = [
     uploadPreset: 'ml_default',
     bucketName: 'socialspree-media-vault',
     isActiveDefault: true,
-  },
-  {
-    id: 'cld-video-02',
-    label: 'High-Speed Video Storage CDN',
-    cloudName: 'socialspree_video_cdn',
-    uploadPreset: 'socialspree_video_preset',
-    bucketName: 'socialspree-video-vault',
-    isActiveDefault: false,
-  },
-  {
-    id: 'cld-backup-03',
-    label: 'Backup Storage CDN Account',
-    cloudName: 'socialspree_backup_cdn',
-    uploadPreset: 'socialspree_backup_preset',
-    bucketName: 'socialspree-backup-vault',
-    isActiveDefault: false,
   }
 ];
+
+export const getStoredCloudinaryPool = (): CloudinaryAccountItem[] => {
+  try {
+    const raw = typeof window !== 'undefined' ? localStorage.getItem('socialspree_cld_pool') : null;
+    if (raw) {
+      const parsed = JSON.parse(raw) as CloudinaryAccountItem[];
+      // Filter out demo placeholders
+      const cleaned = parsed.filter(a => 
+        a.cloudName !== 'socialspree_video_cdn' && 
+        a.cloudName !== 'socialspree_backup_cdn' &&
+        !a.cloudName.includes('socialspree_')
+      );
+      if (cleaned.length > 0) return cleaned;
+    }
+  } catch {
+    /* ignore storage read error */
+  }
+  return GLOBAL_CLOUDINARY_POOL;
+};
+
+export const saveStoredCloudinaryPool = (pool: CloudinaryAccountItem[]) => {
+  try {
+    localStorage.setItem('socialspree_cld_pool', JSON.stringify(pool));
+  } catch {
+    /* ignore storage write error */
+  }
+};
 
 export const GLOBAL_DEFAULT_CLOUDINARY: CloudinaryConfig = {
   cloudName: GLOBAL_CLOUDINARY_POOL[0].cloudName,
@@ -425,16 +436,6 @@ export const INITIAL_MEDIA_ASSETS: MediaAsset[] = [
     cloudName: 'djmww1dwr',
     fileSize: '1.2 MB',
     createdAt: new Date().toISOString()
-  },
-  {
-    id: 'media-2',
-    tenantId: '00000000-0000-0000-0000-000000000001',
-    title: 'SaaS Engine Promo Reel',
-    url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
-    type: 'video',
-    cloudName: 'socialspree_video_cdn',
-    fileSize: '14.8 MB',
-    createdAt: new Date(Date.now() - 3600000).toISOString()
   }
 ];
 

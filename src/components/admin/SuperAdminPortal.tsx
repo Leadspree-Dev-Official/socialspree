@@ -7,7 +7,9 @@ import {
   INITIAL_PLANS, 
   GLOBAL_SYSTEM_SETTINGS,
   getStoredPlans,
-  getStoredSystemSettings
+  getStoredSystemSettings,
+  getStoredCloudinaryPool,
+  saveStoredCloudinaryPool
 } from '../../lib/store';
 import { supabase } from '../../lib/supabase';
 import { plans as cloudPlans } from '../../lib/api';
@@ -127,8 +129,8 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
   const [customMonthlyZernioInput, setCustomMonthlyZernioInput] = useState<number>(0);
   const [customStorageMbInput, setCustomStorageMbInput] = useState<number>(0);
 
-  // Global Cloudinary Pool State
-  const [cldPool, setCldPool] = useState<CloudinaryAccountItem[]>(GLOBAL_CLOUDINARY_POOL);
+  // Global Cloudinary Pool State (Clean authentic pool)
+  const [cldPool, setCldPool] = useState<CloudinaryAccountItem[]>(() => getStoredCloudinaryPool());
   const [showCldModal, setShowCldModal] = useState(false);
   const [editingCldId, setEditingCldId] = useState<string | null>(null);
   const [cldLabelInput, setCldLabelInput] = useState('');
@@ -414,6 +416,7 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
     setCldPool(updated);
     GLOBAL_CLOUDINARY_POOL.length = 0;
     GLOBAL_CLOUDINARY_POOL.push(...updated);
+    saveStoredCloudinaryPool(updated);
     setShowCldModal(false);
 
     setCldNotification('Global Cloudinary CDN Account Pool Saved Successfully!');
@@ -428,6 +431,7 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
     setCldPool(updated);
     GLOBAL_CLOUDINARY_POOL.length = 0;
     GLOBAL_CLOUDINARY_POOL.push(...updated);
+    saveStoredCloudinaryPool(updated);
 
     setCldNotification('Active Default Cloudinary CDN Account Updated!');
     setTimeout(() => setCldNotification(null), 3000);
@@ -442,6 +446,7 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
     setCldPool(updated);
     GLOBAL_CLOUDINARY_POOL.length = 0;
     GLOBAL_CLOUDINARY_POOL.push(...updated);
+    saveStoredCloudinaryPool(updated);
   };
 
   const handleCreateTenant = (e: React.FormEvent) => {
