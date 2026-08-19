@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite';
+import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 
@@ -11,14 +11,39 @@ const securityHeaders = {
 };
 
 // https://vite.dev/config/
-export default defineConfig({
-  plugins: [react(), tailwindcss()],
-  server: {
-    port: 3000,
-    host: true,
-    headers: securityHeaders
-  },
-  preview: {
-    headers: securityHeaders
-  }
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), '');
+  return {
+    plugins: [react(), tailwindcss()],
+    define: {
+      'import.meta.env.VITE_CLERK_PUBLISHABLE_KEY': JSON.stringify(
+        process.env.VITE_CLERK_PUBLISHABLE_KEY ||
+        env.VITE_CLERK_PUBLISHABLE_KEY ||
+        'pk_test_ZmxleGlibGUtbGFkeWJpcmQtMzEuY2xlcmsuYWNjb3VudHMuZGV2JA'
+      ),
+      'import.meta.env.VITE_SUPABASE_URL': JSON.stringify(
+        process.env.VITE_SUPABASE_URL ||
+        env.VITE_SUPABASE_URL ||
+        'https://qglhbesenigpspgkgbac.supabase.co'
+      ),
+      'import.meta.env.VITE_SUPABASE_ANON_KEY': JSON.stringify(
+        process.env.VITE_SUPABASE_ANON_KEY ||
+        env.VITE_SUPABASE_ANON_KEY ||
+        'sb_publishable_PbJKlmuW9t-UMF3GmlLtvw_CEWLn0dN'
+      ),
+      'import.meta.env.VITE_SUPPORT_EMAIL': JSON.stringify(
+        process.env.VITE_SUPPORT_EMAIL ||
+        env.VITE_SUPPORT_EMAIL ||
+        'leadspree24x7@gmail.com'
+      )
+    },
+    server: {
+      port: 3000,
+      host: true,
+      headers: securityHeaders
+    },
+    preview: {
+      headers: securityHeaders
+    }
+  };
 });
