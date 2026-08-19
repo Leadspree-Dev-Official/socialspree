@@ -60,6 +60,7 @@ interface SidebarProps {
   userRole?: string;
   avatarUrl?: string;
   aiCreditsEnabled?: boolean;
+  automationAiEnabled?: boolean;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -77,6 +78,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   userRole,
   avatarUrl,
   aiCreditsEnabled = false,
+  automationAiEnabled = false,
 }) => {
   const { user } = useUser();
   const clerkEmail = user?.primaryEmailAddress?.emailAddress;
@@ -320,24 +322,26 @@ export const Sidebar: React.FC<SidebarProps> = ({
               </button>
             </div>
 
-            {/* AI & Automation Section */}
-            <div className="space-y-1">
-              <div className="px-3 text-[10px] font-mono font-bold uppercase tracking-wider text-slate-500 mb-2">
-                Automation & AI
-              </div>
+            {/* AI & Automation Section (Controlled by Super Admin toggle) */}
+            {automationAiEnabled && (
+              <div className="space-y-1">
+                <div className="px-3 text-[10px] font-mono font-bold uppercase tracking-wider text-slate-500 mb-2">
+                  Automation & AI
+                </div>
 
-              <button
-                onClick={() => handleNavClick('autoresponder')}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${
-                  activeTab === 'autoresponder'
-                    ? 'bg-[#5D3FD3] text-white shadow-md shadow-purple-900/30'
-                    : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
-                }`}
-              >
-                <MessageSquareCode className="w-4 h-4 text-slate-400" />
-                <span>Live Auto-Responder</span>
-              </button>
-            </div>
+                <button
+                  onClick={() => handleNavClick('autoresponder')}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                    activeTab === 'autoresponder'
+                      ? 'bg-[#5D3FD3] text-white shadow-md shadow-purple-900/30'
+                      : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+                  }`}
+                >
+                  <MessageSquareCode className="w-4 h-4 text-slate-400" />
+                  <span>Live Auto-Responder</span>
+                </button>
+              </div>
+            )}
 
             {/* Analytics & Channels Section */}
             <div className="space-y-1">

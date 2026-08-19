@@ -48,7 +48,8 @@ import {
   Sparkles,
   History,
   Wand2,
-  Cpu
+  Cpu,
+  MessageSquareCode
 } from 'lucide-react';
 
 export type SuperAdminSubTab = 'dashboard' | 'subscriptions' | 'plans' | 'api_allocation' | 'cloudflare' | 'settings' | 'ai_credits' | 'privileges';
@@ -111,6 +112,7 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
   const [businessModeEnabled, setBusinessModeEnabled] = useState<boolean>(initialSettings.businessModeEnabled ?? true);
   const [aiCreditsEnabled, setAiCreditsEnabled] = useState<boolean>(initialSettings.aiCreditsEnabled ?? false);
   const [voiceAssistantEnabled, setVoiceAssistantEnabled] = useState<boolean>(initialSettings.voiceAssistantEnabled ?? false);
+  const [automationAiEnabled, setAutomationAiEnabled] = useState<boolean>(initialSettings.automationAiEnabled ?? false);
   const [zernioEnabled, setZernioEnabled] = useState<boolean>(initialSettings.zernioEnabled ?? true);
   const [coresyncEnabled, setCoresyncEnabled] = useState<boolean>(initialSettings.coresyncEnabled ?? true);
   const [globalDispatchEngine, setGlobalDispatchEngine] = useState<EngineChoice>(initialSettings.dispatchEngine ?? 'dual');
@@ -307,6 +309,7 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
       businessModeEnabled: businessModeEnabled,
       aiCreditsEnabled: aiCreditsEnabled,
       voiceAssistantEnabled: voiceAssistantEnabled,
+      automationAiEnabled: automationAiEnabled,
       zernioEnabled: zernioEnabled,
       coresyncEnabled: coresyncEnabled,
       dispatchEngine: globalDispatchEngine,
@@ -1478,6 +1481,31 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
                     className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${voiceAssistantEnabled ? 'bg-purple-600' : 'bg-slate-300'}`}
                   >
                     <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${voiceAssistantEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
+                  </button>
+                </div>
+              </div>
+
+              {/* TOGGLE 7: AUTOMATION & AI PAGE (LIVE AUTO-RESPONDER) */}
+              <div className={`p-4 rounded-xl border transition-all md:col-span-2 ${automationAiEnabled ? 'bg-indigo-50 border-indigo-300' : 'bg-slate-50 border-slate-200'}`}>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <MessageSquareCode className={`w-5 h-5 ${automationAiEnabled ? 'text-indigo-600' : 'text-slate-400'}`} />
+                    <div>
+                      <div className="font-bold text-slate-900 text-xs flex items-center gap-1.5">
+                        <span>Automation & AI Page (Live Auto-Responder & DM Triggers)</span>
+                        <span className={`text-[9px] font-bold px-1.5 py-0.2 rounded ${automationAiEnabled ? 'bg-indigo-600 text-white' : 'bg-slate-200 text-slate-600'}`}>
+                          {automationAiEnabled ? 'ACTIVE (USER VISIBLE)' : 'DISABLED (HIDDEN)'}
+                        </span>
+                      </div>
+                      <div className="text-[10px] text-slate-500">Turn ON/OFF Automation & AI section and Live Auto-Responder for regular workspace users</div>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setAutomationAiEnabled(prev => !prev)}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${automationAiEnabled ? 'bg-indigo-600' : 'bg-slate-300'}`}
+                  >
+                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${automationAiEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
                   </button>
                 </div>
               </div>

@@ -43,6 +43,7 @@ import { SuperAdminPortal, SuperAdminSubTab } from './components/admin/SuperAdmi
 import { SettingsView } from './components/settings/SettingsView';
 import { HelpCenterView } from './components/help/HelpCenterView';
 import { VoiceAssistantOverlay } from './components/assistant/VoiceAssistantOverlay';
+import { MessageSquareCode } from 'lucide-react';
 
 import { PublicNavbar } from './components/public/PublicNavbar';
 import { LandingHero } from './components/public/LandingHero';
@@ -991,6 +992,7 @@ export function App() {
             userRole={profile?.role || undefined}
             avatarUrl={profile?.avatarUrl || user?.imageUrl || undefined}
             aiCreditsEnabled={systemSettings.aiCreditsEnabled ?? false}
+            automationAiEnabled={systemSettings.automationAiEnabled ?? false}
           />
 
           <div className="flex-1 flex flex-col md:ml-[260px] min-w-0">
@@ -1115,12 +1117,30 @@ export function App() {
               )}
 
               {activeTab === 'autoresponder' && (
-                <AutoResponderView
-                  key={currentTenant.id}
-                  tenant={currentTenant}
-                  accounts={accounts}
-                  mediaAssets={mediaAssets.filter(m => m.tenantId === currentTenant.id)}
-                />
+                (systemSettings.automationAiEnabled || isSuperAdminMode) ? (
+                  <AutoResponderView
+                    key={currentTenant.id}
+                    tenant={currentTenant}
+                    accounts={accounts}
+                    mediaAssets={mediaAssets.filter(m => m.tenantId === currentTenant.id)}
+                  />
+                ) : (
+                  <div className="max-w-xl mx-auto mt-12 p-8 bg-white border border-slate-200 rounded-2xl text-center shadow-xs space-y-4">
+                    <div className="w-12 h-12 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto text-slate-400">
+                      <MessageSquareCode className="w-6 h-6" />
+                    </div>
+                    <h3 className="text-lg font-bold text-slate-900">Automation & AI Module Offline</h3>
+                    <p className="text-sm text-slate-500">
+                      The Automation & Auto-Responder module is currently turned off for this workspace by the system administrator.
+                    </p>
+                    <button
+                      onClick={() => setActiveTab('dashboard')}
+                      className="px-4 py-2 bg-[#5D3FD3] text-white font-bold rounded-xl text-xs hover:bg-[#4D32B8] transition-colors"
+                    >
+                      Return to Dashboard
+                    </button>
+                  </div>
+                )
               )}
 
               {activeTab === 'connections' && (

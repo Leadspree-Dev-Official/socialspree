@@ -127,6 +127,7 @@ export interface SystemSettings {
   businessModeEnabled?: boolean;
   aiCreditsEnabled?: boolean;
   voiceAssistantEnabled?: boolean;
+  automationAiEnabled?: boolean;
   zernioEnabled?: boolean;
   coresyncEnabled?: boolean;
 }

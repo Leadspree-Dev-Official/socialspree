@@ -30,6 +30,7 @@ export const GLOBAL_SYSTEM_SETTINGS: SystemSettings = {
   businessModeEnabled: true,
   aiCreditsEnabled: false,
   voiceAssistantEnabled: false,
+  automationAiEnabled: false,
   zernioEnabled: true,
   coresyncEnabled: true,
   dispatchEngine: 'dual'
