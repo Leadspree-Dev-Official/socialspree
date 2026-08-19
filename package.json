@@ -9,9 +9,10 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "test:auth": "node tests/auth-audit.mjs",
-    "test:security": "node tests/security-boundary.mjs",
+    "test:security": "node --env-file=.env tests/security-boundary.mjs",
     "test:security:static": "node tests/static-security-regressions.mjs",
-    "test:rls": "node tests/live-rls.mjs"
+    "test:audit:all": "node --env-file=.env tests/full-audit-runner.mjs",
+    "test:rls": "node --env-file=.env tests/live-rls.mjs"
   },
   "dependencies": {
     "@clerk/react": "^6.13.1",
