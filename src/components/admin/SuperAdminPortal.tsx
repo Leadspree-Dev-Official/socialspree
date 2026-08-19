@@ -118,6 +118,7 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
   const [globalDispatchEngine, setGlobalDispatchEngine] = useState<EngineChoice>(initialSettings.dispatchEngine ?? 'dual');
 
   const [settingsNotification, setSettingsNotification] = useState<string | null>(null);
+  const [isSavingSettings, setIsSavingSettings] = useState<boolean>(false);
 
   // User Usage & Quota Inspector Modal State
   const [inspectingTenant, setInspectingTenant] = useState<Tenant | null>(null);
@@ -294,51 +295,64 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
     setTimeout(() => setSettingsNotification(null), 4000);
   };
 
-  const handleSaveSystemSettings = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const updatedSettings: SystemSettings = {
-      currency: systemCurrency,
-      currencySymbol: currencySymbol,
-      platformName: platformName.trim(),
-      supportEmail: supportEmail.trim(),
-      aiApiKey: aiApiKeyInput.trim() ? `••••${aiApiKeyInput.trim().slice(-4)}` : GLOBAL_SYSTEM_SETTINGS.aiApiKey,
-      defaultAiCredits: defaultCreditsInput,
-      websiteEnabled: websiteEnabled,
-      agencyModeEnabled: agencyModeEnabled,
-      influencerModeEnabled: influencerModeEnabled,
-      businessModeEnabled: businessModeEnabled,
-      aiCreditsEnabled: aiCreditsEnabled,
-      voiceAssistantEnabled: voiceAssistantEnabled,
-      automationAiEnabled: automationAiEnabled,
-      zernioEnabled: zernioEnabled,
-      coresyncEnabled: coresyncEnabled,
-      dispatchEngine: globalDispatchEngine,
-    };
-
-    Object.assign(GLOBAL_SYSTEM_SETTINGS, updatedSettings);
+  const handleSaveSystemSettings = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    setIsSavingSettings(true);
 
     try {
-      localStorage.setItem('spree_system_settings', JSON.stringify(updatedSettings));
-      await supabase.from('system_settings').upsert({
-        key: 'spree_global_settings',
-        value: JSON.stringify(updatedSettings),
-        updated_at: new Date().toISOString()
-      }, { onConflict: 'key' });
-    } catch (err) {
-      console.warn('System settings cloud sync notice:', err);
-    }
+      const updatedSettings: SystemSettings = {
+        currency: systemCurrency,
+        currencySymbol: currencySymbol,
+        platformName: platformName.trim(),
+        supportEmail: supportEmail.trim(),
+        aiApiKey: aiApiKeyInput.trim() ? `••••${aiApiKeyInput.trim().slice(-4)}` : GLOBAL_SYSTEM_SETTINGS.aiApiKey,
+        defaultAiCredits: defaultCreditsInput,
+        websiteEnabled: websiteEnabled,
+        agencyModeEnabled: agencyModeEnabled,
+        influencerModeEnabled: influencerModeEnabled,
+        businessModeEnabled: businessModeEnabled,
+        aiCreditsEnabled: aiCreditsEnabled,
+        voiceAssistantEnabled: voiceAssistantEnabled,
+        automationAiEnabled: automationAiEnabled,
+        zernioEnabled: zernioEnabled,
+        coresyncEnabled: coresyncEnabled,
+        dispatchEngine: globalDispatchEngine,
+      };
 
-    if (onUpdateSystemSettings) {
-      onUpdateSystemSettings(updatedSettings);
-    }
+      Object.assign(GLOBAL_SYSTEM_SETTINGS, updatedSettings);
 
-    if (aiApiKeyInput.trim() && tenants[0]) {
-      const { error } = await supabase.functions.invoke('manage-credentials', { body: { tenantId: tenants[0].id, provider: 'openai', label: 'global', secret: aiApiKeyInput.trim() } });
-      if (error) { setSettingsNotification(`AI credential save failed: ${error.message}`); return; }
-      setAiApiKeyInput('');
+      try {
+        localStorage.setItem('spree_system_settings', JSON.stringify(updatedSettings));
+        await supabase.from('system_settings').upsert({
+          key: 'spree_global_settings',
+          value: JSON.stringify(updatedSettings),
+          updated_at: new Date().toISOString()
+        }, { onConflict: 'key' });
+      } catch (err) {
+        console.warn('System settings cloud sync notice:', err);
+      }
+
+      if (onUpdateSystemSettings) {
+        onUpdateSystemSettings(updatedSettings);
+      }
+
+      if (aiApiKeyInput.trim() && tenants[0]) {
+        const { error } = await supabase.functions.invoke('manage-credentials', { body: { tenantId: tenants[0].id, provider: 'openai', label: 'global', secret: aiApiKeyInput.trim() } });
+        if (error) { 
+          setSettingsNotification(`AI credential save failed: ${error.message}`); 
+          setIsSavingSettings(false);
+          return; 
+        }
+        setAiApiKeyInput('');
+      }
+
+      // Small delay for smooth tactile feedback
+      await new Promise(r => setTimeout(r, 200));
+      setSettingsNotification('Configuration Saved & Activated Live Across All Workspaces!');
+      setTimeout(() => setSettingsNotification(null), 4000);
+    } finally {
+      setIsSavingSettings(false);
     }
-    setSettingsNotification('✅ System settings, AI feature switches, and mode controls saved & activated successfully!');
-    setTimeout(() => setSettingsNotification(null), 3500);
   };
 
   const handleOpenUserInspector = (tenant: Tenant) => {
@@ -678,7 +692,22 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
   };
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6 font-['Inter'] pb-20 md:pb-0">
+    <div className="max-w-7xl mx-auto space-y-6 font-['Inter'] pb-20 md:pb-0 relative">
+
+      {/* GLOBAL HIGH-VISIBILITY FLOATING TOAST NOTIFICATION */}
+      {settingsNotification && (
+        <div className="fixed top-5 right-5 z-50 animate-in fade-in slide-in-from-top-4 duration-300 pointer-events-none">
+          <div className="px-5 py-3.5 bg-slate-950 text-white border-2 border-emerald-500 rounded-2xl shadow-2xl flex items-center gap-3 backdrop-blur-md">
+            <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
+              <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+            </div>
+            <div>
+              <div className="text-xs font-black text-white">System Configuration Live</div>
+              <div className="text-[11px] text-emerald-300 font-medium">{settingsNotification}</div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* SUB-VIEW 1: DASHBOARD */}
       {activeSubTab === 'dashboard' && (
@@ -1676,9 +1705,40 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
             </div>
           </div>
 
-          <button type="submit" className="px-6 py-2.5 bg-[#5D3FD3] hover:bg-purple-700 text-white font-bold rounded-xl text-xs transition-colors shadow-md">
-            Save System Settings & Mode Controls
-          </button>
+          {/* STICKY BOTTOM SAVE ACTION BAR */}
+          <div className="pt-6 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4 sticky bottom-2 bg-white/95 backdrop-blur-md p-4 rounded-2xl border border-purple-200/80 shadow-lg -mx-2 -mb-2 z-10">
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                disabled={isSavingSettings}
+                onClick={() => handleSaveSystemSettings()}
+                className={`px-7 py-3.5 rounded-xl font-black text-xs shadow-lg transition-all duration-200 flex items-center gap-2.5 cursor-pointer active:scale-95 select-none ${
+                  isSavingSettings
+                    ? 'bg-purple-400 text-white cursor-wait opacity-90'
+                    : 'bg-gradient-to-r from-[#5D3FD3] via-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white hover:shadow-purple-500/30 hover:scale-102 ring-2 ring-purple-400/20'
+                }`}
+              >
+                {isSavingSettings ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 animate-spin text-white" />
+                    <span>Saving & Applying Live...</span>
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-4 h-4 text-amber-300 fill-amber-300/30" />
+                    <span>Save System Settings & Mode Controls</span>
+                  </>
+                )}
+              </button>
+            </div>
+
+            {settingsNotification && (
+              <div className="flex items-center gap-2.5 px-4 py-2.5 bg-emerald-50 border border-emerald-300 text-emerald-900 rounded-xl text-xs font-bold shadow-xs animate-in fade-in slide-in-from-bottom-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span>{settingsNotification}</span>
+              </div>
+            )}
+          </div>
         </form>
       )}
 
