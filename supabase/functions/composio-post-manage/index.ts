@@ -60,8 +60,8 @@ Deno.serve(async req => {
         }).catch(() => null);
       }
 
-      await db.from('posts').update({ status: 'failed', error_message: 'Cancelled by user' }).eq('id', body.postId);
-      await db.from('publishing_jobs').update({ status: 'dead_letter', last_error: 'Cancelled by user' }).eq('post_id', body.postId);
+      await db.from('publishing_jobs').delete().eq('post_id', body.postId);
+      await db.from('posts').delete().eq('id', body.postId);
 
       return json({ deleted: true, postId: body.postId });
     }

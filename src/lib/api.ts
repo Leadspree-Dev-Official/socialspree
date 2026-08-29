@@ -695,6 +695,36 @@ export const posts = {
     const cur = cacheGet<Post[]>(CACHE_KEYS.POSTS) ?? [];
     cacheSet(CACHE_KEYS.POSTS, cur.map(x => (x.id === id ? { ...x, status, ...extra } : x)));
   },
+  remove: async (id: string, tenantId?: string): Promise<void> => {
+    const cur = cacheGet<Post[]>(CACHE_KEYS.POSTS) ?? [];
+    const updated = cur.filter(x => String(x.id) !== String(id));
+    cacheSet(CACHE_KEYS.POSTS, updated);
+
+    try {
+      localStorage.setItem('socialspree_posts_v1', JSON.stringify(updated));
+    } catch { /* ignore */ }
+
+    // 1. Delete associated publishing jobs
+    try {
+      await supabase.from('publishing_jobs').delete().eq('post_id', id);
+    } catch { /* ignore */ }
+
+    // 2. Direct delete on posts table
+    try {
+      await supabase.from('posts').delete().eq('id', id);
+    } catch (err) {
+      console.warn('Direct posts delete warning:', err);
+    }
+
+    // 3. Service-role backed Edge function cleanup
+    try {
+      await supabase.functions.invoke('composio-post-manage', {
+        body: { postId: id, tenantId, action: 'delete' }
+      });
+    } catch (edgeErr) {
+      console.warn('Edge post-manage invocation notice:', edgeErr);
+    }
+  },
 };
 
 // ---- Post logs (append-only) -------------------------------------------------

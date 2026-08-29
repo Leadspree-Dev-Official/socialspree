@@ -127,7 +127,7 @@ export const SocialConnectionsView: React.FC<SocialConnectionsViewProps> = ({
     const platform = (params.get('platform') || 'instagram') as SocialPlatform;
 
     // Resolve real user profile handle directly from authoritative profile state
-    let realName = userProfile?.fullName?.trim() || userProfile?.email?.split('@')[0] || 'Aniruddha';
+    const realName = userProfile?.fullName?.trim() || userProfile?.email?.split('@')[0] || 'Aniruddha';
     const cleanHandle = `@${realName.toLowerCase().replace(/[^a-z0-9_]/g, '_')}`;
 
     const newAccountData = {
@@ -171,7 +171,7 @@ export const SocialConnectionsView: React.FC<SocialConnectionsViewProps> = ({
       try {
         const cloudAccounts = await fetchComposioAccounts(tenant.id, 1);
         if (cloudAccounts && cloudAccounts.length > 0 && onAddAccount) {
-          let realName = userProfile?.fullName?.trim() || userProfile?.email?.split('@')[0] || 'Aniruddha';
+          const realName = userProfile?.fullName?.trim() || userProfile?.email?.split('@')[0] || 'Aniruddha';
           const cleanHandle = `@${realName.toLowerCase().replace(/[^a-z0-9_]/g, '_')}`;
 
           cloudAccounts.forEach(cAcc => {

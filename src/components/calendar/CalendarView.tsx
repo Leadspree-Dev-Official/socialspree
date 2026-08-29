@@ -85,9 +85,21 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
 
   // Inspect Post Modal State
   const [inspectPost, setInspectPost] = useState<Post | null>(null);
+  const [deletedPostIds, setDeletedPostIds] = useState<Set<string>>(new Set());
 
   const tenantAccounts = accounts.filter(a => a.tenantId === tenant.id);
-  const tenantPosts = posts.filter(p => p.tenantId === tenant.id);
+  const tenantPosts = posts
+    .filter(p => p.tenantId === tenant.id)
+    .filter(p => !deletedPostIds.has(String(p.id)));
+
+  const handleDeleteSinglePost = (postId: string) => {
+    setDeletedPostIds(prev => new Set(prev).add(String(postId)));
+    if (onDeletePost) {
+      onDeletePost(postId);
+    }
+    setNotification('🗑️ Scheduled post deleted successfully!');
+    setTimeout(() => setNotification(null), 3000);
+  };
 
   const formatLocalDate = (d: Date) => {
     const year = d.getFullYear();
@@ -775,11 +787,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          if (onDeletePost) {
-                            onDeletePost(post.id);
-                          }
-                          setNotification('🗑️ Scheduled post deleted successfully!');
-                          setTimeout(() => setNotification(null), 3000);
+                          handleDeleteSinglePost(post.id);
                         }}
                         className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-xl transition-colors cursor-pointer"
                         title="Delete Scheduled Post"
@@ -913,11 +921,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => {
-                    if (onDeletePost) {
-                      onDeletePost(inspectPost.id);
-                      setNotification('🗑️ Scheduled post deleted successfully!');
-                      setTimeout(() => setNotification(null), 3000);
-                    }
+                    handleDeleteSinglePost(inspectPost.id);
                     setInspectPost(null);
                   }}
                   className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg transition-colors cursor-pointer"
@@ -951,12 +955,8 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
               <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
                 <button
                   onClick={() => {
-                    if (onDeletePost) {
-                      onDeletePost(inspectPost.id);
-                    }
+                    handleDeleteSinglePost(inspectPost.id);
                     setInspectPost(null);
-                    setNotification('🗑️ Scheduled post deleted successfully!');
-                    setTimeout(() => setNotification(null), 3000);
                   }}
                   className="px-4 py-2.5 bg-red-50 dark:bg-red-950/40 hover:bg-red-100 dark:hover:bg-red-900/60 text-red-600 dark:text-red-300 border border-red-200 dark:border-red-800 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all shadow-2xs cursor-pointer"
                 >

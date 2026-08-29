@@ -269,7 +269,7 @@ export async function fetchComposioAccounts(
 
   // Direct client fallback to Composio v3.1
   try {
-    let composioApiKey = 'ak_oyTzo6QSMSHP5KqOfbHn';
+    const composioApiKey = 'ak_oyTzo6QSMSHP5KqOfbHn';
     const entityId = `tenant_${tenantId}`;
     const res = await fetch(`https://backend.composio.dev/api/v3.1/connected_accounts?user_ids=${encodeURIComponent(entityId)}`, {
       headers: { 'x-api-key': composioApiKey }

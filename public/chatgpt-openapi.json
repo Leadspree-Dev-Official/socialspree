@@ -1,24 +1,24 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "SocialSpree ChatGPT Publishing & Scheduling Plugin",
-    "description": "Enables ChatGPT to schedule and publish social media posts, images, reels, and carousel campaigns directly into SocialSpree.",
-    "version": "2.1.0"
+    "title": "SocialSpree ChatGPT Publishing, Cloudinary & Scheduling API",
+    "description": "Enables ChatGPT to generate images, auto-upload/transcode media to permanent Cloudinary CDN (res.cloudinary.com), and simultaneously schedule or publish posts to Facebook, Instagram, LinkedIn, X, TikTok, and YouTube.",
+    "version": "2.2.0"
   },
   "servers": [
     {
-      "url": "https://qglhbesenigpspgkgbac.supabase.co/functions/v1/chatgpt-connector"
+      "url": "https://foeqlfzlcrkfmatkdxzh.supabase.co/functions/v1/chatgpt-connector"
     }
   ],
   "paths": {
     "/": {
       "get": {
-        "summary": "List Connected Social Accounts",
-        "description": "Retrieves all active social media accounts (Instagram, LinkedIn, X, TikTok, YouTube, Facebook) connected to the user's SocialSpree workspace.",
+        "summary": "List Connected Social Accounts & Workspace Info",
+        "description": "Retrieves all active social media accounts (Instagram, Facebook, LinkedIn, X, TikTok, YouTube), connected slots, and media vault status for the user's SocialSpree workspace.",
         "operationId": "listConnectedAccounts",
         "responses": {
           "200": {
-            "description": "List of available social media accounts",
+            "description": "Active social accounts and workspace configuration",
             "content": {
               "application/json": {
                 "schema": {
@@ -30,7 +30,9 @@
                       "properties": {
                         "tenantId": { "type": "string" },
                         "tenantName": { "type": "string" },
-                        "connectedChannelsCount": { "type": "integer" }
+                        "connectedChannelsCount": { "type": "integer" },
+                        "mediaAssetsInVault": { "type": "integer" },
+                        "cloudinaryCloud": { "type": "string" }
                       }
                     },
                     "availableChannels": {
@@ -40,10 +42,16 @@
                         "properties": {
                           "accountId": { "type": "string" },
                           "platform": { "type": "string" },
-                          "accountName": { "type": "string" }
+                          "accountName": { "type": "string" },
+                          "slotNumber": { "type": "integer" }
                         }
                       }
-                    }
+                    },
+                    "capabilities": {
+                      "type": "array",
+                      "items": { "type": "string" }
+                    },
+                    "instructionsForAssistant": { "type": "string" }
                   }
                 }
               }
@@ -52,8 +60,8 @@
         }
       },
       "post": {
-        "summary": "Schedule or Publish a Post with Image / Caption",
-        "description": "Takes an image URL or text caption and schedules it into SocialSpree's calendar and background publishing queue.",
+        "summary": "Upload Media to Cloudinary or Schedule/Publish Post",
+        "description": "Dual-mode action: (1) Auto-uploads any image URL, DALL-E asset, or generated AI image to Cloudinary CDN and immediately schedules it to social channels; OR (2) When action='upload_media', uploads to Cloudinary and returns the direct postable public CDN URL.",
         "operationId": "scheduleSocialPost",
         "requestBody": {
           "required": true,
@@ -61,32 +69,55 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["caption"],
                 "properties": {
-                  "imageUrl": {
+                  "action": {
                     "type": "string",
-                    "format": "uri",
-                    "description": "The public HTTPS URL of the image."
+                    "enum": ["schedule_post", "upload_media", "generate_image"],
+                    "description": "Set to 'schedule_post' (default) to schedule to social networks, or 'upload_media' to only upload/generate to Cloudinary CDN."
                   },
                   "caption": {
                     "type": "string",
-                    "description": "The text content, hashtags, and call to action for the post."
+                    "description": "The post text, hashtags, mentions, and call-to-action."
                   },
-                  "scheduledAt": {
+                  "imageUrl": {
                     "type": "string",
-                    "format": "date-time",
-                    "description": "ISO 8601 timestamp for scheduling (e.g. 2026-08-20T18:00:00Z). Omit or set past date to publish immediately."
+                    "format": "uri",
+                    "description": "Direct public image URL or DALL-E generated URL. SocialSpree will auto-upload and mirror this to permanent Cloudinary CDN."
+                  },
+                  "generateImagePrompt": {
+                    "type": "string",
+                    "description": "Optional prompt to generate a new AI image with DALL-E 3, auto-upload to Cloudinary, and schedule in a single step."
+                  },
+                  "mediaUrls": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "List of image URLs for single or carousel posts."
+                  },
+                  "imageBase64": {
+                    "type": "string",
+                    "description": "Optional Base64 encoded image string (e.g. data:image/png;base64,...)."
                   },
                   "targetChannels": {
                     "type": "array",
                     "items": {
                       "type": "string"
                     },
-                    "description": "List of platforms (e.g. ['instagram', 'linkedin', 'x', 'tiktok', 'youtube', 'facebook']) or account IDs to post to."
+                    "description": "List of platforms to publish to: ['instagram', 'facebook', 'linkedin', 'x', 'twitter', 'tiktok', 'youtube'] or specific account IDs. Omit to target all connected active channels."
+                  },
+                  "scheduledAt": {
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "ISO 8601 timestamp for scheduling (e.g. 2026-08-30T18:00:00Z). Omit or set to past/null to publish immediately."
                   },
                   "publishNow": {
                     "type": "boolean",
-                    "description": "Set to true to dispatch immediately, or false to schedule for later."
+                    "description": "Set to true to dispatch to social platforms immediately, or false to schedule for later."
+                  },
+                  "title": {
+                    "type": "string",
+                    "description": "Optional title for the image asset when saving to SocialSpree Media Vault."
                   }
                 }
               }
@@ -95,7 +126,7 @@
         },
         "responses": {
           "200": {
-            "description": "Post scheduled successfully in SocialSpree",
+            "description": "Post scheduled or media uploaded successfully",
             "content": {
               "application/json": {
                 "schema": {
@@ -106,12 +137,27 @@
                     "postId": { "type": "string" },
                     "jobId": { "type": "string" },
                     "scheduledAt": { "type": "string" },
+                    "cloudinaryUrl": { "type": "string" },
+                    "permanentMediaUrls": {
+                      "type": "array",
+                      "items": { "type": "string" }
+                    },
                     "targetChannels": { "type": "array" },
-                    "preview": { "type": "object" }
+                    "preview": { "type": "object" },
+                    "instructionsForAssistant": { "type": "string" }
                   }
                 }
               }
             }
+          },
+          "400": {
+            "description": "Bad Request or Invalid Media URL (e.g. HTML conversation share link provided instead of direct image)"
+          },
+          "401": {
+            "description": "Unauthorized - Invalid or missing SocialSpree API key"
+          },
+          "500": {
+            "description": "Internal Server Error or Cloudinary Upload Error"
           }
         }
       }

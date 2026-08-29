@@ -18,6 +18,7 @@ import {
   getStoredPlans,
   getStoredAiLogs,
   getStoredMediaAssets,
+  saveStoredMediaAssets,
   getStoredBrands,
   saveStoredBrands
 } from './lib/store';
@@ -516,7 +517,7 @@ export function App() {
         async () => {
           try {
             const freshPosts = await cloudPosts.list();
-            if (freshPosts && freshPosts.length > 0) {
+            if (freshPosts) {
               setPosts(freshPosts);
               saveStoredPosts(freshPosts);
             }
@@ -561,6 +562,8 @@ export function App() {
     };
     const updated = [newAsset, ...mediaAssets];
     setMediaAssets(updated);
+    saveStoredMediaAssets(updated);
+    void cloudMedia.create(newAsset).catch(err => console.warn('Supabase media create info:', err));
   };
 
   const handleDeleteMediaAsset = (id: string) => {
@@ -568,6 +571,8 @@ export function App() {
     if (!target || target.tenantId !== currentTenant.id) return;
     const updated = mediaAssets.filter(m => m.id !== id);
     setMediaAssets(updated);
+    saveStoredMediaAssets(updated);
+    void cloudMedia.remove(id).catch(err => console.warn('Supabase media remove info:', err));
   };
 
   const handleLaunchApp = async () => {
@@ -1041,16 +1046,22 @@ export function App() {
 
   const handlePostPublished = (post: Post, log: PostLog) => {
     if (post.tenantId !== currentTenant.id || log.tenantId !== currentTenant.id) return;
-    const updatedPosts = [post, ...posts];
+    const updatedPosts = [post, ...posts.filter(p => p.id !== post.id)];
     setPosts(updatedPosts);
-    setLogs([log, ...logs]);
+    saveStoredPosts(updatedPosts);
+    const updatedLogs = [log, ...logs.filter(l => l.id !== log.id)];
+    setLogs(updatedLogs);
   };
 
   const handleDeletePost = (postId: string) => {
-    const target = posts.find(p => p.id === postId);
-    if (!target || target.tenantId !== currentTenant.id) return;
-    const updatedPosts = posts.filter(p => p.id !== postId);
-    setPosts(updatedPosts);
+    setPosts(prev => {
+      const updatedPosts = prev.filter(p => String(p.id) !== String(postId));
+      saveStoredPosts(updatedPosts);
+      return updatedPosts;
+    });
+
+    // Authoritative Supabase Cloud Sync & job cancellation
+    void cloudPosts.remove(postId, currentTenant.id).catch(err => console.warn('Supabase post delete info:', err));
   };
 
   const handleAddAccount = (accInput: Omit<SocialAccount, 'id' | 'tenantId' | 'lastSyncedAt'>) => {
