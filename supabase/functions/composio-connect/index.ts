@@ -49,7 +49,7 @@ Deno.serve(async req => {
         return json({
           sessionId: `composio_demo_${targetTenantId}`,
           userId: entityId,
-          connectedApps: ['INSTAGRAM', 'FACEBOOK', 'LINKEDIN', 'TWITTER', 'YOUTUBE']
+          connectedApps: ['INSTAGRAM', 'FACEBOOK', 'LINKEDIN', 'YOUTUBE', 'TIKTOK']
         }, 200, req);
       }
 
@@ -67,7 +67,7 @@ Deno.serve(async req => {
       return json({
         sessionId: data.session_id || data.id,
         userId: entityId,
-        connectedApps: data.connected_apps || ['INSTAGRAM', 'FACEBOOK', 'LINKEDIN', 'TWITTER']
+        connectedApps: data.connected_apps || ['INSTAGRAM', 'FACEBOOK', 'LINKEDIN', 'YOUTUBE']
       }, 200, req);
     }
 

@@ -28,7 +28,7 @@ Deno.serve(async req => {
     for (const acc of accounts) {
       const rawAppName = String(acc.appName || acc.app_name || acc.toolkit || '').toLowerCase();
       let platform = rawAppName;
-      if (platform === 'twitter') platform = 'x';
+      if (platform === 'twitter' || platform === 'x') continue; // X is not a supported channel
       if (platform === 'googlebusiness') platform = 'google_business';
 
       // Build a stable, deterministic channel ID for upsert idempotency.

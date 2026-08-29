@@ -1,39 +1,13 @@
 import { Post, Tenant, PostLog, SocialPlatform } from '../types';
 import { supabase } from './supabase';
 import { executeComposioPublishing } from './composio';
+import { validateSchedulableMedia } from './media';
 
 export interface PublishResult {
   post: Post;
   log: PostLog;
   success: boolean;
   message: string;
-}
-
-/**
- * Validates Cloudflare media links for scheduled posts
- */
-export function validateCloudflareMediaForScheduling(mediaUrls: string[], isCloudflareHosted: boolean): { isValid: boolean; message?: string } {
-  if (mediaUrls.length === 0) return { isValid: true };
-  
-  if (isCloudflareHosted) return { isValid: true };
-
-  // Check if URLs match Cloudflare or external CDN patterns
-  const isCloudflareUrl = mediaUrls.every(url => 
-    url.includes('r2.dev') || 
-    url.includes('cloudflare') || 
-    url.includes('imagedelivery.net') ||
-    url.includes('cloudinary') ||
-    url.startsWith('https://')
-  );
-
-  if (!isCloudflareUrl) {
-    return {
-      isValid: false,
-      message: "For scheduling, media MUST use a Cloudflare R2 / hosted CDN link. Direct local file uploads cannot be scheduled."
-    };
-  }
-
-  return { isValid: true };
 }
 
 /**
@@ -61,11 +35,11 @@ export async function executePublishing(
     throw new Error("Post cannot be empty. Please enter text caption OR attach image/video media.");
   }
 
-  // 2. Cloudflare Link Enforcement for Scheduling
+  // 2. Media must still resolve when the worker fetches it at the scheduled time
   if (isScheduled && hasMedia) {
-    const cfCheck = validateCloudflareMediaForScheduling(postInput.mediaUrls, postInput.isCloudflareHosted);
-    if (!cfCheck.isValid) {
-      throw new Error(cfCheck.message);
+    const mediaCheck = validateSchedulableMedia(postInput.mediaUrls);
+    if (!mediaCheck.isValid) {
+      throw new Error(mediaCheck.message);
     }
   }
 
@@ -83,7 +57,7 @@ export async function executePublishing(
     content: postInput.content || null,
     mediaUrls: postInput.mediaUrls,
     mediaType: postInput.mediaType,
-    isCloudflareHosted: postInput.isCloudflareHosted,
+    isCdnHosted: postInput.isCdnHosted,
     publishNow: !isScheduled,
     scheduledFor: finalScheduledFor || null,
   };
@@ -103,7 +77,7 @@ export async function executePublishing(
     content: post.content,
     media_urls: post.mediaUrls,
     media_type: post.mediaType,
-    is_cloudflare_hosted: post.isCloudflareHosted,
+    is_cdn_hosted: post.isCdnHosted,
     selected_account_ids: post.selectedAccountIds,
     status: post.status,
     scheduled_for: finalScheduledFor || null,

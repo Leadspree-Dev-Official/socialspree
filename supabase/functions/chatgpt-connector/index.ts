@@ -502,7 +502,7 @@ Deno.serve(async (req) => {
             content: caption || "",
             media_urls: processedMediaUrls,
             media_type: mediaType,
-            is_cloudflare_hosted: true,
+            is_cdn_hosted: true,
             selected_account_ids: selectedAccountRefs,
             status: status,
             scheduled_for: scheduleIso,

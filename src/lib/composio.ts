@@ -11,7 +11,6 @@ export const COMPOSIO_TOOLKIT_MAP: Record<SocialPlatform, string> = {
   instagram: 'INSTAGRAM_CREATE_POST',
   facebook: 'FACEBOOK_CREATE_POST',
   linkedin: 'LINKEDIN_CREATE_SHARE',
-  x: 'TWITTER_CREATETWEET',
   youtube: 'YOUTUBE_UPLOAD_VIDEO',
   google_business: 'GOOGLE_BUSINESS_POST',
   tiktok: 'TIKTOK_CREATE_POST',
@@ -89,13 +88,13 @@ export async function getComposioUserSession(tenant: Tenant): Promise<ComposioSe
     return {
       sessionId: data.sessionId,
       userId: data.userId || userId,
-      connectedApps: data.connectedApps || ['INSTAGRAM', 'FACEBOOK', 'LINKEDIN', 'TWITTER']
+      connectedApps: data.connectedApps || ['INSTAGRAM', 'FACEBOOK', 'LINKEDIN', 'YOUTUBE']
     };
   } catch {
     return {
       sessionId: `composio_fallback_${tenant.id}`,
       userId,
-      connectedApps: ['INSTAGRAM', 'FACEBOOK', 'LINKEDIN', 'TWITTER']
+      connectedApps: ['INSTAGRAM', 'FACEBOOK', 'LINKEDIN', 'YOUTUBE']
     };
   }
 }
@@ -154,7 +153,7 @@ export async function executeComposioPublishing(
     content: post.content,
     media_urls: post.mediaUrls,
     media_type: post.mediaType,
-    is_cloudflare_hosted: post.isCloudflareHosted,
+    is_cdn_hosted: post.isCdnHosted,
     selected_account_ids: post.selectedAccountIds,
     status: post.status,
     scheduled_for: finalScheduledFor || null,

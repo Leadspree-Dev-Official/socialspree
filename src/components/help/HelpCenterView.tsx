@@ -26,16 +26,16 @@ export const HelpCenterView: React.FC = () => {
 
   const faqs = [
     {
-      q: "Why do scheduled posts require a Cloudflare or Cloudinary hosted CDN link?",
-      a: "Scheduled posts are processed asynchronously by our cloud background dispatcher workers. Direct local file uploads cannot be retrieved by remote social network servers (Instagram, LinkedIn, YouTube, Meta) hours or days later. Hosting your file on a Cloudflare R2 bucket or Cloudinary CDN ensures an immutable, high-speed public URL is accessible when your post goes live."
+      q: "Why do scheduled posts require a hosted CDN link?",
+      a: "Scheduled posts are dispatched later by background workers. A file that only exists in your browser cannot be fetched by Instagram, LinkedIn, YouTube or Meta hours or days afterwards. Uploading to your Cloudinary Media Vault gives the file a permanent public URL that still resolves when the post goes live."
     },
     {
       q: "Is text caption content mandatory for publishing image or video posts?",
-      a: "No! Text captions are completely optional. As long as your post contains an attached image or video file (via Cloudflare, Cloudinary, or direct URL), it can be published or scheduled live to target channels."
+      a: "No — captions are optional. As long as the post carries an image or video, whether uploaded to the Media Vault or supplied as a direct HTTPS URL, it can be published or scheduled to your channels."
     },
     {
-      q: "How do I configure custom Cloudflare or Cloudinary storage settings?",
-      a: "Navigate to the Settings tab -> Media CDN & Storage. You can choose to use the Super Admin default Cloudinary / Cloudflare CDN accounts, or toggle to 'Use Custom Account' and enter your custom Cloud Name, Unsigned Upload Preset, or R2 Bucket details."
+      q: "How do I configure custom Cloudinary storage settings?",
+      a: "Open Settings -> Media CDN & Storage. Use the Super Admin default Cloudinary account, or switch to 'Use Custom Account' and enter your own cloud name and folder."
     },
     {
       q: "What is the difference between Standard Tier (Free) and Pro Tier Engine?",
@@ -47,7 +47,7 @@ export const HelpCenterView: React.FC = () => {
     },
     {
       q: "How does Super Admin API allocation work?",
-      a: "Super Admin (leadspree24x7@gmail.com) has root access in the Super Admin Portal to provision client accounts, allocate master API keys, toggle subscription tiers, set max account connection limits, and update global Cloudinary/Cloudflare storage defaults."
+      a: "Super Admin (leadspree24x7@gmail.com) has root access in the Super Admin Portal to provision client accounts, allocate master API keys, toggle subscription tiers, set max account connection limits, and update the global Cloudinary storage defaults."
     }
   ];
 
@@ -100,7 +100,7 @@ export const HelpCenterView: React.FC = () => {
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search FAQs, Cloudflare setup, API keys, or post scheduling..."
+            placeholder="Search FAQs, media storage, API keys, or post scheduling..."
             className="w-full pl-12 pr-4 py-3 bg-white dark:bg-slate-900 text-slate-900 dark:text-white rounded-xl text-xs focus:ring-2 focus:ring-amber-400 focus:outline-none shadow-lg placeholder:text-slate-400 dark:placeholder:text-slate-500 border border-slate-200/40 dark:border-slate-800"
           />
         </div>
@@ -207,7 +207,7 @@ export const HelpCenterView: React.FC = () => {
                   required
                   value={subject}
                   onChange={(e) => setSubject(e.target.value)}
-                  placeholder="e.g. Need assistance with Cloudflare R2 bucket CORS"
+                  placeholder="e.g. Need assistance with Media Vault uploads"
                   className="w-full p-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-lg focus:ring-2 focus:ring-[#5D3FD3]"
                 />
               </div>

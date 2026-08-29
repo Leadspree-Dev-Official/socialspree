@@ -12,7 +12,6 @@ import {
   Instagram, 
   Youtube, 
   Linkedin, 
-  Twitter, 
   Facebook, 
   Store,
   ShieldAlert,
@@ -59,6 +58,7 @@ export const SocialConnectionsView: React.FC<SocialConnectionsViewProps> = ({
   const [successMsg, setSuccessMsg] = useState<string>();
   const [editingAccountId, setEditingAccountId] = useState<string | null>(null);
   const [editHandleInput, setEditHandleInput] = useState<string>('');
+  const [syncing, setSyncing] = useState(false);
 
   const tenantAccounts = accounts.filter(a => a.tenantId === tenant.id);
   const slotsList: ApiAllocationSlot[] = tenant.apiSlotDetails && tenant.apiSlotDetails.length > 0
@@ -85,7 +85,6 @@ export const SocialConnectionsView: React.FC<SocialConnectionsViewProps> = ({
     { id: 'facebook', name: 'Facebook', category: 'Meta', iconBg: 'bg-[#1877F2]', textColor: 'text-white', description: 'Pages & Group Posts' },
     { id: 'tiktok', name: 'TikTok', category: 'ByteDance', iconBg: 'bg-slate-950', textColor: 'text-white', description: 'Direct Video & Shorts' },
     { id: 'linkedin', name: 'LinkedIn', category: 'Professional', iconBg: 'bg-[#0A66C2]', textColor: 'text-white', description: 'Profile & Company Pages' },
-    { id: 'x', name: 'X (Twitter)', category: 'Social', iconBg: 'bg-slate-900', textColor: 'text-white', description: 'Posts, Threads & Video' },
     { id: 'youtube', name: 'YouTube', category: 'Google', iconBg: 'bg-[#FF0000]', textColor: 'text-white', description: 'Shorts & Long-form Videos' },
     { id: 'google_business', name: 'Google Business', category: 'Google', iconBg: 'bg-[#4285F4]', textColor: 'text-white', description: 'Local Profile & Maps' },
     { id: 'pinterest', name: 'Pinterest', category: 'Social', iconBg: 'bg-[#E60023]', textColor: 'text-white', description: 'Visual Pins & Boards' },
@@ -114,103 +113,104 @@ export const SocialConnectionsView: React.FC<SocialConnectionsViewProps> = ({
       case 'youtube': return <Youtube className="w-5 h-5" />;
       case 'linkedin': return <Linkedin className="w-5 h-5" />;
       case 'facebook': return <Facebook className="w-5 h-5" />;
-      case 'x': return <Twitter className="w-5 h-5" />;
       case 'google_business': return <Store className="w-5 h-5" />;
       default: return <Share2 className="w-5 h-5" />;
     }
   };
 
+  /**
+   * Pull the authoritative connection list from the provider.
+   *
+   * The browser never invents a connection. An OAuth popup closing tells us
+   * nothing about whether authorisation succeeded — only the provider knows,
+   * and the sync endpoint writes the rows server-side before returning them.
+   */
+  const syncConnections = React.useCallback(async (slotNumber = 1): Promise<number> => {
+    if (!onAddAccount) return 0;
+    setSyncing(true);
+    try {
+      const rows = await fetchComposioAccounts(tenant.id, slotNumber);
+      let added = 0;
+      for (const row of rows || []) {
+        const channelAccountId = row.channel_account_id || row.channelAccountId;
+        const platform = row.platform as SocialPlatform;
+        if (!channelAccountId || !platform) continue;
+
+        onAddAccount({
+          platform,
+          channelAccountId,
+          accountName: row.account_name || row.accountName || getPlatformDetails(platform).name,
+          accountHandle: row.account_handle || row.accountHandle || null,
+          accountAvatar: row.account_avatar || row.accountAvatar || null,
+          slotNumber: row.slot_number || row.slotNumber || slotNumber,
+          status: row.status === 'disconnected' ? 'disconnected' : 'active'
+        });
+        added += 1;
+      }
+      return added;
+    } catch (err: any) {
+      setError(err?.message || 'Could not read your connected accounts from the provider.');
+      return 0;
+    } finally {
+      setSyncing(false);
+    }
+  }, [tenant.id, onAddAccount]);
+
+  // Return leg of the OAuth redirect.
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get('connected') !== 'true') return;
     const slot = Number(params.get('slot') || 1);
-    const platform = (params.get('platform') || 'instagram') as SocialPlatform;
 
-    // Resolve real user profile handle directly from authoritative profile state
-    const realName = userProfile?.fullName?.trim() || userProfile?.email?.split('@')[0] || 'Aniruddha';
-    const cleanHandle = `@${realName.toLowerCase().replace(/[^a-z0-9_]/g, '_')}`;
-
-    const newAccountData = {
-      platform,
-      channelAccountId: `chan_${platform}_${Date.now()}`,
-      accountName: realName,
-      accountHandle: cleanHandle,
-      accountAvatar: `https://api.dicebear.com/7.x/shapes/svg?seed=${realName}_${platform}`,
-      slotNumber: slot,
-      status: 'active' as const
-    };
-
-    // 1. If this window is the popup window, notify opener and close self
+    // If this window is the popup, tell the opener to sync and close.
     if (window.opener && window.opener !== window) {
       try {
-        window.opener.postMessage({
-          type: 'SOCIALSPREE_ACCOUNT_CONNECTED',
-          account: newAccountData,
-          slotNumber: slot
-        }, '*');
-      } catch { /* ignore */ }
+        window.opener.postMessage(
+          { type: 'SOCIALSPREE_OAUTH_RETURNED', slotNumber: slot },
+          window.location.origin
+        );
+      } catch { /* opener may already be gone */ }
       window.close();
       return;
     }
 
-    // 2. Otherwise handle in current window
-    if (onAddAccount) {
-      onAddAccount(newAccountData);
-    }
-
-    setSuccessMsg(`🎉 Successfully connected ${getPlatformDetails(platform).name} to Account Slot #${slot}!`);
-    setTimeout(() => setSuccessMsg(undefined), 5000);
-
-    // Clean up query string smoothly without reload
     window.history.replaceState({}, document.title, window.location.pathname);
-  }, [tenant.id, onAddAccount, userProfile]);
+    void syncConnections(slot).then(count => {
+      setSuccessMsg(
+        count > 0
+          ? `Connected. ${count} account${count === 1 ? '' : 's'} synced to slot #${slot}.`
+          : 'Authorisation finished, but the provider has not reported an account yet. Use Refresh in a moment.'
+      );
+      setTimeout(() => setSuccessMsg(undefined), 6000);
+    });
+  }, [syncConnections]);
 
-  // Auto-sync active connected accounts from Composio API on page load (synchronizes Brave, Chrome, etc.)
+  // Initial load: reflect whatever the provider already holds.
   useEffect(() => {
-    async function syncFromCloud() {
-      try {
-        const cloudAccounts = await fetchComposioAccounts(tenant.id, 1);
-        if (cloudAccounts && cloudAccounts.length > 0 && onAddAccount) {
-          const realName = userProfile?.fullName?.trim() || userProfile?.email?.split('@')[0] || 'Aniruddha';
-          const cleanHandle = `@${realName.toLowerCase().replace(/[^a-z0-9_]/g, '_')}`;
+    void syncConnections(1);
+  }, [syncConnections]);
 
-          cloudAccounts.forEach(cAcc => {
-            if (cAcc.status === 'active') {
-              onAddAccount({
-                platform: cAcc.platform,
-                channelAccountId: cAcc.id,
-                accountName: realName,
-                accountHandle: cleanHandle,
-                accountAvatar: `https://api.dicebear.com/7.x/shapes/svg?seed=${realName}_${cAcc.platform}`,
-                slotNumber: 1,
-                status: 'active'
-              });
-            }
-          });
-        }
-      } catch (err) {
-        console.warn('Auto cloud sync note:', err);
-      }
-    }
-
-    syncFromCloud();
-  }, [tenant.id, onAddAccount, userProfile]);
-
-  // Listen to postMessage from popup window upon OAuth completion
+  // The popup signals completion; it is not a source of account data.
   useEffect(() => {
     const handleWindowMessage = (e: MessageEvent) => {
-      if (e.data && e.data.type === 'SOCIALSPREE_ACCOUNT_CONNECTED' && e.data.account) {
-        if (onAddAccount) {
-          onAddAccount(e.data.account);
-        }
-        setSuccessMsg(`🎉 Successfully connected ${getPlatformDetails(e.data.account.platform).name} to Account Slot #${e.data.slotNumber || 1}!`);
-        setTimeout(() => setSuccessMsg(undefined), 5000);
-      }
+      // Only trust our own origin — otherwise any open page could inject a channel.
+      if (e.origin !== window.location.origin) return;
+      if (e.data?.type !== 'SOCIALSPREE_OAUTH_RETURNED') return;
+
+      const slot = Number(e.data.slotNumber) || 1;
+      void syncConnections(slot).then(count => {
+        setSuccessMsg(
+          count > 0
+            ? `Connected. ${count} account${count === 1 ? '' : 's'} synced to slot #${slot}.`
+            : 'Authorisation finished, but the provider has not reported an account yet. Use Refresh in a moment.'
+        );
+        setTimeout(() => setSuccessMsg(undefined), 6000);
+      });
     };
 
     window.addEventListener('message', handleWindowMessage);
     return () => window.removeEventListener('message', handleWindowMessage);
-  }, [onAddAccount]);
+  }, [syncConnections]);
 
   const handleConnectPosition = async (slotNum: number, position: number) => {
     const key = `${slotNum}:${position}`;
@@ -247,49 +247,23 @@ export const SocialConnectionsView: React.FC<SocialConnectionsViewProps> = ({
       if (redirectUrl && popup) {
         popup.location.href = redirectUrl;
 
-        // Monitor popup completion and automatically register the channel
-        const realName = userProfile?.fullName?.trim() || userProfile?.email?.split('@')[0] || 'Aniruddha';
-        const cleanHandle = `@${realName.toLowerCase().replace(/[^a-z0-9_]/g, '_')}`;
-
+        // A closed popup means the flow ended — success or cancel, we cannot
+        // tell from here. Ask the provider what actually exists.
         const timer = setInterval(() => {
-          try {
-            if (popup.closed) {
-              clearInterval(timer);
-              // Register account once popup completes
-              if (onAddAccount) {
-                onAddAccount({
-                  platform: platformId,
-                  channelAccountId: `chan_${platformId}_${Date.now()}`,
-                  accountName: realName,
-                  accountHandle: cleanHandle,
-                  accountAvatar: `https://api.dicebear.com/7.x/shapes/svg?seed=${realName}_${platformId}`,
-                  slotNumber: slotNum,
-                  status: 'active'
-                });
-              }
-              setSuccessMsg(`🎉 Successfully connected ${getPlatformDetails(platformId).name} to Account Slot #${slotNum}!`);
-              setTimeout(() => setSuccessMsg(undefined), 5000);
-            } else if (popup.location && popup.location.href && popup.location.href.includes('connected=true')) {
-              clearInterval(timer);
-              popup.close();
-              if (onAddAccount) {
-                onAddAccount({
-                  platform: platformId,
-                  channelAccountId: `chan_${platformId}_${Date.now()}`,
-                  accountName: realName,
-                  accountHandle: cleanHandle,
-                  accountAvatar: `https://api.dicebear.com/7.x/shapes/svg?seed=${realName}_${platformId}`,
-                  slotNumber: slotNum,
-                  status: 'active'
-                });
-              }
-              setSuccessMsg(`🎉 Successfully connected ${getPlatformDetails(platformId).name} to Account Slot #${slotNum}!`);
-              setTimeout(() => setSuccessMsg(undefined), 5000);
-            }
-          } catch {
-            // Cross-origin restriction while user is on Composio/Meta auth page
-          }
+          if (!popup.closed) return;
+          clearInterval(timer);
+          void syncConnections(slotNum).then(count => {
+            setSuccessMsg(
+              count > 0
+                ? `Connected. ${count} account${count === 1 ? '' : 's'} synced to slot #${slotNum}.`
+                : 'No new account came back from the provider. If you cancelled, nothing was connected.'
+            );
+            setTimeout(() => setSuccessMsg(undefined), 6000);
+          });
         }, 1000);
+
+        // Stop watching if the user abandons the popup entirely.
+        setTimeout(() => clearInterval(timer), 5 * 60 * 1000);
       } else if (redirectUrl) {
         window.location.href = redirectUrl;
       }
@@ -318,7 +292,7 @@ export const SocialConnectionsView: React.FC<SocialConnectionsViewProps> = ({
             <span>Social Channel API Slot Management</span>
           </h2>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-            Connect and manage your social channels across <strong>Composio (Unified Multi-Channel)</strong> and <strong>Zernio (Isolated Slots)</strong>.
+            Connect and manage your social channels. Accounts shown here are read back from the provider, so this list always reflects what can actually publish.
           </p>
         </div>
 
@@ -327,6 +301,15 @@ export const SocialConnectionsView: React.FC<SocialConnectionsViewProps> = ({
             <Layers className="w-4 h-4 text-[#5D3FD3] dark:text-purple-400" />
             <span><strong>{allocatedSlotCount} API Slot{allocatedSlotCount !== 1 ? 's' : ''}</strong> • {tenantAccounts.length} Channels Connected</span>
           </div>
+          <button
+            type="button"
+            onClick={() => { void syncConnections(1); }}
+            disabled={syncing}
+            className="px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold text-slate-700 dark:text-slate-200 flex items-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5D3FD3]"
+          >
+            <RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} />
+            <span>{syncing ? 'Syncing…' : 'Refresh from provider'}</span>
+          </button>
         </div>
       </div>
 

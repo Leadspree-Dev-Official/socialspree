@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { SUPPORT_WHATSAPP_NUMBER } from '../../lib/config';
 import { 
   Mail, 
   PhoneCall, 
@@ -32,7 +33,7 @@ export const AboutContactView: React.FC = () => {
     setSubmitted(true);
   };
 
-  const directWhatsAppUrl = `https://wa.me/919051822558?text=${encodeURIComponent(
+  const directWhatsAppUrl = `https://wa.me/${SUPPORT_WHATSAPP_NUMBER}?text=${encodeURIComponent(
     `Hello SocialSpree Team! I would like to inquire about agency plans and enterprise API slot allocations.`
   )}`;
 
@@ -76,7 +77,7 @@ export const AboutContactView: React.FC = () => {
             </div>
             <h3 className="text-xl font-black text-slate-900 dark:text-white">Cloud Native Speed</h3>
             <p className="text-xs text-slate-600 dark:text-slate-300 font-medium mt-2 leading-relaxed">
-              Powered by Cloudflare CDN and async parallel firing workers, media uploads and posts publish in under 200ms globally.
+              Powered by Cloudinary CDN and async parallel workers, media uploads and posts dispatch in milliseconds.
             </p>
           </div>
 

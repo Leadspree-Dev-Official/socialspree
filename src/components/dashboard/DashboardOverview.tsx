@@ -16,7 +16,6 @@ import {
   Eye,
   Instagram,
   Linkedin,
-  Twitter,
   Youtube,
   Facebook,
   Store,
@@ -122,7 +121,6 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
     switch (platform) {
       case 'instagram': return <Instagram className="w-4 h-4 text-pink-600" />;
       case 'linkedin': return <Linkedin className="w-4 h-4 text-blue-600" />;
-      case 'x': return <Twitter className="w-4 h-4 text-slate-900" />;
       case 'youtube': return <Youtube className="w-4 h-4 text-red-600" />;
       case 'facebook': return <Facebook className="w-4 h-4 text-blue-700" />;
       case 'google_business': return <Store className="w-4 h-4 text-emerald-600" />;
@@ -255,10 +253,17 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
                             ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800'
                             : post.status === 'scheduled'
                             ? 'bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800'
+                            : post.status === 'failed'
+                            ? 'bg-red-50 dark:bg-red-950/60 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800'
                             : 'bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800'
                         }`}>
                           {post.status}
                         </span>
+                        {post.status === 'failed' && post.errorMessage && (
+                          <p className="mt-1.5 text-[11px] text-red-600 dark:text-red-400 max-w-[260px] leading-snug">
+                            {post.errorMessage}
+                          </p>
+                        )}
                       </td>
 
                       <td className="px-6 py-4 font-mono text-[11px] text-slate-500 dark:text-slate-400">

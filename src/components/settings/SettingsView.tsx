@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Tenant, CloudinaryConfig, CloudinaryAccountItem } from '../../types';
+import { uploadToMediaVault } from '../../lib/media';
 import { auth, type Profile } from '../../lib/api';
 import { supabase } from '../../lib/supabase';
 import { 
@@ -354,68 +355,29 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     setAvatarUploading(true);
     setNotification(null);
 
-    let finalAvatarUrl = '';
-
-    // Robust client-side compression / DataURL conversion as guaranteed durable fallback
-    const fileReaderPromise = new Promise<string>((resolve) => {
+    // Show the picked file immediately while the upload runs. A data: URL only
+    // exists in this browser, so it is a preview and never the stored avatar.
+    const localPreview = await new Promise<string>((resolve) => {
       const reader = new FileReader();
-      reader.onload = (event) => {
-        const dataUrl = (event.target?.result as string) || '';
-        resolve(dataUrl);
-      };
+      reader.onload = (event) => resolve((event.target?.result as string) || '');
       reader.onerror = () => resolve('');
       reader.readAsDataURL(file);
     });
+    if (localPreview) setAvatarUrl(localPreview);
 
-    const localDataUrl = await fileReaderPromise;
-    if (localDataUrl) {
-      finalAvatarUrl = localDataUrl;
-    }
+    let finalAvatarUrl = '';
 
-    // Strategy 1: Upload to Cloudinary CDN directly
     try {
-      const activeCloudName = tenant.cloudinaryConfig?.cloudName || GLOBAL_DEFAULT_CLOUDINARY.cloudName;
-      const activeUploadPreset = tenant.cloudinaryConfig?.uploadPreset || GLOBAL_DEFAULT_CLOUDINARY.uploadPreset;
-      
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('upload_preset', activeUploadPreset);
-      formData.append('folder', 'socialspree_avatars');
-
-      const res = await fetch(`https://api.cloudinary.com/v1_1/${activeCloudName}/image/upload`, {
-        method: 'POST',
-        body: formData,
+      const asset = await uploadToMediaVault(file, {
+        subfolder: 'avatars',
+        fallback: {
+          cloudName: tenant.cloudinaryConfig?.cloudName || GLOBAL_DEFAULT_CLOUDINARY.cloudName,
+          uploadPreset: tenant.cloudinaryConfig?.uploadPreset || GLOBAL_DEFAULT_CLOUDINARY.uploadPreset
+        }
       });
-
-      if (res.ok) {
-        const data = await res.json();
-        if (data.secure_url) {
-          finalAvatarUrl = data.secure_url;
-        }
-      }
+      finalAvatarUrl = asset.secureUrl;
     } catch (err) {
-      console.warn('Cloudinary avatar upload note:', err);
-    }
-
-    // Strategy 2: Attempt Supabase Storage bucket 'avatars'
-    if (!finalAvatarUrl || finalAvatarUrl.startsWith('data:')) {
-      try {
-        const fileExt = file.name.split('.').pop() || 'png';
-        const cleanFileName = `avatar_${(userProfile?.id || tenant.id || 'user').replace(/[^a-zA-Z0-9_-]/g, '_')}_${Date.now()}.${fileExt}`;
-        
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from('avatars')
-          .upload(cleanFileName, file, { upsert: true, contentType: file.type });
-
-        if (!uploadError && uploadData) {
-          const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(cleanFileName);
-          if (publicUrl) {
-            finalAvatarUrl = publicUrl;
-          }
-        }
-      } catch (err) {
-        console.warn('Supabase storage avatar upload note:', err);
-      }
+      console.error('Avatar upload failed:', err);
     }
 
     if (finalAvatarUrl) {
@@ -436,7 +398,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         setNotification('✅ Profile photo updated.');
       }
     } else {
-      setNotification('Failed to upload photo.');
+      setNotification('Photo upload failed. The image was not saved — check your connection and try again.');
     }
 
     setAvatarUploading(false);

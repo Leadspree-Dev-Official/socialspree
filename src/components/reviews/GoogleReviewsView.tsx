@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { supabase } from '../../lib/supabase';
 import { GoogleReview, Tenant } from '../../types';
 import { 
   Star, 
@@ -28,6 +29,8 @@ export const GoogleReviewsView: React.FC<GoogleReviewsViewProps> = ({
   onReturnToDashboard
 }) => {
   const [waitlistEmail, setWaitlistEmail] = useState('');
+  const [joining, setJoining] = useState(false);
+  const [waitlistError, setWaitlistError] = useState<string | null>(null);
   const [isSubscribed, setIsSubscribed] = useState(() => {
     try {
       return localStorage.getItem(`waitlist_google_reviews_${tenant.id}`) === 'true';
@@ -41,15 +44,36 @@ export const GoogleReviewsView: React.FC<GoogleReviewsViewProps> = ({
     ? (tenantReviews.reduce((acc, r) => acc + r.rating, 0) / tenantReviews.length).toFixed(1)
     : '4.9';
 
-  const handleJoinWaitlist = (e: React.FormEvent) => {
+  const handleJoinWaitlist = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!waitlistEmail.trim() || !waitlistEmail.includes('@')) return;
+    const email = waitlistEmail.trim();
+    if (!email || !email.includes('@')) return;
 
+    setWaitlistError(null);
+    setJoining(true);
+
+    // Persist the signup — this is a demand signal for an unbuilt module, so
+    // it has to survive the browser it was typed into.
+    const { data: { session } } = await supabase.auth.getSession();
+    const { error } = await supabase.from('feature_waitlist').upsert({
+      tenant_id: tenant.id,
+      user_id: session?.user?.id ?? null,
+      feature: 'google_reviews',
+      email
+    }, { onConflict: 'tenant_id,feature,email' });
+
+    setJoining(false);
+
+    if (error) {
+      setWaitlistError('We could not record that just now. Please try again in a moment.');
+      return;
+    }
+
+    // Remember locally too, so the form stays collapsed on return visits.
     try {
       localStorage.setItem(`waitlist_google_reviews_${tenant.id}`, 'true');
-      localStorage.setItem(`waitlist_email_${tenant.id}`, waitlistEmail.trim());
     } catch {
-      /* ignore storage quota */
+      /* private mode: the server record is what matters */
     }
     setIsSubscribed(true);
   };
@@ -287,12 +311,16 @@ export const GoogleReviewsView: React.FC<GoogleReviewsViewProps> = ({
                   </div>
                   <button
                     type="submit"
-                    className="px-5 py-2.5 bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 hover:from-amber-400 hover:to-orange-500 text-slate-950 font-black rounded-xl text-xs transition-all shadow-lg shadow-amber-500/20 flex items-center justify-center gap-2 cursor-pointer shrink-0 active:scale-95"
+                    disabled={joining}
+                    className="px-5 py-2.5 bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 hover:from-amber-400 hover:to-orange-500 disabled:opacity-60 disabled:cursor-not-allowed text-slate-950 font-black rounded-xl text-xs transition-all shadow-lg shadow-amber-500/20 flex items-center justify-center gap-2 cursor-pointer shrink-0 active:scale-95"
                   >
-                    <span>Notify Me</span>
+                    <span>{joining ? 'Saving…' : 'Notify Me'}</span>
                     <Send className="w-3.5 h-3.5" />
                   </button>
                 </div>
+                {waitlistError && (
+                  <p className="text-[11px] font-semibold text-red-300">{waitlistError}</p>
+                )}
               </form>
             )}
           </div>

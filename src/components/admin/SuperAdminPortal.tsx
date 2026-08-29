@@ -13,6 +13,7 @@ import {
 } from '../../lib/store';
 import { supabase } from '../../lib/supabase';
 import { plans as cloudPlans } from '../../lib/api';
+import { PendingPaymentsQueue } from './PendingPaymentsQueue';
 
 import { 
   ShieldCheck, 
@@ -55,7 +56,7 @@ import {
   ArrowLeft
 } from 'lucide-react';
 
-export type SuperAdminSubTab = 'dashboard' | 'subscriptions' | 'plans' | 'api_allocation' | 'cloudflare' | 'settings' | 'ai_credits' | 'privileges';
+export type SuperAdminSubTab = 'dashboard' | 'subscriptions' | 'payments' | 'plans' | 'api_allocation' | 'media' | 'settings' | 'ai_credits' | 'privileges';
 
 interface SuperAdminPortalProps {
   tenants: Tenant[];
@@ -1160,6 +1161,8 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
       )}
 
       {/* PLANS TAB */}
+      {activeSubTab === 'payments' && <PendingPaymentsQueue />}
+
       {activeSubTab === 'plans' && (
         <div className="space-y-6 animate-in fade-in">
           <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs flex items-center justify-between">
@@ -1344,8 +1347,8 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
         </div>
       )}
 
-      {/* CLOUDINARY & CLOUDFLARE TAB */}
-      {activeSubTab === 'cloudflare' && (
+      {/* CLOUDINARY MEDIA TAB */}
+      {activeSubTab === 'media' && (
         <div className="space-y-6 animate-in fade-in">
           <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-xs space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">

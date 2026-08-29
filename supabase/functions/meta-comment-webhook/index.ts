@@ -1,7 +1,70 @@
-import { admin, cors, json } from '../_shared/server.ts';
+import { admin, cors, decrypt, json } from '../_shared/server.ts';
 
 const META_VERIFY_TOKEN = Deno.env.get('META_WEBHOOK_VERIFY_TOKEN') || 'socialspree_meta_autoresponder_token_2026';
 const META_APP_SECRET = Deno.env.get('META_APP_SECRET');
+const GRAPH_VERSION = Deno.env.get('META_GRAPH_VERSION') || 'v21.0';
+
+type DeliveryOutcome = { status: 'sent' | 'failed' | 'skipped'; error?: string };
+
+/**
+ * Resolves the page / IG access token a tenant has stored for Meta.
+ *
+ * Composio owns the OAuth handshake for publishing, but replying to comments
+ * needs a token this function can present directly, so tenants store one in the
+ * encrypted credential vault via the Super Admin console.
+ */
+async function resolveMetaToken(db: any, tenantId: string): Promise<string | null> {
+  const { data } = await db.schema('private').from('provider_credentials')
+    .select('ciphertext')
+    .eq('tenant_id', tenantId)
+    .eq('provider', 'meta')
+    .eq('label', 'page_token')
+    .maybeSingle();
+
+  if (!data?.ciphertext) return null;
+  try {
+    return await decrypt(data.ciphertext);
+  } catch {
+    return null;
+  }
+}
+
+async function graphPost(path: string, body: Record<string, unknown>, token: string): Promise<DeliveryOutcome> {
+  try {
+    const res = await fetch(`https://graph.facebook.com/${GRAPH_VERSION}/${path}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...body, access_token: token })
+    });
+
+    if (res.ok) return { status: 'sent' };
+
+    const detail = await res.json().catch(() => ({}));
+    const message = detail?.error?.message || `HTTP ${res.status}`;
+    return { status: 'failed', error: message };
+  } catch (err) {
+    return { status: 'failed', error: err instanceof Error ? err.message : 'network error' };
+  }
+}
+
+/** Public reply threaded under the original comment. */
+function postPublicReply(commentId: string, message: string, token: string) {
+  return graphPost(`${commentId}/replies`, { message }, token);
+}
+
+/**
+ * Private reply to the commenter's inbox.
+ *
+ * Both Instagram and Facebook accept recipient.comment_id, which is the only
+ * way to open a thread with someone who has not messaged the page first.
+ */
+function sendPrivateReply(actorId: string, commentId: string, text: string, token: string) {
+  return graphPost(
+    `${actorId}/messages`,
+    { recipient: { comment_id: commentId }, message: { text } },
+    token
+  );
+}
 
 function hex(bytes: ArrayBuffer) {
   return [...new Uint8Array(bytes)].map((b) => b.toString(16).padStart(2, '0')).join('');
@@ -173,25 +236,96 @@ Deno.serve(async (req: Request) => {
                 formattedDmReply += `\n\n📎 Attached Asset: ${rule.attached_media_url}`;
               }
 
-              // Record in live_comment_trigger_logs
-              const logEntry = {
+              // --- Rate limit: don't flood one commenter from the same rule ---
+              const windowMinutes = Number(rule.rate_limit_minutes) || 0;
+              if (windowMinutes > 0) {
+                const since = new Date(Date.now() - windowMinutes * 60_000).toISOString();
+                const { count } = await db
+                  .from('live_comment_trigger_logs')
+                  .select('id', { count: 'exact', head: true })
+                  .eq('rule_id', rule.id)
+                  .eq('sender_username', senderUsername)
+                  .gte('created_at', since);
+
+                if ((count ?? 0) > 0) {
+                  await db.from('live_comment_trigger_logs').insert({
+                    tenant_id: rule.tenant_id,
+                    rule_id: rule.id,
+                    platform,
+                    sender_username: senderUsername,
+                    comment_text: commentText,
+                    comment_id: commentId,
+                    post_id: String(postId),
+                    matched_keyword: matchedKeyword,
+                    status: 'rate_limited'
+                  });
+                  break;
+                }
+              }
+
+              // --- Deliver ---------------------------------------------------
+              const token = await resolveMetaToken(db, rule.tenant_id);
+              const wantsPublic = rule.action_type === 'both' || rule.action_type === 'comment_reply';
+              const wantsDm = rule.action_type === 'both' || rule.action_type === 'private_dm';
+
+              let publicOutcome: DeliveryOutcome = { status: 'skipped' };
+              let dmOutcome: DeliveryOutcome = { status: 'skipped' };
+              let deliveryError: string | undefined;
+
+              if (!token) {
+                deliveryError = 'No Meta page access token stored for this workspace';
+                if (wantsPublic) publicOutcome = { status: 'failed', error: deliveryError };
+                if (wantsDm) dmOutcome = { status: 'failed', error: deliveryError };
+              } else {
+                if (wantsPublic) {
+                  publicOutcome = await postPublicReply(commentId, formattedPublicReply, token);
+                }
+                // The account that owns the comment is the one that can reply privately.
+                const actorId = value.from?.id && platform === 'facebook'
+                  ? (entry.id || value.from.id)
+                  : (value.media?.id ? entry.id : entry.id);
+                if (wantsDm && actorId) {
+                  dmOutcome = await sendPrivateReply(String(actorId), commentId, formattedDmReply, token);
+                }
+                deliveryError = publicOutcome.error || dmOutcome.error;
+              }
+
+              const attempted = [publicOutcome, dmOutcome].filter(o => o.status !== 'skipped');
+              const allSent = attempted.length > 0 && attempted.every(o => o.status === 'sent');
+              const noneSent = attempted.length > 0 && attempted.every(o => o.status === 'failed');
+              const logStatus = attempted.length === 0
+                ? 'filtered'
+                : allSent ? 'replied' : noneSent ? 'failed' : 'partial';
+
+              // Record what actually happened. The unique index on
+              // (rule_id, comment_id) makes a redelivered webhook a no-op.
+              const { error: logError } = await db.from('live_comment_trigger_logs').insert({
                 tenant_id: rule.tenant_id,
                 rule_id: rule.id,
                 platform,
-                commenter_username: senderUsername,
+                sender_username: senderUsername,
                 comment_text: commentText,
-                reply_dispatched: formattedPublicReply,
+                comment_id: commentId,
+                post_id: String(postId),
                 matched_keyword: matchedKeyword,
-              };
+                public_reply_sent: wantsPublic ? formattedPublicReply : null,
+                private_dm_sent: wantsDm ? formattedDmReply : null,
+                public_reply_status: publicOutcome.status,
+                private_dm_status: dmOutcome.status,
+                delivery_error: deliveryError ?? null,
+                status: logStatus
+              });
 
-              await db.from('live_comment_trigger_logs').insert(logEntry).catch(() => {});
+              if (logError && logError.code !== '23505') {
+                console.error('Failed to write trigger log:', logError.message);
+              }
 
-              // Increment rule trigger count
-              await db
-                .from('auto_responder_rules')
-                .update({ trigger_count: (rule.trigger_count || 0) + 1 })
-                .eq('id', rule.id)
-                .catch(() => {});
+              if (allSent) {
+                await db
+                  .from('auto_responder_rules')
+                  .update({ trigger_count: (rule.trigger_count || 0) + 1 })
+                  .eq('id', rule.id);
+              }
 
               responsesDispatched.push({
                 ruleId: rule.id,
@@ -199,8 +333,10 @@ Deno.serve(async (req: Request) => {
                 platform,
                 commenter: senderUsername,
                 commentId,
-                publicReply: formattedPublicReply,
-                privateDm: formattedDmReply
+                publicReply: publicOutcome.status === 'sent' ? formattedPublicReply : null,
+                privateDm: dmOutcome.status === 'sent' ? formattedDmReply : null,
+                status: logStatus,
+                error: deliveryError ?? null
               });
 
               // Stop after first matching rule per comment to prevent duplicate responses
@@ -213,7 +349,8 @@ Deno.serve(async (req: Request) => {
       return json({
         status: 'success',
         processed: true,
-        dispatchedCount: responsesDispatched.length,
+        matchedCount: responsesDispatched.length,
+        deliveredCount: responsesDispatched.filter(r => r.status === 'replied').length,
         dispatched: responsesDispatched
       });
     } catch (err: any) {

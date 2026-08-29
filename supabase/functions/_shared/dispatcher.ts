@@ -72,8 +72,6 @@ export async function dispatchPost(
             instagram: 'INSTAGRAM_CREATE_POST',
             facebook: 'FACEBOOK_CREATE_POST',
             linkedin: 'LINKEDIN_CREATE_POST',
-            x: 'TWITTER_CREATION_OF_A_POST',
-            twitter: 'TWITTER_CREATION_OF_A_POST',
             youtube: 'YOUTUBE_UPLOAD_VIDEO',
             google_business: 'GOOGLE_BUSINESS_CREATE_POST'
           };
@@ -177,7 +175,7 @@ export async function dispatchPost(
       }));
 
       const platforms = groupConnections.map(c => ({
-        platform: c.platform === 'x' ? 'twitter' : c.platform,
+        platform: c.platform,
         accountId: c.channel_account_id
       }));
 

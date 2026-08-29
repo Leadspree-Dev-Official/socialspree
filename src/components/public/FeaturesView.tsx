@@ -54,7 +54,7 @@ export const FeaturesView: React.FC<FeaturesViewProps> = ({
     {
       id: 'cloud-native',
       title: 'Parallel Async Firing Queue',
-      subtitle: 'Concurrent dispatch to 15+ social networks in under 200ms',
+      subtitle: 'Concurrent dispatch to 12+ social networks in under 200ms',
       icon: Zap,
       badge: 'Dispatch Engine',
       color: 'from-amber-500 to-orange-600',
@@ -83,12 +83,12 @@ export const FeaturesView: React.FC<FeaturesViewProps> = ({
     },
     {
       id: 'media-vault',
-      title: 'Cloudflare CDN & Media Vault',
+      title: 'Cloudinary CDN & Media Vault',
       subtitle: 'Ultra-fast global edge media storage and video distribution',
       icon: Cloud,
       badge: 'Media Infrastructure',
       color: 'from-cyan-500 to-blue-600',
-      description: 'Host video reels, high-resolution carousels, and graphic assets on global Cloudflare edge CDN with unsigned Cloudinary direct uploads.',
+      description: 'Host video reels, high-resolution carousels, and graphic assets on Cloudinary global edge CDN with signed, server-verified uploads.',
       highlights: [
         'Instant CDN video delivery globally',
         'Multi-Cloudinary storage pool manager',

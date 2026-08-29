@@ -16,7 +16,6 @@ import {
   Linkedin, 
   Facebook, 
   Youtube, 
-  Twitter, 
   Store, 
   Upload, 
   Sparkles,
@@ -170,12 +169,12 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
 
   const handleTimeFormatChange = (fmt: TimeFormat) => {
     setTimeFormat(fmt);
-    try { localStorage.setItem('socialspree_calendar_time_format', fmt); } catch {}
+    try { localStorage.setItem('socialspree_calendar_time_format', fmt); } catch { /* preference not persisted in private mode */ }
   };
 
   const handleSelectPreset = (preset: PostingHoursPreset) => {
     setHoursPreset(preset);
-    try { localStorage.setItem('socialspree_calendar_hours_preset', preset); } catch {}
+    try { localStorage.setItem('socialspree_calendar_hours_preset', preset); } catch { /* preference not persisted in private mode */ }
     if (preset !== 'custom') {
       const p = PRESETS[preset];
       setStartHour(p.start);
@@ -183,7 +182,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
       try {
         localStorage.setItem('socialspree_calendar_start_hour', String(p.start));
         localStorage.setItem('socialspree_calendar_end_hour', String(p.end));
-      } catch {}
+      } catch { /* preference not persisted in private mode */ }
     }
   };
 
@@ -197,7 +196,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
       localStorage.setItem('socialspree_calendar_hours_preset', 'custom');
       localStorage.setItem('socialspree_calendar_start_hour', String(s));
       localStorage.setItem('socialspree_calendar_end_hour', String(e));
-    } catch {}
+    } catch { /* preference not persisted in private mode */ }
   };
 
   // Quick Post Modal State
@@ -334,7 +333,6 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
       case 'linkedin': return <Linkedin className="w-3.5 h-3.5 text-blue-600" />;
       case 'facebook': return <Facebook className="w-3.5 h-3.5 text-blue-700" />;
       case 'youtube': return <Youtube className="w-3.5 h-3.5 text-red-600" />;
-      case 'x': return <Twitter className="w-3.5 h-3.5 text-slate-900" />;
       case 'google_business': return <Store className="w-3.5 h-3.5 text-emerald-600" />;
       default: return <Share2 className="w-3.5 h-3.5 text-purple-600" />;
     }
@@ -368,7 +366,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
       content: quickContent.trim(),
       mediaUrls: quickMediaUrl ? [quickMediaUrl] : [],
       mediaType: quickMediaUrl ? 'image' : 'none',
-      isCloudflareHosted: false,
+      isCdnHosted: false,
       selectedAccountIds: selectedAccounts,
       status: 'scheduled',
       scheduledFor: scheduledDateTime,
