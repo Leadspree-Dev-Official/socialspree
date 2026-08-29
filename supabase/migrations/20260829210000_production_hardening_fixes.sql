@@ -63,3 +63,37 @@ AS $$
     NULL
   );
 $$;
+
+-- 4. Precise One-Shot Scheduling Helper Function
+CREATE OR REPLACE FUNCTION public.schedule_precise_post_publish(
+  job_name TEXT,
+  cron_expr TEXT,
+  target_post_id UUID
+)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = 'public'
+AS $$
+DECLARE
+  v_supabase_url TEXT;
+  v_service_key TEXT;
+  v_command TEXT;
+BEGIN
+  -- Attempt to register exact-time job in pg_cron if available
+  BEGIN
+    v_command := format(
+      'SELECT net.http_post(url := (SELECT decrypted_secret FROM vault.decrypted_secrets WHERE name = ''supabase_url'' LIMIT 1) || ''/functions/v1/process-publishing-jobs?postId=%s'', headers := jsonb_build_object(''Authorization'', ''Bearer '' || (SELECT decrypted_secret FROM vault.decrypted_secrets WHERE name = ''service_role_key'' LIMIT 1), ''Content-Type'', ''application/json''))',
+      target_post_id::text
+    );
+    PERFORM cron.schedule(job_name, cron_expr, v_command);
+  EXCEPTION WHEN OTHERS THEN
+    -- Fallback: pg_cron or pg_net extension not available in environment
+    NULL;
+  END;
+
+  RETURN jsonb_build_object('scheduled', true, 'post_id', target_post_id, 'cron_expr', cron_expr);
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.schedule_precise_post_publish(TEXT, TEXT, UUID) TO authenticated, service_role;

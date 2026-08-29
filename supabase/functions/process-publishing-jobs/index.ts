@@ -6,8 +6,17 @@ const LEASE_MS = 10 * 60 * 1000;
 Deno.serve(async req => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors(req) });
   const workerSecret = Deno.env.get('WORKER_SECRET');
+  const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
   const suppliedSecret = req.headers.get('x-worker-secret');
-  if (!workerSecret || !suppliedSecret || suppliedSecret !== workerSecret) return json({ error: 'Unauthorized' }, 401, req);
+  const authHeader = req.headers.get('authorization') || '';
+  const token = authHeader.replace(/^Bearer\s+/i, '').trim();
+
+  const isWorkerAuthorized = Boolean(workerSecret && suppliedSecret && suppliedSecret === workerSecret);
+  const isServiceAuthorized = Boolean(serviceKey && token && token === serviceKey);
+
+  if (!isWorkerAuthorized && !isServiceAuthorized) {
+    return json({ error: 'Unauthorized: Valid worker secret or service token required' }, 401, req);
+  }
 
   const db = admin();
   const url = new URL(req.url);
