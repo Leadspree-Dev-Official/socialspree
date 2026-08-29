@@ -46,8 +46,9 @@ Deno.serve(async req => {
 
       // Amount and Currency Verification
       const paymentEntity = payload.payload?.payment?.entity;
-      if (paymentEntity?.amount && order.amount_in_cents) {
-        if (Number(paymentEntity.amount) < Number(order.amount_in_cents)) {
+      const expectedAmount = Number(order.amount_minor ?? order.amount_in_cents ?? 0);
+      if (paymentEntity?.amount && expectedAmount > 0) {
+        if (Number(paymentEntity.amount) < expectedAmount) {
           return json({ error: 'Payment amount mismatch' }, 422, req);
         }
       }

@@ -386,16 +386,16 @@ export const INITIAL_TENANTS: Tenant[] = [
     id: '00000000-0000-0000-0000-000000000001',
     name: 'LeadSpree HQ (Master Super Admin)',
     ownerEmail: SUPER_ADMIN_EMAIL,
-    apiKey: 'ak_oyTzo6QSMSHP5KqOfbHn',
+    apiKey: '',
     dispatchEngine: 'dual',
     tierPlan: 'pro',
-    planId: 'plan-pro',
+    planId: 'plan-biz-pro',
     allocatedApiSlots: 5, // 5 API slots = 10 social channels
     maxSocialAccounts: 10,
     aiCredits: 1000, // Default 1000 AI Credits
     apiSlotDetails: [
-      { id: 'slot-hq-1', slotNumber: 1, slotName: 'API 1', provider: 'composio', apiKey: 'ak_oyTzo6QSMSHP5KqOfbHn', maxChannels: 5, connectedAccountIds: [] },
-      { id: 'slot-hq-2', slotNumber: 2, slotName: 'API 2', provider: 'composio', apiKey: 'ak_oyTzo6QSMSHP5KqOfbHn', maxChannels: 5, connectedAccountIds: [] },
+      { id: 'slot-hq-1', slotNumber: 1, slotName: 'API 1', provider: 'composio', apiKey: '', maxChannels: 5, connectedAccountIds: [] },
+      { id: 'slot-hq-2', slotNumber: 2, slotName: 'API 2', provider: 'composio', apiKey: '', maxChannels: 5, connectedAccountIds: [] },
       { id: 'slot-hq-3', slotNumber: 3, slotName: 'API 3', provider: 'zernio', apiKey: '', maxChannels: 2, connectedAccountIds: [] },
       { id: 'slot-hq-4', slotNumber: 4, slotName: 'API 4', provider: 'zernio', apiKey: '', maxChannels: 2, connectedAccountIds: [] },
       { id: 'slot-hq-5', slotNumber: 5, slotName: 'API 5', provider: 'zernio', apiKey: '', maxChannels: 2, connectedAccountIds: [] },

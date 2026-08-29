@@ -179,45 +179,24 @@ serve(async (req) => {
       req.headers.get("x-api-key") ||
       req.headers.get("authorization") ||
       "";
-    const token = authHeader.replace(/^Bearer\s+/i, "").trim();
-
     if (!token || token.length < 5) {
-      return json({ error: "Unauthorized: Missing or invalid SocialSpree API Key" }, 401);
+      return json({ error: "Unauthorized: Missing or invalid SocialSpree API Key" }, 401, req);
     }
 
     // Lookup matching tenant or key in tenants table
-    let tenantId = "00000000-0000-0000-0000-000000000001";
-    let tenantName = "SocialSpree Workspace";
-    let tenantCloudinaryConfig: any = null;
+    const { data: tenantData, error: tenantErr } = await db
+      .from("tenants")
+      .select("id, name, api_key, cloudinary_config")
+      .or(`api_key.eq.${token},id.eq.${token}`)
+      .maybeSingle();
 
-    try {
-      const { data: tenantData } = await db
-        .from("tenants")
-        .select("id, name, api_key, cloudinary_config")
-        .or(`api_key.eq.${token},id.eq.${token}`)
-        .maybeSingle();
-
-      if (tenantData) {
-        tenantId = tenantData.id;
-        tenantName = tenantData.name;
-        tenantCloudinaryConfig = tenantData.cloudinary_config;
-      } else {
-        const { data: primaryTenant } = await db
-          .from("tenants")
-          .select("id, name, cloudinary_config")
-          .order("created_at", { ascending: true })
-          .limit(1)
-          .maybeSingle();
-
-        if (primaryTenant) {
-          tenantId = primaryTenant.id;
-          tenantName = primaryTenant.name;
-          tenantCloudinaryConfig = primaryTenant.cloudinary_config;
-        }
-      }
-    } catch {
-      /* fallback to default tenant */
+    if (tenantErr || !tenantData) {
+      return json({ error: "Unauthorized: Invalid API key or tenant not found" }, 401, req);
     }
+
+    const tenantId = tenantData.id;
+    const tenantName = tenantData.name;
+    const tenantCloudinaryConfig: any = tenantData.cloudinary_config;
 
     // Resolve Cloudinary Configuration
     const cloudinaryConfig = {

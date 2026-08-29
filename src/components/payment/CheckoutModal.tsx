@@ -39,19 +39,31 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
       'plan-starter': { USD: 19, INR: 1499, GBP: 15 },
       'plan-pro': { USD: 29, INR: 1499, GBP: 24 },
       'plan-enterprise': { USD: 149, INR: 11999, GBP: 119 },
+      'plan-biz-starter': { USD: 1, INR: 49, GBP: 1 },
+      'plan-biz-growth': { USD: 2, INR: 99, GBP: 2 },
+      'plan-biz-pro': { USD: 3, INR: 149, GBP: 3 },
+      'plan-biz-scale': { USD: 4, INR: 199, GBP: 4 },
+      'plan-biz-ultimate': { USD: 5, INR: 249, GBP: 5 },
+      'plan-influencer-starter': { USD: 4, INR: 299, GBP: 3 },
+      'plan-influencer-pro': { USD: 7, INR: 499, GBP: 6 },
+      'plan-influencer-elite': { USD: 12, INR: 899, GBP: 10 },
+      'plan-agency-starter': { USD: 20, INR: 1499, GBP: 16 },
+      'plan-agency-growth': { USD: 35, INR: 2799, GBP: 28 },
+      'plan-agency-scale': { USD: 65, INR: 4999, GBP: 52 },
+      'plan-agency-enterprise': { USD: 120, INR: 8999, GBP: 95 },
     };
     if (matrix[plan.id]?.[curr]) {
       return matrix[plan.id][curr];
     }
-    const srcCurr = plan.currency || 'USD';
+    const srcCurr = plan.currency || 'INR';
     const basePrice = plan.priceMonthly;
     if (srcCurr === curr) return basePrice;
-    if (srcCurr === 'USD' && curr === 'INR') return Math.round(basePrice * 80);
-    if (srcCurr === 'USD' && curr === 'GBP') return Math.round(basePrice * 0.8);
-    if (srcCurr === 'INR' && curr === 'USD') return Math.round(basePrice / 80);
-    if (srcCurr === 'INR' && curr === 'GBP') return Math.round(basePrice / 100);
+    if (srcCurr === 'USD' && curr === 'INR') return Math.round(basePrice * 85);
+    if (srcCurr === 'USD' && curr === 'GBP') return Math.max(1, Math.round(basePrice * 0.8));
+    if (srcCurr === 'INR' && curr === 'USD') return Math.max(1, Math.round(basePrice / 85));
+    if (srcCurr === 'INR' && curr === 'GBP') return Math.max(1, Math.round(basePrice / 105));
     if (srcCurr === 'GBP' && curr === 'USD') return Math.round(basePrice * 1.25);
-    if (srcCurr === 'GBP' && curr === 'INR') return Math.round(basePrice * 100);
+    if (srcCurr === 'GBP' && curr === 'INR') return Math.round(basePrice * 105);
     return basePrice;
   };
 

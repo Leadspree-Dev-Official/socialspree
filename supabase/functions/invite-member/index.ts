@@ -1,6 +1,6 @@
 import { actor, cors, json } from '../_shared/server.ts';
 Deno.serve(async req => {
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: cors(req) });
   try {
     const { db, user, profile } = await actor(req);
     const { email, tenantId = profile.tenant_id, role = 'member', redirectTo } = await req.json();

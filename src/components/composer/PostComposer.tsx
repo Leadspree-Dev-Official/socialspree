@@ -185,10 +185,8 @@ export const PostComposer: React.FC<PostComposerProps> = ({
       return;
     }
     setAiOutput(data.content);
-    if (onDeductAiCredits) {
-      onDeductAiCredits(10, `AI ${mode} generation`);
-    }
-    setAiNotification(`⚡ AI Output Generated (${data.creditsRemaining ?? currentAiCredits - 10} credits remaining)`);
+    const remaining = typeof data.creditsRemaining === 'number' ? data.creditsRemaining : Math.max(0, currentAiCredits - 10);
+    setAiNotification(`⚡ AI Output Generated (${remaining} credits remaining)`);
     setTimeout(() => setAiNotification(null), 3000);
   };
 

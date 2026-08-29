@@ -18,10 +18,9 @@ function timingSafeEqual(a: string, b: string) {
 }
 
 async function verifyMetaHmacSignature(rawBody: string, signatureHeader: string | null): Promise<boolean> {
-  // In development/test mode without META_APP_SECRET configured, pass with warning
   if (!META_APP_SECRET) {
-    console.warn('⚠️ META_APP_SECRET not configured. Skipping HMAC validation for local test.');
-    return true;
+    console.error('❌ META_APP_SECRET is not configured in Supabase Secrets.');
+    return false;
   }
   if (!signatureHeader) return false;
 
@@ -43,7 +42,7 @@ async function verifyMetaHmacSignature(rawBody: string, signatureHeader: string 
 
 serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: cors });
+    return new Response('ok', { headers: cors(req) });
   }
 
   const url = new URL(req.url);

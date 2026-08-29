@@ -438,7 +438,7 @@ function mapAccount(r: any): SocialAccount {
 
 function mapPost(r: any): Post {
   return {
-    id: r.id, tenantId: r.tenant_id, content: r.content ?? '',
+    id: r.id, tenantId: r.tenant_id, provider: r.provider ?? 'composio', content: r.content ?? '',
     mediaUrls: Array.isArray(r.media_urls) ? r.media_urls.map(String) : [],
     mediaType: (r.media_type ?? 'none') as Post['mediaType'],
     isCloudflareHosted: r.is_cloudflare_hosted === true,
@@ -452,7 +452,7 @@ function mapPost(r: any): Post {
 }
 function postToRow(p: Post): any {
   return {
-    tenant_id: p.tenantId, content: p.content, media_urls: p.mediaUrls,
+    tenant_id: p.tenantId, provider: p.provider ?? 'composio', content: p.content, media_urls: p.mediaUrls,
     media_type: p.mediaType, is_cloudflare_hosted: p.isCloudflareHosted,
     selected_account_ids: p.selectedAccountIds, status: p.status,
     scheduled_for: p.scheduledFor, published_at: p.publishedAt,

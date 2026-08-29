@@ -3,6 +3,8 @@ import { createClient } from 'npm:@supabase/supabase-js@2.48.1';
 const DEFAULT_ALLOWED_ORIGINS = [
   'https://socialspree.leadspree.in',
   'https://socialspree.pages.dev',
+  'https://socialspree.vercel.app',
+  'https://leadspree.io',
   'http://localhost:5173',
   'http://localhost:3000',
   'http://127.0.0.1:5173'
@@ -18,11 +20,18 @@ export function cors(req?: Request) {
   const origin = req?.headers.get('Origin') || '';
   const allow = ALLOWED_WEB_ORIGINS();
   const headers: Record<string, string> = {
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-idempotency-key, x-worker-secret',
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-idempotency-key, x-worker-secret, x-chatgpt-api-key, x-api-key',
     'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
     'Vary': 'Origin'
   };
-  if (origin && (allow.includes(origin) || origin.endsWith('.pages.dev') || origin.endsWith('.leadspree.in'))) {
+  if (
+    origin &&
+    (allow.includes(origin) ||
+      origin.endsWith('.vercel.app') ||
+      origin.endsWith('.pages.dev') ||
+      origin.endsWith('.leadspree.in') ||
+      origin.endsWith('.leadspree.io'))
+  ) {
     headers['Access-Control-Allow-Origin'] = origin;
     headers['Access-Control-Allow-Credentials'] = 'true';
   } else if (!origin) {

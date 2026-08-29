@@ -35,9 +35,9 @@ export const RazorpaySandbox: React.FC<RazorpaySandboxProps> = ({
     e.preventDefault();
     if (!orgName || !email) return;
 
-    setState('processing');
-    setErrorMessage('');
-    const { data, error } = await supabase.functions.invoke('create-checkout', { body: { planId: plan.id, billingCycle } });
+    const { data, error } = await supabase.functions.invoke('create-checkout', {
+      body: { planId: plan.id, billingCycle, currency: plan.currency }
+    });
     if (error || !data?.orderId) {
       setState('form');
       setErrorMessage(error?.message || data?.error || 'Sign in before starting a secure checkout.');

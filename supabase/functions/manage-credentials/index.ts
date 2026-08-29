@@ -1,7 +1,7 @@
 import { actor, cors, encrypt, json } from '../_shared/server.ts';
 import { zernioClient } from '../_shared/zernio.ts';
 Deno.serve(async req => {
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: cors(req) });
   try {
     const { db, profile } = await actor(req);
     if (!profile.is_super_admin) return json({ error: 'Forbidden' }, 403);

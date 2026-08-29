@@ -1,10 +1,10 @@
 import { actor, cors, json } from '../_shared/server.ts';
 
 Deno.serve(async req => {
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: cors(req) });
   try {
     const { db, profile } = await actor(req);
-    if (!profile.tenant_id) return json({ error: 'No tenant assigned' }, 403);
+    if (!profile.tenant_id) return json({ error: 'No tenant assigned' }, 403, req);
 
     const body = await req.json().catch(() => ({}));
     const prompt = body.prompt;

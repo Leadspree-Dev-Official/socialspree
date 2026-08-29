@@ -1,7 +1,7 @@
 import { actor, cors, json } from '../_shared/server.ts';
 import { normalizeZernioError, slotKey, zernioClient } from '../_shared/zernio.ts';
 Deno.serve(async req => {
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: cors(req) });
   try {
     const { db, profile } = await actor(req);
     const body = await req.json().catch(() => ({}));

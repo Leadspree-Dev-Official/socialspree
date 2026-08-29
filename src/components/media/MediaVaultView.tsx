@@ -68,7 +68,7 @@ export const MediaVaultView: React.FC<MediaVaultViewProps> = ({
 
   const activeCloudinaryConfig = tenant.cloudinaryConfig || GLOBAL_DEFAULT_CLOUDINARY;
 
-  const tenantAssets = mediaAssets.filter(m => m.tenantId === tenant.id || m.tenantId === '00000000-0000-0000-0000-000000000001');
+  const tenantAssets = mediaAssets.filter(m => m.tenantId === tenant.id);
 
   const filteredAssets = tenantAssets.filter(asset => {
     if (filterType !== 'all' && asset.type !== filterType) return false;

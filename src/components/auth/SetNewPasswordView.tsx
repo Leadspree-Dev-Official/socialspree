@@ -79,12 +79,12 @@ export function SetNewPasswordView({ onSuccess, onCancel }: SetNewPasswordViewPr
         }
       } catch { /* ignore */ }
 
-      setSuccessMsg('Your password has been successfully updated! Redirecting to login...');
+      setSuccessMsg('Your password has been successfully updated! Redirecting to workspace...');
       setTimeout(() => {
         if (onSuccess) {
           onSuccess();
         } else {
-          navigate('/login');
+          navigate('/dashboard');
         }
       }, 1500);
     } catch (err: any) {

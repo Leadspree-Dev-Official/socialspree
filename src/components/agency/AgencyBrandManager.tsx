@@ -41,10 +41,12 @@ export const AgencyBrandManager: React.FC<AgencyBrandManagerProps> = ({
   const [industryInput, setIndustryInput] = useState('E-commerce & Retail');
   const [logoUrlInput, setLogoUrlInput] = useState('');
 
-  const filteredBrands = brands.filter(b => 
-    b.brandName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (b.industry && b.industry.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
+  const filteredBrands = brands
+    .filter(b => !b.agencyTenantId || b.agencyTenantId === tenantId)
+    .filter(b => 
+      b.brandName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (b.industry && b.industry.toLowerCase().includes(searchQuery.toLowerCase()))
+    );
 
   const handleCreateBrandSubmit = (e: React.FormEvent) => {
     e.preventDefault();

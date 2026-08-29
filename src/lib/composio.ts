@@ -41,98 +41,39 @@ export const COMPOSIO_AUTH_CONFIG_MAP: Record<string, string> = {
 
 /**
  * Generate a white-labeled Composio Connect Link for user OAuth channel authentication
- * Uses Composio v3.1 API connected_accounts/link
+ * Uses secure Supabase Edge Function `composio-connect`
  */
 export async function generateComposioConnectLink(
   appName: string,
   tenantId: string,
   callbackUrl: string = typeof window !== 'undefined' ? window.location.origin + '/connections' : ''
 ): Promise<{ redirectUrl: string; connectionId: string }> {
-  const entityId = `tenant_${tenantId}`;
-  const slug = String(appName || 'instagram').toLowerCase();
-  
-  let composioApiKey = 'ak_oyTzo6QSMSHP5KqOfbHn';
   try {
-    const storedTenants = localStorage.getItem('socialspree_tenants_store');
-    if (storedTenants) {
-      const parsed = JSON.parse(storedTenants);
-      const t = parsed.find((item: any) => item.id === tenantId);
-      const slotKey = t?.apiSlotDetails?.find((s: any) => s.provider === 'composio')?.apiKey;
-      if (slotKey) composioApiKey = slotKey;
-    }
-  } catch { /* ignore */ }
-
-  // 1. Check known auth_config_id or create on-the-fly
-  let authConfigId = COMPOSIO_AUTH_CONFIG_MAP[slug];
-
-  if (!authConfigId && composioApiKey) {
-    try {
-      const createConfigRes = await fetch('https://backend.composio.dev/api/v3.1/auth_configs', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': composioApiKey
-        },
-        body: JSON.stringify({
-          toolkit: { slug },
-          use_composio_auth: true
-        })
-      });
-      if (createConfigRes.ok) {
-        const configData = await createConfigRes.json();
-        if (configData?.auth_config?.id) {
-          authConfigId = configData.auth_config.id;
-          COMPOSIO_AUTH_CONFIG_MAP[slug] = authConfigId;
-        }
+    const { data, error } = await supabase.functions.invoke('composio-connect', {
+      body: {
+        action: 'generate_link',
+        appName: String(appName || 'instagram').toLowerCase(),
+        tenantId,
+        callbackUrl
       }
-    } catch { /* ignore */ }
-  }
-
-  // 2. Generate live link session from Composio v3.1 API
-  if (authConfigId && composioApiKey) {
-    const payload = JSON.stringify({
-      auth_config_id: authConfigId,
-      user_id: entityId,
-      callback_url: callbackUrl
     });
 
-    const endpoints = [
-      '/api/composio/connected_accounts/link',
-      'https://backend.composio.dev/api/v3.1/connected_accounts/link'
-    ];
-
-    for (const endpoint of endpoints) {
-      try {
-        const res = await fetch(endpoint, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-api-key': composioApiKey
-          },
-          body: payload
-        });
-
-        if (res.ok) {
-          const data = await res.json();
-          const url = data.redirect_url || data.redirectUrl || data.url;
-          if (url) {
-            return {
-              redirectUrl: url,
-              connectionId: data.connected_account_id || data.connectionId || `conn_${Date.now()}`
-            };
-          }
-        }
-      } catch (err) {
-        console.warn(`Composio link creation note (${endpoint}):`, err);
-      }
+    if (error || !data?.redirectUrl) {
+      throw error || new Error(data?.error || 'Failed to generate Composio connection link');
     }
-  }
 
-  // 3. Fallback
-  return {
-    redirectUrl: `https://connect.composio.dev/link/lk_9W8YL_HFF7Mq`,
-    connectionId: `conn_fallback_${Date.now()}`
-  };
+    return {
+      redirectUrl: data.redirectUrl,
+      connectionId: data.connectionId || `conn_${Date.now()}`
+    };
+  } catch (err: any) {
+    console.warn('Edge function composio-connect notice:', err);
+    // Safe generic link
+    return {
+      redirectUrl: `https://connect.composio.dev/auth?app=${encodeURIComponent(appName || 'instagram')}&entity_id=tenant_${encodeURIComponent(tenantId)}&callback_url=${encodeURIComponent(callbackUrl)}`,
+      connectionId: `conn_fallback_${Date.now()}`
+    };
+  }
 }
 
 /**
@@ -274,27 +215,6 @@ export async function fetchComposioAccounts(
     }
   } catch (e) {
     console.warn('Edge function composio-accounts note:', e);
-  }
-
-  // Direct client fallback to Composio v3.1
-  try {
-    const composioApiKey = 'ak_oyTzo6QSMSHP5KqOfbHn';
-    const entityId = `tenant_${tenantId}`;
-    const res = await fetch(`https://backend.composio.dev/api/v3.1/connected_accounts?user_ids=${encodeURIComponent(entityId)}`, {
-      headers: { 'x-api-key': composioApiKey }
-    });
-    if (res.ok) {
-      const result = await res.json();
-      return (result.items || []).map((acc: any) => ({
-        id: acc.id,
-        platform: acc.toolkit?.slug || 'instagram',
-        accountName: acc.alias || acc.wordId || 'Connected Channel',
-        avatarUrl: acc.toolkit?.meta?.logo || `https://api.dicebear.com/7.x/shapes/svg?seed=${acc.id}`,
-        status: acc.status === 'ACTIVE' ? 'active' : 'pending'
-      }));
-    }
-  } catch (err) {
-    console.warn('Composio v3.1 direct accounts fetch note:', err);
   }
 
   return [];
