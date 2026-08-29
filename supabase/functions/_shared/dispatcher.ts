@@ -26,20 +26,29 @@ export async function dispatchPost(
   options: { idempotencyKey?: string; publishNow?: boolean; scheduledFor?: string } = {}
 ): Promise<DispatchResult> {
   const refs = Array.isArray(post.selected_account_ids) ? post.selected_account_ids : [];
-  const accountIds = refs.map((x: any) => x?.accountId).filter(Boolean);
-  if (!accountIds.length) {
-    throw new Error('No target social channels selected for dispatch.');
-  }
+  const targetPlatforms = refs.map((x: any) => String(x?.platform || '').toLowerCase()).filter(Boolean);
+  const accountIds = refs.map((x: any) => x?.accountId || x?.id || x?.channel_account_id || x?.channelAccountId).filter(Boolean);
 
-  // Fetch connection metadata for selected accounts
-  const { data: connections, error: connError } = await db.from('social_connections')
-    .select('platform,channel_account_id,slot_number,account_handle,account_name')
-    .eq('tenant_id', tenantId)
-    .in('channel_account_id', accountIds);
+  // Fetch connection metadata for this tenant
+  const { data: allConnections, error: connError } = await db.from('social_connections')
+    .select('id,platform,channel_account_id,slot_number,account_handle,account_name')
+    .eq('tenant_id', tenantId);
 
   if (connError) throw connError;
-  if (!connections || connections.length === 0) {
-    throw new Error('Selected social accounts are not connected or authorization expired.');
+  if (!allConnections || allConnections.length === 0) {
+    throw new Error('No connected social accounts found for this workspace. Please connect accounts in the Social Accounts tab.');
+  }
+
+  // Match by account ID or target platform
+  let connections = allConnections.filter((conn: any) =>
+    accountIds.includes(conn.channel_account_id) ||
+    accountIds.includes(conn.id) ||
+    (targetPlatforms.length > 0 && targetPlatforms.includes(String(conn.platform).toLowerCase()))
+  );
+
+  if (connections.length === 0) {
+    // Graceful fallback: use all active tenant connections
+    connections = allConnections;
   }
 
   const { data: tenant } = await db.from('tenants').select('dispatch_engine').eq('id', tenantId).maybeSingle();
