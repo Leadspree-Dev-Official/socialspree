@@ -5,31 +5,35 @@ Deno.serve(async req => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors(req) });
   try {
     const { db, profile } = await actor(req);
-    const { postId } = await req.json();
+    const { postId, publishNow } = await req.json();
     const { data: post, error } = await db.from('posts').select('*').eq('id', postId).single();
     if (error || !post) return json({ error: 'Post not found' }, 404, req);
     if (!profile.is_super_admin && profile.tenant_id !== post.tenant_id) return json({ error: 'Forbidden' }, 403, req);
 
-    const isScheduled = Boolean(post.scheduled_for);
-    const supplied = req.headers.get('x-idempotency-key') || `${post.id}:${post.scheduled_for ?? 'now'}`;
+    const isScheduled = publishNow ? false : Boolean(post.scheduled_for);
+    const supplied = req.headers.get('x-idempotency-key') || `${post.id}:${isScheduled ? post.scheduled_for : 'now'}_${Date.now()}`;
     const idempotency_key = await sha256(supplied);
 
     // =========================================================================
     // 1. INSTANT "PUBLISH POST NOW" -> SYNCHRONOUS DIRECT DISPATCH
     // =========================================================================
     if (!isScheduled) {
-      // Mark as publishing while executing
-      await db.from('posts').update({ status: 'publishing' }).eq('id', post.id);
+      // Mark as publishing while executing & clear scheduled_for if forcing instant publish
+      await db.from('posts').update({ status: 'publishing', scheduled_for: null }).eq('id', post.id);
 
       try {
-        const result = await dispatchPost(db, post, post.tenant_id, {
+        const result = await dispatchPost(db, { ...post, scheduled_for: null }, post.tenant_id, {
           idempotencyKey: idempotency_key,
           publishNow: true
         });
 
+        // Clean up any lingering scheduled job for this post
+        await db.from('publishing_jobs').delete().eq('post_id', post.id);
+
         // Update post with published confirmation
         await db.from('posts').update({
           status: 'published',
+          scheduled_for: null,
           provider: result.provider,
           published_at: result.publishedAt,
           zernio_post_id: result.apiPostId,

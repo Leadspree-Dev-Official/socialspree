@@ -40,15 +40,18 @@ export function validateCloudflareMediaForScheduling(mediaUrls: string[], isClou
  * Execute Enterprise Publishing Engine / Dispatcher (Composio Primary with Zernio Fallback)
  */
 export async function executePublishing(
-  postInput: Omit<Post, 'id' | 'createdAt' | 'status'>,
-  tenant: Tenant
+  postInput: (Omit<Post, 'id' | 'createdAt' | 'status'> & { id?: string; createdAt?: string; status?: string }),
+  tenant: Tenant,
+  options?: { publishNow?: boolean }
 ): Promise<PublishResult> {
   // Composio is the Primary Standard Engine for all workspaces unless explicitly set to Zenith/Zernio
   if (tenant.dispatchEngine !== 'zenith') {
-    return executeComposioPublishing(postInput, tenant);
+    return executeComposioPublishing(postInput, tenant, options);
   }
 
-  const isScheduled = Boolean(postInput.scheduledFor);
+  const forceInstant = Boolean(options?.publishNow || postInput.status === 'publishing' || !postInput.scheduledFor);
+  const isScheduled = forceInstant ? false : Boolean(postInput.scheduledFor);
+  const finalScheduledFor = isScheduled ? postInput.scheduledFor : undefined;
 
   // 1. Content & Media Validation
   const hasText = Boolean(postInput.content && postInput.content.trim().length > 0);
@@ -71,7 +74,7 @@ export async function executePublishing(
     throw new Error("Please select at least one social media channel to publish to.");
   }
 
-  const postId = crypto.randomUUID();
+  const postId = postInput.id || crypto.randomUUID();
   const now = new Date().toISOString();
 
   const requestPayload = {
@@ -82,17 +85,18 @@ export async function executePublishing(
     mediaType: postInput.mediaType,
     isCloudflareHosted: postInput.isCloudflareHosted,
     publishNow: !isScheduled,
-    scheduledFor: postInput.scheduledFor || null,
+    scheduledFor: finalScheduledFor || null,
   };
 
   const post: Post = {
     ...postInput,
     id: postId,
     status: isScheduled ? 'scheduled' : 'publishing',
-    createdAt: now
+    scheduledFor: finalScheduledFor,
+    createdAt: postInput.createdAt || now
   };
 
-  const { error: saveError } = await supabase.from('posts').insert({
+  const { error: saveError } = await supabase.from('posts').upsert({
     id: post.id,
     tenant_id: post.tenantId,
     provider: 'zernio',
@@ -102,14 +106,14 @@ export async function executePublishing(
     is_cloudflare_hosted: post.isCloudflareHosted,
     selected_account_ids: post.selectedAccountIds,
     status: post.status,
-    scheduled_for: post.scheduledFor,
-  });
+    scheduled_for: finalScheduledFor || null,
+  }, { onConflict: 'id' });
   if (saveError) throw saveError;
 
   try {
     const { data: response, error: queueError } = await supabase.functions.invoke('publish-post', {
-      body: { postId: post.id },
-      headers: { 'x-idempotency-key': `${post.id}:${post.scheduledFor ?? 'now'}` },
+      body: { postId: post.id, publishNow: forceInstant },
+      headers: { 'x-idempotency-key': `${post.id}:${isScheduled ? post.scheduledFor : 'now'}_${Date.now()}` },
     });
     if (queueError) throw queueError;
     if (response?.error) throw new Error(response.error);
@@ -119,6 +123,7 @@ export async function executePublishing(
     const updatedPost: Post = {
       ...post,
       status: finalStatus,
+      scheduledFor: isPublished ? undefined : finalScheduledFor,
       provider: response?.provider || 'zernio'
     };
 

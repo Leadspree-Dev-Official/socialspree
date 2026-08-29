@@ -267,7 +267,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
 
                       <td className="px-6 py-4 text-right">
                         <div className="flex items-center justify-end gap-2">
-                          {(post.status === 'publishing' || post.status === 'failed') && onRetryPost && (
+                          {(post.status === 'publishing' || post.status === 'failed' || post.status === 'scheduled') && onRetryPost && (
                             <button
                               onClick={async () => {
                                 setRetryingPostId(post.id);

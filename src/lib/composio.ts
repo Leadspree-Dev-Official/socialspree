@@ -104,8 +104,9 @@ export async function getComposioUserSession(tenant: Tenant): Promise<ComposioSe
  * Execute Post Dispatch via Composio Engine via server publishing queue
  */
 export async function executeComposioPublishing(
-  postInput: Omit<Post, 'id' | 'createdAt' | 'status'>,
-  tenant: Tenant
+  postInput: (Omit<Post, 'id' | 'createdAt' | 'status'> & { id?: string; createdAt?: string; status?: string }),
+  tenant: Tenant,
+  options?: { publishNow?: boolean }
 ): Promise<{ post: Post; log: PostLog; success: boolean; message: string }> {
   // 1. Content & Media Validation
   const hasText = Boolean(postInput.content && postInput.content.trim().length > 0);
@@ -121,9 +122,11 @@ export async function executeComposioPublishing(
   }
 
   const session = await getComposioUserSession(tenant);
-  const postId = crypto.randomUUID();
+  const postId = postInput.id || crypto.randomUUID();
   const now = new Date().toISOString();
-  const isScheduled = Boolean(postInput.scheduledFor);
+  const forceInstant = Boolean(options?.publishNow || postInput.status === 'publishing' || !postInput.scheduledFor);
+  const isScheduled = forceInstant ? false : Boolean(postInput.scheduledFor);
+  const finalScheduledFor = isScheduled ? postInput.scheduledFor : undefined;
 
   const requestPayload = {
     provider: 'composio',
@@ -132,18 +135,19 @@ export async function executeComposioPublishing(
     content: postInput.content,
     mediaUrls: postInput.mediaUrls,
     targetPlatforms: postInput.selectedAccountIds.map(a => a.platform),
-    scheduledFor: postInput.scheduledFor || null
+    scheduledFor: finalScheduledFor || null
   };
 
   const post: Post = {
     ...postInput,
     id: postId,
     status: isScheduled ? 'scheduled' : 'publishing',
-    createdAt: now
+    scheduledFor: finalScheduledFor,
+    createdAt: postInput.createdAt || now
   };
 
   // 1. Save post record pre-locked with provider = 'composio'
-  const { error: saveError } = await supabase.from('posts').insert({
+  const { error: saveError } = await supabase.from('posts').upsert({
     id: post.id,
     tenant_id: post.tenantId,
     provider: 'composio',
@@ -153,15 +157,15 @@ export async function executeComposioPublishing(
     is_cloudflare_hosted: post.isCloudflareHosted,
     selected_account_ids: post.selectedAccountIds,
     status: post.status,
-    scheduled_for: post.scheduledFor,
-  });
+    scheduled_for: finalScheduledFor || null,
+  }, { onConflict: 'id' });
   if (saveError) throw saveError;
 
   // 2. Invoke unified publish-post edge function with fail-safe error handling
   try {
     const { data: response, error: invokeError } = await supabase.functions.invoke('publish-post', {
-      body: { postId: post.id },
-      headers: { 'x-idempotency-key': `${post.id}:${post.scheduledFor ?? 'now'}` },
+      body: { postId: post.id, publishNow: forceInstant },
+      headers: { 'x-idempotency-key': `${post.id}:${isScheduled ? post.scheduledFor : 'now'}_${Date.now()}` },
     });
     if (invokeError) throw invokeError;
     if (response?.error) throw new Error(response.error);
@@ -171,6 +175,7 @@ export async function executeComposioPublishing(
     const updatedPost: Post = {
       ...post,
       status: finalStatus,
+      scheduledFor: isPublished ? undefined : finalScheduledFor,
       provider: response?.provider || 'composio'
     };
 

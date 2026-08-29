@@ -1175,7 +1175,13 @@ export function App() {
   const handleRetryPost = async (post: Post) => {
     try {
       const targetTenant = tenants.find(t => t.id === post.tenantId) || currentTenant;
-      const { post: updatedPost, log } = await executePublishing(post, targetTenant);
+      const instantPost: Post = {
+        ...post,
+        scheduledFor: undefined,
+        status: 'publishing'
+      };
+      await supabase.from('posts').update({ status: 'publishing', scheduled_for: null }).eq('id', post.id);
+      const { post: updatedPost, log } = await executePublishing(instantPost, targetTenant, { publishNow: true });
       handlePostPublished(updatedPost, log);
     } catch (err: any) {
       console.warn('Publish retry failed:', err);
@@ -1185,6 +1191,7 @@ export function App() {
         errorMessage: err?.message || 'Publishing retry failed'
       };
       setPosts(prev => prev.map(p => p.id === post.id ? failedPost : p));
+      saveStoredPosts(posts.map(p => p.id === post.id ? failedPost : p));
     }
   };
 
