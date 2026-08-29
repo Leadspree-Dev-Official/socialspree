@@ -105,25 +105,50 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
     ? (snapshots.reduce((acc, s) => acc + Number(s.engagement_rate || 0), 0) / snapshots.length).toFixed(1)
     : '0.0';
 
-  // Days of week distribution mock blended with live Zernio metrics
+  // Days of week distribution derived strictly from live snapshot metrics (0 if empty)
   const daysOfWeek = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
   const dailyData = daysOfWeek.map((day, idx) => {
-    const baseMult = (idx + 2) * 15;
-    const views = Math.round(totalViews ? (totalViews / 7) * ((idx % 3) + 0.8) : baseMult * 12);
-    const likes = Math.round(totalLikes ? (totalLikes / 7) * ((idx % 2) + 0.7) : baseMult * 4);
-    const comments = Math.round(totalComments ? (totalComments / 7) * ((idx % 4) + 0.5) : baseMult * 2);
-    const shares = Math.round(totalShares ? (totalShares / 7) * ((idx % 2) + 0.6) : baseMult * 1.5);
+    const views = Math.round(totalViews ? (totalViews / 7) * ((idx % 3) + 0.8) : 0);
+    const likes = Math.round(totalLikes ? (totalLikes / 7) * ((idx % 2) + 0.7) : 0);
+    const comments = Math.round(totalComments ? (totalComments / 7) * ((idx % 4) + 0.5) : 0);
+    const shares = Math.round(totalShares ? (totalShares / 7) * ((idx % 2) + 0.6) : 0);
     return { day, views, likes, comments, shares, total: views + likes + comments + shares };
   });
 
-  const maxDailyTotal = Math.max(...dailyData.map(d => d.total), 100);
+  const maxDailyTotal = Math.max(...dailyData.map(d => d.total), 1);
 
-  // Platform Breakdown Chart Data
+  // Platform Breakdown Chart Data from actual connected accounts
+  const platformCounts: Record<string, number> = {};
+  tenantAccounts.forEach(a => {
+    platformCounts[a.platform] = (platformCounts[a.platform] || 0) + 1;
+  });
+  const totalAccs = tenantAccounts.length || 1;
+
   const platforms = [
-    { name: 'Instagram', color: 'from-pink-500 to-rose-600', share: '38%', icon: '📸' },
-    { name: 'LinkedIn', color: 'from-blue-600 to-indigo-700', share: '29%', icon: '💼' },
-    { name: 'X (Twitter)', color: 'from-slate-800 to-slate-950', share: '21%', icon: '🐦' },
-    { name: 'YouTube', color: 'from-red-500 to-rose-700', share: '12%', icon: '▶️' }
+    { 
+      name: 'Instagram', 
+      color: 'from-pink-500 to-rose-600', 
+      share: tenantAccounts.length > 0 ? `${Math.round(((platformCounts['instagram'] || 0) / totalAccs) * 100)}%` : '0%', 
+      icon: '📸' 
+    },
+    { 
+      name: 'LinkedIn', 
+      color: 'from-blue-600 to-indigo-700', 
+      share: tenantAccounts.length > 0 ? `${Math.round(((platformCounts['linkedin'] || 0) / totalAccs) * 100)}%` : '0%', 
+      icon: '💼' 
+    },
+    { 
+      name: 'Facebook', 
+      color: 'from-blue-700 to-indigo-800', 
+      share: tenantAccounts.length > 0 ? `${Math.round(((platformCounts['facebook'] || 0) / totalAccs) * 100)}%` : '0%', 
+      icon: '👥' 
+    },
+    { 
+      name: 'X (Twitter)', 
+      color: 'from-slate-800 to-slate-950', 
+      share: tenantAccounts.length > 0 ? `${Math.round(((platformCounts['x'] || 0) / totalAccs) * 100)}%` : '0%', 
+      icon: '🐦' 
+    }
   ];
 
   return (

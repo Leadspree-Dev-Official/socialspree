@@ -108,12 +108,12 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
   const snapshotLikes = snapshots.reduce((acc, s) => acc + (s.likes || 0), 0);
   const snapshotComments = snapshots.reduce((acc, s) => acc + (s.comments || 0) + (s.shares || 0), 0);
 
-  const totalReach = snapshotReach || (publishedCount > 0 ? publishedCount * 450 : 0);
-  const totalLikes = snapshotLikes || (publishedCount > 0 ? publishedCount * 32 : 0);
-  const totalComments = snapshotComments || (publishedCount > 0 ? publishedCount * 8 : 0);
+  const totalReach = snapshotReach;
+  const totalLikes = snapshotLikes;
+  const totalComments = snapshotComments;
   const avgEngagementRate = snapshots.length > 0
     ? (snapshots.reduce((acc, s) => acc + (s.engagement_rate || 0), 0) / snapshots.length).toFixed(1)
-    : publishedCount > 0 ? '4.8' : '0.0';
+    : '0.0';
 
   const getPlatformIcon = (platform: string) => {
     switch (platform) {
@@ -218,51 +218,61 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-['Inter']">
-                {tenantPosts.slice(0, 5).map((post) => (
-                  <tr key={post.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/50 transition-colors">
-                    <td className="px-6 py-4 max-w-xs">
-                      <div className="font-bold text-slate-900 dark:text-slate-100 truncate">
-                        {post.content || '[Image / Video Only Post]'}
-                      </div>
-                      <div className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">{post.id}</div>
-                    </td>
-
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-1.5">
-                        {post.selectedAccountIds.slice(0, 3).map((a, i) => (
-                          <span key={i} className="p-1 bg-slate-100 dark:bg-slate-800 rounded" title={a.platform}>
-                            {getPlatformIcon(a.platform)}
-                          </span>
-                        ))}
-                      </div>
-                    </td>
-
-                    <td className="px-6 py-4">
-                      <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase font-mono border ${
-                        post.status === 'published'
-                          ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800'
-                          : post.status === 'scheduled'
-                          ? 'bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800'
-                          : 'bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800'
-                      }`}>
-                        {post.status}
-                      </span>
-                    </td>
-
-                    <td className="px-6 py-4 font-mono text-[11px] text-slate-500 dark:text-slate-400">
-                      {new Date(post.createdAt).toLocaleDateString()}
-                    </td>
-
-                    <td className="px-6 py-4 text-right">
-                      <button
-                        onClick={() => onNavigate('logs')}
-                        className="px-2.5 py-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 rounded font-semibold text-[11px] cursor-pointer"
-                      >
-                        Inspect Log
-                      </button>
+                {tenantPosts.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="px-6 py-10 text-center text-slate-400 dark:text-slate-500">
+                      <Clock className="w-6 h-6 mx-auto mb-2 opacity-50" />
+                      <div className="font-semibold text-xs text-slate-600 dark:text-slate-400">No Social Posts Dispatched Yet</div>
+                      <div className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">Click &quot;Create New Post&quot; to publish your first multi-channel campaign.</div>
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  tenantPosts.slice(0, 5).map((post) => (
+                    <tr key={post.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/50 transition-colors">
+                      <td className="px-6 py-4 max-w-xs">
+                        <div className="font-bold text-slate-900 dark:text-slate-100 truncate">
+                          {post.content || '[Image / Video Only Post]'}
+                        </div>
+                        <div className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">{post.id}</div>
+                      </td>
+
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-1.5">
+                          {post.selectedAccountIds.slice(0, 3).map((a, i) => (
+                            <span key={i} className="p-1 bg-slate-100 dark:bg-slate-800 rounded" title={a.platform}>
+                              {getPlatformIcon(a.platform)}
+                            </span>
+                          ))}
+                        </div>
+                      </td>
+
+                      <td className="px-6 py-4">
+                        <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase font-mono border ${
+                          post.status === 'published'
+                            ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800'
+                            : post.status === 'scheduled'
+                            ? 'bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800'
+                            : 'bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800'
+                        }`}>
+                          {post.status}
+                        </span>
+                      </td>
+
+                      <td className="px-6 py-4 font-mono text-[11px] text-slate-500 dark:text-slate-400">
+                        {new Date(post.createdAt).toLocaleDateString()}
+                      </td>
+
+                      <td className="px-6 py-4 text-right">
+                        <button
+                          onClick={() => onNavigate('logs')}
+                          className="px-2.5 py-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 rounded font-semibold text-[11px] cursor-pointer"
+                        >
+                          Inspect Log
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
@@ -321,39 +331,49 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
           </button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-          {(snapshots.length > 0 ? snapshots.slice(0, 5) : tenantPosts.slice(0, 5)).map((item: any, idx: number) => (
-            <div key={item.id || idx} className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 hover:bg-white dark:hover:bg-slate-800 hover:shadow-md transition-all space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="w-6 h-6 rounded-full bg-amber-100 dark:bg-amber-950/60 text-amber-900 dark:text-amber-300 font-bold text-[10px] flex items-center justify-center font-mono">
-                  #{idx + 1}
-                </span>
-                <span className="text-[10px] font-mono font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-200 dark:border-emerald-800">
-                  {item.engagement_rate ? `${item.engagement_rate}% ER` : `${(5.2 - idx * 0.4).toFixed(1)}% ER`}
-                </span>
-              </div>
+        {snapshots.length === 0 ? (
+          <div className="py-8 px-4 text-center rounded-xl border border-dashed border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 space-y-2">
+            <BarChart2 className="w-8 h-8 text-slate-400 mx-auto stroke-1" />
+            <div className="text-xs font-bold text-slate-700 dark:text-slate-300">No Post Analytics Synced Yet</div>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
+              Once you publish posts to your connected social channels and sync analytics, real-time engagement data (views, likes, comments, and engagement rate) will appear here.
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+            {snapshots.slice(0, 5).map((item, idx) => (
+              <div key={item.id || idx} className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 hover:bg-white dark:hover:bg-slate-800 hover:shadow-md transition-all space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="w-6 h-6 rounded-full bg-amber-100 dark:bg-amber-950/60 text-amber-900 dark:text-amber-300 font-bold text-[10px] flex items-center justify-center font-mono">
+                    #{idx + 1}
+                  </span>
+                  <span className="text-[10px] font-mono font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-200 dark:border-emerald-800">
+                    {item.engagement_rate ? `${item.engagement_rate}% ER` : '0.0% ER'}
+                  </span>
+                </div>
 
-              <p className="text-xs font-medium text-slate-800 dark:text-slate-200 line-clamp-2">
-                {item.content || tenantPosts.find(p => p.id === item.post_id)?.content || (item.zernio_post_id ? `Post #${item.zernio_post_id}` : 'Top Performing Social Campaign Asset')}
-              </p>
+                <p className="text-xs font-medium text-slate-800 dark:text-slate-200 line-clamp-2">
+                  {tenantPosts.find(p => p.id === (item as any).post_id)?.content || (item.zernio_post_id ? `Post #${item.zernio_post_id}` : 'Social Post')}
+                </p>
 
-              <div className="grid grid-cols-3 gap-1 pt-2 border-t border-slate-200/60 dark:border-slate-800 text-[10px] font-mono text-slate-600 dark:text-slate-400">
-                <div className="flex items-center gap-1">
-                  <Eye className="w-3 h-3 text-blue-600 dark:text-blue-400" />
-                  <span>{item.views || (5 - idx) * 450}</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <Heart className="w-3 h-3 text-pink-600 dark:text-pink-400" />
-                  <span>{item.likes || (5 - idx) * 38}</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <MessageSquare className="w-3 h-3 text-purple-600 dark:text-purple-400" />
-                  <span>{item.comments || (5 - idx) * 12}</span>
+                <div className="grid grid-cols-3 gap-1 pt-2 border-t border-slate-200/60 dark:border-slate-800 text-[10px] font-mono text-slate-600 dark:text-slate-400">
+                  <div className="flex items-center gap-1">
+                    <Eye className="w-3 h-3 text-blue-600 dark:text-blue-400" />
+                    <span>{item.views || 0}</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Heart className="w-3 h-3 text-pink-600 dark:text-pink-400" />
+                    <span>{item.likes || 0}</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <MessageSquare className="w-3 h-3 text-purple-600 dark:text-purple-400" />
+                    <span>{item.comments || 0}</span>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

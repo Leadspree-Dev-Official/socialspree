@@ -2267,21 +2267,29 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
               <h4 className="font-bold text-slate-900 dark:text-white flex items-center justify-between">
                 <span>Storage Breakdown (Supabase + Cloudinary)</span>
                 <span className="font-mono text-purple-700 dark:text-purple-300 font-bold">
-                  {(( (inspectingTenant.supabaseStorageBytes || 240000000) + (inspectingTenant.cloudinaryStorageBytes || 650000000) ) / (1024 * 1024)).toFixed(1)} MB / {inspectingTenant.customStorageLimitMb || 5000} MB
+                  {(( (inspectingTenant.supabaseStorageBytes || 0) + (inspectingTenant.cloudinaryStorageBytes || 0) ) / (1024 * 1024)).toFixed(1)} MB / {inspectingTenant.customStorageLimitMb || 5000} MB
                 </span>
               </h4>
               <div className="w-full bg-slate-200 dark:bg-slate-700 h-2.5 rounded-full overflow-hidden flex">
-                <div className="bg-blue-600 h-full" style={{ width: '35%' }} title="Supabase Bucket Storage" />
-                <div className="bg-purple-600 h-full" style={{ width: '45%' }} title="Cloudinary CDN Assets" />
+                <div 
+                  className="bg-blue-600 h-full" 
+                  style={{ width: `${Math.min(100, Math.max(0, ((inspectingTenant.supabaseStorageBytes || 0) / ((inspectingTenant.customStorageLimitMb || 5000) * 1024 * 1024)) * 100))}%` }} 
+                  title="Supabase Bucket Storage" 
+                />
+                <div 
+                  className="bg-purple-600 h-full" 
+                  style={{ width: `${Math.min(100, Math.max(0, ((inspectingTenant.cloudinaryStorageBytes || 0) / ((inspectingTenant.customStorageLimitMb || 5000) * 1024 * 1024)) * 100))}%` }} 
+                  title="Cloudinary CDN Assets" 
+                />
               </div>
               <div className="grid grid-cols-2 gap-2 text-[11px] font-mono">
                 <div className="flex items-center gap-1.5 text-blue-900 dark:text-blue-300">
                   <span className="w-2.5 h-2.5 rounded-full bg-blue-600 inline-block" />
-                  <span>Supabase: {((inspectingTenant.supabaseStorageBytes || 240000000) / (1024 * 1024)).toFixed(1)} MB</span>
+                  <span>Supabase: {(((inspectingTenant.supabaseStorageBytes || 0) / (1024 * 1024))).toFixed(1)} MB</span>
                 </div>
                 <div className="flex items-center gap-1.5 text-purple-900 dark:text-purple-300">
                   <span className="w-2.5 h-2.5 rounded-full bg-purple-600 inline-block" />
-                  <span>Cloudinary: {((inspectingTenant.cloudinaryStorageBytes || 650000000) / (1024 * 1024)).toFixed(1)} MB</span>
+                  <span>Cloudinary: {(((inspectingTenant.cloudinaryStorageBytes || 0) / (1024 * 1024))).toFixed(1)} MB</span>
                 </div>
               </div>
             </div>
@@ -2291,7 +2299,7 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
               <div className="p-3 bg-purple-50 dark:bg-purple-950/50 rounded-xl border border-purple-200 dark:border-purple-800">
                 <div className="text-[10px] uppercase font-mono text-purple-700 dark:text-purple-300 font-bold">Zenith Daily Dispatches</div>
                 <div className="text-lg font-black text-purple-950 dark:text-purple-100 mt-1">
-                  {inspectingTenant.zernioDailyDispatchCount || 14} / {customDailyZernioInput} Posts
+                  {inspectingTenant.zernioDailyDispatchCount || 0} / {customDailyZernioInput} Posts
                 </div>
               </div>
               <div className="p-3 bg-amber-50 dark:bg-amber-950/50 rounded-xl border border-amber-200 dark:border-amber-800">
