@@ -1,19 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { Routes, Route, useNavigate } from 'react-router-dom';
-import { useUser, useClerk, useSession } from '@clerk/react';
+import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { Tenant, SocialAccount, Post, PostLog, GoogleReview, CloudinaryConfig, ApiAllocationSlot, AiCreditLog, SubscriptionPlan, CurrencyCode, MediaAsset, AgencyBrand, SystemSettings } from './types';
 import { 
   INITIAL_TENANTS, 
   INITIAL_POST_LOGS, 
   INITIAL_REVIEWS, 
   SUPER_ADMIN_EMAIL,
-  GLOBAL_DEFAULT_CLOUDINARY,
+  GLOBAL_DEFAULT_CLOUDINARY, 
   GLOBAL_SYSTEM_SETTINGS,
   getStoredSystemSettings,
   getStoredTenants,
   saveStoredTenants,
   getStoredAccounts,
+  saveStoredAccounts,
   getStoredPosts,
+  saveStoredPosts,
   getStoredPlans,
   getStoredAiLogs,
   getStoredMediaAssets,
@@ -53,46 +54,49 @@ import { TestimonialsView } from './components/public/TestimonialsView';
 import { AboutContactView } from './components/public/AboutContactView';
 import { PublicFooter } from './components/public/PublicFooter';
 import { CheckoutPage } from './components/payment/CheckoutPage';
-import { AuthGate } from './components/auth/AuthGate';
+import { AuthView } from './components/auth/AuthView';
 import { SetNewPasswordView } from './components/auth/SetNewPasswordView';
-import { clearAuthenticatedCache, hydrateFromCloud, mapProfile, type Profile } from './lib/api';
-import { auth } from './lib/api';
-import { setClerkTokenProvider, supabase } from './lib/supabase';
-import { tenants as cloudTenants, socialConnections as cloudAccounts, posts as cloudPosts, postLogs as cloudLogs, aiCreditLogs as cloudAiLogs, mediaAssets as cloudMedia, agencyBrands } from './lib/api';
+import { clearAuthenticatedCache, hydrateFromCloud, mapProfile, type Profile, auth, socialConnections, tenants as cloudTenants, posts as cloudPosts, postLogs as cloudLogs, aiCreditLogs as cloudAiLogs, mediaAssets as cloudMedia, agencyBrands } from './lib/api';
+import { supabase } from './lib/supabase';
 import { executePublishing } from './lib/zernio';
 
+function checkIsRecoveryUrl(): boolean {
+  if (typeof window === 'undefined') return false;
+  const hash = window.location.hash || '';
+  const search = window.location.search || '';
+  const path = window.location.pathname || '';
+  return (
+    hash.includes('type=recovery') ||
+    (hash.includes('access_token=') && hash.includes('type=')) ||
+    search.includes('type=recovery') ||
+    path === '/set-password' ||
+    path === '/reset-password' ||
+    path === '/reset' ||
+    (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('spree_recovery_active') === 'true')
+  );
+}
 
 export function App() {
-  const { user, isLoaded: isClerkLoaded, isSignedIn } = useUser();
-  const { session } = useSession();
-  const { signOut: clerkSignOut } = useClerk();
-
-  useEffect(() => {
-    setClerkTokenProvider(async () => {
-      if (!session) return null;
-      try {
-        const token = await session.getToken({ template: 'supabase' });
-        if (token) return token;
-      } catch {
-        /* fallback if template is not named supabase */
-      }
-      return session.getToken();
-    });
-    return () => setClerkTokenProvider(null);
-  }, [session]);
-
   const navigate = useNavigate();
+  const location = useLocation();
 
-  const getInitialTabFromPath = (): { tab: TabType; view: 'public' | 'auth' | 'app' } => {
+  const getInitialTabFromPath = (): { tab: TabType; view: 'public' | 'auth' | 'app'; authMode?: 'signin' | 'signup' | 'forgot' | 'set_password' } => {
     if (typeof window === 'undefined') return { tab: 'dashboard', view: 'public' };
+    if (checkIsRecoveryUrl()) {
+      try { sessionStorage.setItem('spree_recovery_active', 'true'); } catch { /* ignore */ }
+      return { tab: 'dashboard', view: 'auth', authMode: 'set_password' };
+    }
     const path = window.location.pathname.replace(/^\/+|\/+$/g, '');
     if (!path || path === 'features' || path === 'pricing' || path === 'testimonials' || path === 'about' || path === 'docs' || path === 'checkout' || path === 'cart') return { tab: 'dashboard', view: 'public' };
-    if (path === 'login' || path === 'auth' || path === 'sign-in' || path === 'reset' || path === 'reset-password' || path === 'set-password') return { tab: 'dashboard', view: 'auth' };
-    if (path === 'superadmin') return { tab: 'superadmin', view: 'app' };
-    if (path === 'admin' || path === 'dashboard' || path === 'infludash' || path === 'influencer' || path === 'agency') {
+    if (path === 'login' || path === 'auth' || path === 'sign-in') return { tab: 'dashboard', view: 'auth', authMode: 'signin' };
+    if (path === 'signup' || path === 'register') return { tab: 'dashboard', view: 'auth', authMode: 'signup' };
+    if (path === 'reset' || path === 'reset-password' || path === 'forgot-password') return { tab: 'dashboard', view: 'auth', authMode: 'forgot' };
+    if (path === 'set-password' || path === 'update-password') return { tab: 'dashboard', view: 'auth', authMode: 'set_password' };
+    if (path === 'superadmin' || path === 'admin') return { tab: 'superadmin', view: 'app' };
+    if (path === 'dashboard' || path === 'infludash' || path === 'influencer' || path === 'agency') {
       return { tab: 'dashboard', view: 'app' };
     }
-    const validTabs: TabType[] = ['dashboard', 'composer', 'calendar', 'agents', 'media', 'autoresponder', 'connections', 'logs', 'reviews', 'analytics', 'admin', 'superadmin', 'settings', 'help'];
+    const validTabs: TabType[] = ['dashboard', 'agency_brands', 'grid_planner', 'composer', 'calendar', 'agents', 'media', 'autoresponder', 'connections', 'logs', 'reviews', 'analytics', 'admin', 'superadmin', 'settings', 'help'];
     if (validTabs.includes(path as TabType)) {
       return { tab: path as TabType, view: 'app' };
     }
@@ -103,6 +107,10 @@ export function App() {
 
   // Public vs App View Mode Router State
   const [viewMode, setViewMode] = useState<'public' | 'auth' | 'app'>(initialRoute.view);
+  const [authMode, setAuthMode] = useState<'signin' | 'signup' | 'forgot' | 'set_password'>(initialRoute.authMode || 'signin');
+  const [supabaseUser, setSupabaseUser] = useState<any>(null);
+  const [supabaseSession, setSupabaseSession] = useState<any>(null);
+  const [isAuthLoaded, setIsAuthLoaded] = useState(false);
   const [profile, setProfile] = useState<Profile | null>(() => {
     try {
       const raw = localStorage.getItem('socialspree_user_profile_v1');
@@ -126,7 +134,16 @@ export function App() {
     const list = getStoredTenants();
     return list[0] || INITIAL_TENANTS[0];
   });
-  const [isSuperAdminMode, setIsSuperAdminMode] = useState<boolean>(false);
+  const [isSuperAdminMode, setIsSuperAdminMode] = useState<boolean>(() => {
+    try {
+      const raw = localStorage.getItem('socialspree_user_profile_v1');
+      if (raw) {
+        const p = JSON.parse(raw);
+        return p?.isSuperAdmin === true || p?.role === 'super_admin' || p?.email?.toLowerCase() === SUPER_ADMIN_EMAIL.toLowerCase();
+      }
+    } catch { /* ignore */ }
+    return false;
+  });
   const [systemSettings, setSystemSettings] = useState<SystemSettings>(() => getStoredSystemSettings());
   const [activeTab, setActiveTab] = useState<TabType>(initialRoute.tab);
   const [adminSubTab, setAdminSubTab] = useState<SuperAdminSubTab>('dashboard');
@@ -144,9 +161,12 @@ export function App() {
   // Keep browser URL pathname synced with view mode, active tab, and role (app mode only)
   useEffect(() => {
     if (typeof window === 'undefined') return;
+    if (checkIsRecoveryUrl() || authMode === 'set_password') {
+      return;
+    }
     // Only sync URL for auth and app modes — public mode uses react-router
     if (viewMode === 'auth') {
-      const targetPath = '/login';
+      const targetPath = authMode === 'signup' ? '/signup' : authMode === 'forgot' ? '/reset-password' : '/login';
       if (window.location.pathname !== targetPath) {
         window.history.pushState({}, '', targetPath);
       }
@@ -154,8 +174,10 @@ export function App() {
       let targetPath: string;
       if (activeTab === 'superadmin') {
         targetPath = '/superadmin';
-      } else if (activeTab === 'dashboard' || activeTab === 'admin') {
-        targetPath = '/admin'; // Normal users and Super Admin both land on /admin for standard workspace
+      } else if (activeTab === 'dashboard') {
+        targetPath = '/dashboard';
+      } else if (activeTab === 'admin') {
+        targetPath = profile?.isSuperAdmin || isSuperAdminMode ? '/superadmin' : '/dashboard';
       } else {
         targetPath = `/${activeTab}`;
       }
@@ -163,7 +185,7 @@ export function App() {
         window.history.pushState({}, '', targetPath);
       }
     }
-  }, [viewMode, activeTab, profile?.role, profile?.isSuperAdmin]);
+  }, [viewMode, activeTab, authMode, profile?.role, profile?.isSuperAdmin]);
 
   const [accounts, setAccounts] = useState<SocialAccount[]>(() => getStoredAccounts());
   const [posts, setPosts] = useState<Post[]>(() => getStoredPosts());
@@ -180,6 +202,33 @@ export function App() {
   useEffect(() => {
     saveStoredBrands(brands);
   }, [brands]);
+
+  // Listen to cross-window / cross-tab storage changes & custom account-sync events
+  useEffect(() => {
+    const handleStorage = (e: StorageEvent) => {
+      if ((e.key === 'socialspree_accounts_v1' || e.key === 'socialspree_social_accounts') && e.newValue) {
+        try {
+          setAccounts(JSON.parse(e.newValue));
+        } catch { /* ignore */ }
+      }
+    };
+
+    const handleCustomSync = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      if (customEvent.detail) {
+        setAccounts(customEvent.detail);
+      } else {
+        setAccounts(getStoredAccounts());
+      }
+    };
+
+    window.addEventListener('storage', handleStorage);
+    window.addEventListener('socialspree_accounts_updated', handleCustomSync);
+    return () => {
+      window.removeEventListener('storage', handleStorage);
+      window.removeEventListener('socialspree_accounts_updated', handleCustomSync);
+    };
+  }, []);
 
   const handleAddBrand = (newBrand: Omit<AgencyBrand, 'id' | 'createdAt'>) => {
     const created: AgencyBrand = {
@@ -200,59 +249,23 @@ export function App() {
     void agencyBrands.delete(brandId).catch(() => {});
   };
 
-  const loadAuthenticatedWorkspace = async () => {
+  const loadAuthenticatedWorkspace = async (targetUser?: any) => {
+    if (checkIsRecoveryUrl() || authMode === 'set_password') {
+      return;
+    }
     setCloudLoading(true);
     setCloudError('');
     try {
-      if (!user) {
+      const activeUser = targetUser || supabaseUser || (await supabase.auth.getUser()).data.user;
+      if (!activeUser) {
         setProfile(null);
         setViewMode('auth');
         return;
       }
-      const primaryEmail = user.primaryEmailAddress?.emailAddress;
-      if (!primaryEmail) throw new Error('Your Clerk account has no verified primary email.');
+      const primaryEmail = activeUser.email;
+      if (!primaryEmail) throw new Error('Your Supabase account has no verified email address.');
 
-      let userProfile: Profile | null = null;
-      try {
-        const { data: provisionData } = await supabase.rpc('ensure_clerk_profile', {
-          p_email: primaryEmail,
-          p_full_name: user.fullName || user.firstName || null,
-          p_avatar_url: null,
-        });
-        if (provisionData) {
-          userProfile = mapProfile(Array.isArray(provisionData) ? provisionData[0] : provisionData);
-        }
-      } catch {
-        /* fallback to getProfile */
-      }
-
-      if (!userProfile) {
-        userProfile = await auth.getProfile(primaryEmail);
-      }
-
-      // Check if user previously saved a custom name or avatar in localStorage
-      try {
-        const savedRaw = localStorage.getItem('socialspree_user_profile_v1');
-        if (savedRaw) {
-          const saved = JSON.parse(savedRaw);
-          if (saved && saved.email?.toLowerCase() === primaryEmail.toLowerCase()) {
-            if (userProfile) {
-              if (saved.fullName && (!userProfile.fullName || userProfile.fullName === primaryEmail.split('@')[0])) {
-                userProfile.fullName = saved.fullName;
-              }
-              if (saved.avatarUrl && !userProfile.avatarUrl) {
-                userProfile.avatarUrl = saved.avatarUrl;
-              }
-              if (saved.jobTitle && !userProfile.jobTitle) {
-                userProfile.jobTitle = saved.jobTitle;
-              }
-              if (saved.timezone && (!userProfile.timezone || userProfile.timezone === 'UTC')) {
-                userProfile.timezone = saved.timezone;
-              }
-            }
-          }
-        }
-      } catch { /* ignore */ }
+      let userProfile: Profile | null = await auth.getProfile(primaryEmail);
 
       if (!userProfile) {
         const emailLower = primaryEmail.toLowerCase().trim();
@@ -260,11 +273,11 @@ export function App() {
         const fallbackTenantId = isAdmin ? '00000000-0000-0000-0000-000000000001' : crypto.randomUUID();
 
         userProfile = {
-          id: user.id || `user_${crypto.randomUUID().slice(0, 12)}`,
+          id: activeUser.id || `user_${crypto.randomUUID().slice(0, 12)}`,
           email: emailLower,
-          fullName: user.fullName || user.firstName || emailLower.split('@')[0],
-          avatarUrl: user.imageUrl || '',
-          jobTitle: 'Business Owner',
+          fullName: activeUser.user_metadata?.full_name || (isAdmin ? 'Aniruddha' : emailLower.split('@')[0]),
+          avatarUrl: activeUser.user_metadata?.avatar_url || '',
+          jobTitle: isAdmin ? 'Founder & CEO' : 'Business Owner',
           phoneNumber: '',
           timezone: 'UTC',
           notifications: { emailDigest: true, postFailureAlerts: true, securityAlerts: true },
@@ -278,18 +291,19 @@ export function App() {
         void (async () => {
           try {
             await supabase.from('profiles').upsert({
-              id: userProfile.id,
-              email: userProfile.email,
-              full_name: userProfile.fullName,
-              avatar_url: userProfile.avatarUrl,
-              tenant_id: userProfile.tenantId,
-              is_super_admin: userProfile.isSuperAdmin,
-              role: userProfile.role
+              id: userProfile!.id,
+              email: userProfile!.email,
+              full_name: userProfile!.fullName,
+              avatar_url: userProfile!.avatarUrl,
+              tenant_id: userProfile!.tenantId,
+              is_super_admin: userProfile!.isSuperAdmin,
+              role: userProfile!.role
             });
           } catch { /* ignore */ }
         })();
       }
 
+      setProfile(userProfile);
       try {
         localStorage.setItem('socialspree_user_profile_v1', JSON.stringify(userProfile));
       } catch { /* ignore */ }
@@ -302,9 +316,9 @@ export function App() {
         posts: [],
         logs: [],
         reviews: [],
-        aiLogs: [],
         media: [],
-        brands: []
+        aiLogs: [],
+        brands: [],
       }));
 
       const cloudList = cloud.tenants || [];
@@ -416,10 +430,12 @@ export function App() {
       if (cloud.brands && cloud.brands.length > 0) setBrands(cloud.brands);
       setCloudReady(true);
       setIsSuperAdminMode(isSuperAdmin);
-      if (activeTab === 'superadmin' && !isSuperAdmin) {
-        setActiveTab('dashboard');
-      } else if (activeTab === 'admin') {
-        setActiveTab('dashboard');
+      if (activeTab === 'superadmin' || activeTab === 'admin') {
+        if (!isSuperAdmin) {
+          setActiveTab('dashboard');
+        } else {
+          setActiveTab('superadmin');
+        }
       }
       setViewMode('app');
     } catch (error) {
@@ -460,18 +476,104 @@ export function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  // Sync route changes to viewMode and activeTab
   useEffect(() => {
-    if (!isClerkLoaded) return;
-
-    if (isSignedIn && user && session) {
-      void loadAuthenticatedWorkspace();
-    } else {
-      setCloudLoading(false);
-      if (viewMode === 'app' && !profile && !isDemoSession) {
-        setViewMode('auth');
-      }
+    const route = getInitialTabFromPath();
+    setViewMode(route.view);
+    if (route.authMode) {
+      setAuthMode(route.authMode);
     }
-  }, [isClerkLoaded, isSignedIn, user, session, isDemoSession]);
+    if (route.view === 'app' && route.tab) {
+      setActiveTab(route.tab);
+    }
+  }, [location.pathname, location.hash, location.search]);
+
+  // Supabase Auth session & auth state change listener
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSupabaseSession(session);
+      setSupabaseUser(session?.user ?? null);
+      setIsAuthLoaded(true);
+
+      if (checkIsRecoveryUrl()) {
+        try { sessionStorage.setItem('spree_recovery_active', 'true'); } catch { /* ignore */ }
+        setViewMode('auth');
+        setAuthMode('set_password');
+        setCloudLoading(false);
+        return;
+      }
+
+      if (session?.user && !isDemoSession) {
+        void loadAuthenticatedWorkspace(session.user);
+      } else {
+        setCloudLoading(false);
+      }
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      setSupabaseSession(session);
+      setSupabaseUser(session?.user ?? null);
+      setIsAuthLoaded(true);
+
+      if (event === 'PASSWORD_RECOVERY' || checkIsRecoveryUrl()) {
+        try { sessionStorage.setItem('spree_recovery_active', 'true'); } catch { /* ignore */ }
+        setViewMode('auth');
+        setAuthMode('set_password');
+        setCloudLoading(false);
+      } else if (event === 'SIGNED_IN' && session?.user) {
+        if (!checkIsRecoveryUrl() && authMode !== 'set_password') {
+          void loadAuthenticatedWorkspace(session.user);
+        }
+      } else if (event === 'SIGNED_OUT') {
+        try { sessionStorage.removeItem('spree_recovery_active'); } catch { /* ignore */ }
+        setProfile(null);
+        setIsDemoSession(false);
+        setCloudReady(false);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  // Realtime Supabase Database Sync for external posts (e.g. ChatGPT, background jobs)
+  useEffect(() => {
+    if (!cloudReady) return;
+
+    const channel = supabase
+      .channel('realtime_workspace_sync')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'posts' },
+        async () => {
+          try {
+            const freshPosts = await cloudPosts.list();
+            if (freshPosts && freshPosts.length > 0) {
+              setPosts(freshPosts);
+              saveStoredPosts(freshPosts);
+            }
+          } catch (e) {
+            console.warn('Realtime posts refresh error:', e);
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'post_logs' },
+        async () => {
+          try {
+            const freshLogs = await cloudLogs.list();
+            if (freshLogs) setLogs(freshLogs);
+          } catch (e) {
+            console.warn('Realtime logs refresh error:', e);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [cloudReady]);
 
   // Sync local cache state safely without triggering premature cross-tenant RLS writes
   useEffect(() => {
@@ -499,30 +601,28 @@ export function App() {
     setMediaAssets(updated);
   };
 
-  // Public Navigation — no longer needed, react-router handles it
-
   const handleLaunchApp = async () => {
     setCloudLoading(true);
-    if (isSignedIn) {
-      void loadAuthenticatedWorkspace();
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.user) {
+      void loadAuthenticatedWorkspace(session.user);
     } else {
       setCloudLoading(false);
       setViewMode('auth');
+      navigate('/login');
     }
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleSignOut = async () => {
-    if (isSignedIn) {
-      await clerkSignOut().catch(() => {});
-    }
-    setClerkTokenProvider(null);
+    await supabase.auth.signOut().catch(() => {});
     clearAuthenticatedCache();
     setIsDemoSession(false);
     setProfile(null);
     setCloudReady(false);
     setIsSuperAdminMode(false);
     setViewMode('auth');
+    navigate('/login');
   };
 
 
@@ -596,18 +696,25 @@ export function App() {
   // AI Credit Handlers
   const handleDeductAiCredits = (tenantId: string, amount: number, description: string) => {
     let newBalance = 0;
+    let targetUpdatedTenant: Tenant | null = null;
     const updatedTenants = tenants.map(t => {
       if (t.id === tenantId) {
         newBalance = Math.max(0, (t.aiCredits ?? 1000) - amount);
-        return { ...t, aiCredits: newBalance };
+        targetUpdatedTenant = { ...t, aiCredits: newBalance };
+        return targetUpdatedTenant;
       }
       return t;
     });
 
     setTenants(updatedTenants);
+    saveStoredTenants(updatedTenants);
 
     if (currentTenant.id === tenantId) {
       setCurrentTenant(prev => ({ ...prev, aiCredits: newBalance }));
+    }
+
+    if (targetUpdatedTenant) {
+      void cloudTenants.save(targetUpdatedTenant).catch(() => {});
     }
 
     // Record AI Credit Log
@@ -625,22 +732,30 @@ export function App() {
 
     const updatedLogs = [newLog, ...aiLogs];
     setAiLogs(updatedLogs);
+    void cloudAiLogs.create(newLog).catch(() => {});
   };
 
   const handleTopupAiCredits = (tenantId: string, amount: number, description: string) => {
     let newBalance = 0;
+    let targetUpdatedTenant: Tenant | null = null;
     const updatedTenants = tenants.map(t => {
       if (t.id === tenantId) {
         newBalance = (t.aiCredits ?? 1000) + amount;
-        return { ...t, aiCredits: newBalance };
+        targetUpdatedTenant = { ...t, aiCredits: newBalance };
+        return targetUpdatedTenant;
       }
       return t;
     });
 
     setTenants(updatedTenants);
+    saveStoredTenants(updatedTenants);
 
     if (currentTenant.id === tenantId) {
       setCurrentTenant(prev => ({ ...prev, aiCredits: newBalance }));
+    }
+
+    if (targetUpdatedTenant) {
+      void cloudTenants.save(targetUpdatedTenant).catch(() => {});
     }
 
     const targetTenant = tenants.find(t => t.id === tenantId);
@@ -657,6 +772,7 @@ export function App() {
 
     const updatedLogs = [newLog, ...aiLogs];
     setAiLogs(updatedLogs);
+    void cloudAiLogs.create(newLog).catch(() => {});
   };
 
   // Tenant Handlers
@@ -669,48 +785,80 @@ export function App() {
     };
     const updated = [newTenant, ...tenants];
     setTenants(updated);
+    saveStoredTenants(updated);
+    void cloudTenants.save(newTenant).catch(() => {});
   };
 
   const handleDeleteTenant = (tenantId: string) => {
     const updated = tenants.filter(t => t.id !== tenantId);
     setTenants(updated);
+    saveStoredTenants(updated);
     if (currentTenant.id === tenantId) {
       setCurrentTenant(updated[0] || INITIAL_TENANTS[0]);
     }
   };
 
   const handleToggleTenantStatus = (tenantId: string) => {
+    let targetUpdated: Tenant | null = null;
     const updated = tenants.map(t => {
       if (t.id === tenantId) {
-        return {
+        targetUpdated = {
           ...t,
           status: t.status === 'active' ? ('suspended' as const) : ('active' as const)
         };
+        return targetUpdated;
       }
       return t;
     });
     setTenants(updated);
+    saveStoredTenants(updated);
+    if (targetUpdated) {
+      void cloudTenants.save(targetUpdated).catch(() => {});
+    }
   };
 
   const handleUpdateTenantPaymentStatus = (tenantId: string, paymentStatus: 'paid' | 'unpaid' | 'overdue' | 'trial') => {
-    const updated = tenants.map(t => t.id === tenantId ? { ...t, paymentStatus } : t);
+    let targetUpdated: Tenant | null = null;
+    const updated = tenants.map(t => {
+      if (t.id === tenantId) {
+        targetUpdated = { ...t, paymentStatus };
+        return targetUpdated;
+      }
+      return t;
+    });
     setTenants(updated);
+    saveStoredTenants(updated);
     if (currentTenant.id === tenantId) {
       setCurrentTenant({ ...currentTenant, paymentStatus });
+    }
+    if (targetUpdated) {
+      void cloudTenants.save(targetUpdated).catch(() => {});
     }
   };
 
   const handleUpdateTenantRenewalDate = (tenantId: string, renewalDate: string) => {
-    const updated = tenants.map(t => t.id === tenantId ? { ...t, renewalDate } : t);
+    let targetUpdated: Tenant | null = null;
+    const updated = tenants.map(t => {
+      if (t.id === tenantId) {
+        targetUpdated = { ...t, renewalDate };
+        return targetUpdated;
+      }
+      return t;
+    });
     setTenants(updated);
+    saveStoredTenants(updated);
     if (currentTenant.id === tenantId) {
       setCurrentTenant({ ...currentTenant, renewalDate });
+    }
+    if (targetUpdated) {
+      void cloudTenants.save(targetUpdated).catch(() => {});
     }
   };
 
   const handleUpdateTenantPlan = (tenantId: string, planId: string) => {
     const allPlans = getStoredPlans();
     const targetPlan = allPlans.find(p => p.id === planId);
+    let targetUpdated: Tenant | null = null;
 
     const updated = tenants.map(t => {
       if (t.id === tenantId) {
@@ -733,7 +881,7 @@ export function App() {
           newSlotDetails = newSlotDetails.slice(0, newSlotsCount);
         }
 
-        return {
+        targetUpdated = {
           ...t,
           planId: planId,
           tierPlan: (targetPlan ? targetPlan.name : t.tierPlan) as any,
@@ -742,65 +890,110 @@ export function App() {
           aiCredits: targetPlan ? targetPlan.aiCredits : (t.aiCredits ?? 1000),
           apiSlotDetails: newSlotDetails
         };
+        return targetUpdated;
       }
       return t;
     });
 
     setTenants(updated);
+    saveStoredTenants(updated);
     if (currentTenant.id === tenantId) {
       const match = updated.find(t => t.id === tenantId);
       if (match) setCurrentTenant(match);
     }
+    if (targetUpdated) {
+      void cloudTenants.save(targetUpdated).catch(() => {});
+    }
   };
 
   const handleUpdateTenantApiSlotDetails = (tenantId: string, slots: ApiAllocationSlot[]) => {
+    let targetUpdated: Tenant | null = null;
     const updated = tenants.map(t => {
       if (t.id === tenantId) {
         const slotsCount = slots.length;
         const firstKey = slots[0]?.apiKey || t.apiKey;
-        return {
+        targetUpdated = {
           ...t,
           apiKey: firstKey,
           apiSlotDetails: slots,
           allocatedApiSlots: slotsCount,
           maxSocialAccounts: slotsCount * 2
         };
+        return targetUpdated;
       }
       return t;
     });
 
     setTenants(updated);
+    saveStoredTenants(updated);
     if (currentTenant.id === tenantId) {
       const match = updated.find(t => t.id === tenantId);
       if (match) setCurrentTenant(match);
     }
+    if (targetUpdated) {
+      void cloudTenants.save(targetUpdated).catch(() => {});
+    }
   };
 
   const handleUpdateTenantTier = (tenantId: string, tier: 'free' | 'pro' | 'agency') => {
-    const updated = tenants.map(t => t.id === tenantId ? { ...t, tierPlan: tier } : t);
+    let targetUpdated: Tenant | null = null;
+    const updated = tenants.map(t => {
+      if (t.id === tenantId) {
+        targetUpdated = { ...t, tierPlan: tier };
+        return targetUpdated;
+      }
+      return t;
+    });
     setTenants(updated);
+    saveStoredTenants(updated);
     if (currentTenant.id === tenantId) {
       setCurrentTenant({ ...currentTenant, tierPlan: tier });
+    }
+    if (targetUpdated) {
+      void cloudTenants.save(targetUpdated).catch(() => {});
     }
   };
 
   const handleUpdateTenantLimit = (tenantId: string, limit: number) => {
-    const updated = tenants.map(t => t.id === tenantId ? { ...t, maxSocialAccounts: limit } : t);
+    let targetUpdated: Tenant | null = null;
+    const updated = tenants.map(t => {
+      if (t.id === tenantId) {
+        targetUpdated = { ...t, maxSocialAccounts: limit };
+        return targetUpdated;
+      }
+      return t;
+    });
     setTenants(updated);
+    saveStoredTenants(updated);
     if (currentTenant.id === tenantId) {
       setCurrentTenant({ ...currentTenant, maxSocialAccounts: limit });
+    }
+    if (targetUpdated) {
+      void cloudTenants.save(targetUpdated).catch(() => {});
     }
   };
 
   const handleUpdateTenantApiKey = (tenantId: string, newApiKey: string) => {
-    const updated = tenants.map(t => t.id === tenantId ? { ...t, apiKey: newApiKey } : t);
+    let targetUpdated: Tenant | null = null;
+    const updated = tenants.map(t => {
+      if (t.id === tenantId) {
+        targetUpdated = { ...t, apiKey: newApiKey };
+        return targetUpdated;
+      }
+      return t;
+    });
     setTenants(updated);
+    saveStoredTenants(updated);
     if (currentTenant.id === tenantId) {
       setCurrentTenant({ ...currentTenant, apiKey: newApiKey });
+    }
+    if (targetUpdated) {
+      void cloudTenants.save(targetUpdated).catch(() => {});
     }
   };
 
   const handleUpdateTenantApiSlots = (tenantId: string, slotsCount: number) => {
+    let targetUpdated: Tenant | null = null;
     const updated = tenants.map(t => {
       if (t.id === tenantId) {
         const currentSlots = t.apiSlotDetails || [];
@@ -819,35 +1012,62 @@ export function App() {
         } else if (newSlotDetails.length > slotsCount) {
           newSlotDetails = newSlotDetails.slice(0, slotsCount);
         }
-        return { 
+        targetUpdated = { 
           ...t, 
           allocatedApiSlots: slotsCount,
           maxSocialAccounts: slotsCount * 2,
           apiSlotDetails: newSlotDetails
         };
+        return targetUpdated;
       }
       return t;
     });
     setTenants(updated);
+    saveStoredTenants(updated);
     if (currentTenant.id === tenantId) {
       const match = updated.find(t => t.id === tenantId);
       if (match) setCurrentTenant(match);
     }
+    if (targetUpdated) {
+      void cloudTenants.save(targetUpdated).catch(() => {});
+    }
   };
 
   const handleUpdateTenantCloudinary = (tenantId: string, config: CloudinaryConfig) => {
-    const updated = tenants.map(t => t.id === tenantId ? { ...t, cloudinaryConfig: config } : t);
+    let targetUpdated: Tenant | null = null;
+    const updated = tenants.map(t => {
+      if (t.id === tenantId) {
+        targetUpdated = { ...t, cloudinaryConfig: config };
+        return targetUpdated;
+      }
+      return t;
+    });
     setTenants(updated);
+    saveStoredTenants(updated);
     if (currentTenant.id === tenantId) {
       setCurrentTenant({ ...currentTenant, cloudinaryConfig: config });
+    }
+    if (targetUpdated) {
+      void cloudTenants.save(targetUpdated).catch(() => {});
     }
   };
 
   const handleUpdateTenantProfile = (tenantId: string, name: string, ownerEmail: string) => {
-    const updated = tenants.map(t => t.id === tenantId ? { ...t, name, ownerEmail } : t);
+    let targetUpdated: Tenant | null = null;
+    const updated = tenants.map(t => {
+      if (t.id === tenantId) {
+        targetUpdated = { ...t, name, ownerEmail };
+        return targetUpdated;
+      }
+      return t;
+    });
     setTenants(updated);
+    saveStoredTenants(updated);
     if (currentTenant.id === tenantId) {
       setCurrentTenant({ ...currentTenant, name, ownerEmail });
+    }
+    if (targetUpdated) {
+      void cloudTenants.save(targetUpdated).catch(() => {});
     }
   };
 
@@ -866,14 +1086,63 @@ export function App() {
   };
 
   const handleAddAccount = (accInput: Omit<SocialAccount, 'id' | 'tenantId' | 'lastSyncedAt'>) => {
-    const newAcc: SocialAccount = {
-      ...accInput,
-      id: crypto.randomUUID(),
-      tenantId: currentTenant.id,
-      lastSyncedAt: new Date().toISOString()
-    };
-    const updatedAccs = [newAcc, ...accounts];
+    setAccounts(prev => {
+      // Check if this exact channel already exists in the same slot to prevent stale overwrites
+      const existing = prev.find(a => 
+        a.tenantId === currentTenant.id && 
+        a.platform === accInput.platform && 
+        a.slotNumber === accInput.slotNumber
+      );
+      let updated: SocialAccount[];
+      let targetAcc: SocialAccount;
+
+      if (existing) {
+        targetAcc = { ...existing, ...accInput, lastSyncedAt: new Date().toISOString() };
+        updated = prev.map(a => a.id === existing.id ? targetAcc : a);
+      } else {
+        targetAcc = {
+          ...accInput,
+          id: crypto.randomUUID(),
+          tenantId: currentTenant.id,
+          lastSyncedAt: new Date().toISOString()
+        };
+        updated = [targetAcc, ...prev];
+      }
+
+      saveStoredAccounts(updated);
+      try {
+        window.dispatchEvent(new CustomEvent('socialspree_accounts_updated', { detail: updated }));
+      } catch { /* ignore */ }
+
+      // Authoritative Supabase Cloud Sync
+      void socialConnections.save(targetAcc).catch(err => console.warn('Supabase social connection write info:', err));
+
+      return updated;
+    });
+  };
+
+  const handleUpdateAccount = (accountId: string, updates: Partial<SocialAccount>) => {
+    const updatedAccs = accounts.map(a => a.id === accountId ? { ...a, ...updates, lastSyncedAt: new Date().toISOString() } : a);
     setAccounts(updatedAccs);
+    saveStoredAccounts(updatedAccs);
+    try {
+      window.dispatchEvent(new CustomEvent('socialspree_accounts_updated', { detail: updatedAccs }));
+    } catch { /* ignore */ }
+
+    // Authoritative Supabase Cloud Sync
+    void socialConnections.update(accountId, updates).catch(err => console.warn('Supabase social connection update info:', err));
+  };
+
+  const handleDeleteAccount = (accountId: string) => {
+    const updatedAccs = accounts.filter(a => a.id !== accountId);
+    setAccounts(updatedAccs);
+    saveStoredAccounts(updatedAccs);
+    try {
+      window.dispatchEvent(new CustomEvent('socialspree_accounts_updated', { detail: updatedAccs }));
+    } catch { /* ignore */ }
+
+    // Authoritative Supabase Cloud Sync
+    void socialConnections.remove(accountId).catch(err => console.warn('Supabase social connection delete info:', err));
   };
 
   const handleReplyReview = (reviewId: string, replyText: string) => {
@@ -924,24 +1193,51 @@ export function App() {
     }
   };
 
+  // Top Priority: If in Password Recovery flow (hash or set_password route), immediately render SetNewPasswordView
+  if (checkIsRecoveryUrl() || authMode === 'set_password') {
+    return (
+      <div className="min-h-screen bg-[#F8FAFF] dark:bg-[#090D16] font-['Inter'] text-[#0B1C30] dark:text-slate-100 transition-colors duration-150 flex items-center justify-center p-4">
+        <SetNewPasswordView
+          onSuccess={() => {
+            try { sessionStorage.removeItem('spree_recovery_active'); } catch { /* ignore */ }
+            setCloudError('');
+            setAuthMode('signin');
+            setViewMode('auth');
+            navigate('/login');
+          }}
+          onCancel={() => {
+            try { sessionStorage.removeItem('spree_recovery_active'); } catch { /* ignore */ }
+            setCloudError('');
+            setViewMode('public');
+            navigate('/');
+          }}
+        />
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-[#F8FAFF] font-['Inter'] text-[#0B1C30]">
+    <div className="min-h-screen bg-[#F8FAFF] dark:bg-[#090D16] font-['Inter'] text-[#0B1C30] dark:text-slate-100 transition-colors duration-150">
       {viewMode === 'auth' ? (
         cloudLoading ? (
-          <div className="min-h-screen flex items-center justify-center font-bold text-slate-600">Loading secure workspace…</div>
+          <div className="min-h-screen flex items-center justify-center font-bold text-slate-600 dark:text-slate-400">Loading secure workspace…</div>
         ) : (
           <div>
-            {cloudError && <div className="fixed top-4 left-1/2 z-50 -translate-x-1/2 rounded-xl bg-red-50 px-4 py-3 text-sm font-semibold text-red-700 shadow">{cloudError}</div>}
-            <AuthGate
+            {cloudError && <div className="fixed top-4 left-1/2 z-50 -translate-x-1/2 rounded-xl bg-red-50 dark:bg-red-950/80 border border-red-200 dark:border-red-800 px-4 py-3 text-sm font-semibold text-red-700 dark:text-red-300 shadow">{cloudError}</div>}
+            <AuthView
+              initialMode={authMode === 'signup' ? 'signup' : authMode === 'forgot' ? 'forgot' : 'signin'}
               onCancel={() => { setCloudError(''); setViewMode('public'); navigate('/'); }}
               onInstantDemoLogin={handleInstantDemoLogin}
-              onContinueToWorkspace={() => { setCloudError(''); setViewMode('app'); setActiveTab('dashboard'); }}
+              onAuthSuccess={() => {
+                setCloudError('');
+                void loadAuthenticatedWorkspace();
+              }}
             />
           </div>
         )
       ) : viewMode === 'public' ? (
         /* Public Marketing Pages — React Router */
-        <div className="min-h-screen flex flex-col">
+        <div className="min-h-screen flex flex-col bg-[#F8FAFF] dark:bg-[#090D16] text-[#0B1C30] dark:text-slate-100 transition-colors duration-150">
           <PublicNavbar
             onLaunchApp={handleLaunchApp}
             onOpenCheckout={(planId) => handleOpenCheckout(planId)}
@@ -1003,7 +1299,7 @@ export function App() {
         </div>
       ) : viewMode === 'app' ? (
         /* SaaS Dashboard Application View Mode */
-        <div className="min-h-screen flex bg-[#F8FAFF]">
+        <div className="min-h-screen flex bg-[#F8FAFF] dark:bg-[#090D16] text-[#0B1C30] dark:text-slate-100 transition-colors duration-150">
           <Sidebar
             activeTab={activeTab}
             setActiveTab={handleSelectTab}
@@ -1014,10 +1310,10 @@ export function App() {
             onSelectAdminSubTab={setAdminSubTab}
             onReturnToPublic={() => { setViewMode('public'); navigate('/'); }}
             onSignOut={handleSignOut}
-            userFullName={user?.fullName || profile?.fullName || undefined}
-            userEmail={user?.primaryEmailAddress?.emailAddress || profile?.email || undefined}
+            userFullName={profile?.fullName || supabaseUser?.user_metadata?.full_name || undefined}
+            userEmail={supabaseUser?.email || profile?.email || undefined}
             userRole={profile?.role || undefined}
-            avatarUrl={profile?.avatarUrl || user?.imageUrl || undefined}
+            avatarUrl={profile?.avatarUrl || supabaseUser?.user_metadata?.avatar_url || undefined}
             aiCreditsEnabled={systemSettings.aiCreditsEnabled ?? false}
             automationAiEnabled={systemSettings.automationAiEnabled ?? false}
           />
@@ -1026,7 +1322,7 @@ export function App() {
             <SuperAdminBanner
               isSuperAdminMode={isSuperAdminMode}
               onToggleSuperAdmin={handleToggleSuperAdmin}
-              userEmail={user?.primaryEmailAddress?.emailAddress || profile?.email || SUPER_ADMIN_EMAIL}
+              userEmail={supabaseUser?.email || profile?.email || SUPER_ADMIN_EMAIL}
             />
             <SystemModeBanner />
             <Header
@@ -1038,8 +1334,8 @@ export function App() {
               pageTitle={getPageTitle(activeTab)}
               onReturnToPublic={() => { setViewMode('public'); navigate('/'); }}
               onSignOut={handleSignOut}
-              userEmail={user?.primaryEmailAddress?.emailAddress || profile?.email || SUPER_ADMIN_EMAIL}
-              userProfile={profile ? { ...profile, fullName: user?.fullName || profile.fullName } : null}
+              userEmail={supabaseUser?.email || profile?.email || SUPER_ADMIN_EMAIL}
+              userProfile={profile ? { ...profile, fullName: profile.fullName || supabaseUser?.user_metadata?.full_name } : null}
               onOpenUserProfile={() => setActiveTab('settings')}
               isAgencyMode={systemSettings.agencyModeEnabled || currentTenant.tierPlan === 'agency'}
               brands={brands}
@@ -1174,7 +1470,10 @@ export function App() {
                 <SocialConnectionsView
                   tenant={currentTenant}
                   accounts={accounts}
+                  userProfile={profile}
                   onAddAccount={handleAddAccount}
+                  onUpdateAccount={handleUpdateAccount}
+                  onDeleteAccount={handleDeleteAccount}
                 />
               )}
 
@@ -1270,13 +1569,7 @@ export function App() {
             )}
           </div>
         </div>
-      ) : (
-        <AuthGate
-          onCancel={() => { setCloudError(''); setViewMode('public'); navigate('/'); }}
-          onInstantDemoLogin={handleInstantDemoLogin}
-          onContinueToWorkspace={() => { setCloudError(''); setViewMode('app'); setActiveTab('dashboard'); }}
-        />
-      )}
+      ) : null}
     </div>
   );
 }

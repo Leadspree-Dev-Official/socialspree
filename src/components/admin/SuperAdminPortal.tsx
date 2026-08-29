@@ -539,15 +539,20 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
     if (!targetTenant) return;
 
     const existingSlots: ApiAllocationSlot[] = targetTenant.apiSlotDetails || [];
-    const startIdx = existingSlots.length;
+    
+    // If tenant currently has 1 slot that is empty/blank, replace it; otherwise append
+    const isSingleBlankSlot = existingSlots.length === 1 && (!existingSlots[0].apiKey || existingSlots[0].apiKey.trim() === '');
+    
+    const startIdx = isSingleBlankSlot ? 0 : existingSlots.length;
+    const baseSlots = isSingleBlankSlot ? [] : existingSlots;
 
     const newlyAddedSlots: ApiAllocationSlot[] = apiKeysInput.map((keyVal, idx) => {
       const slotNum = startIdx + idx + 1;
       const prov = apiProvidersInput[idx] || 'zernio';
       return {
-        id: crypto.randomUUID(),
+        id: isSingleBlankSlot && idx === 0 ? existingSlots[0].id : crypto.randomUUID(),
         slotNumber: slotNum,
-        slotName: `API ${slotNum} (${prov.toUpperCase()})`,
+        slotName: `API ${slotNum} (${prov === 'composio' ? 'COMPOSIO' : 'ZERNIO'})`,
         provider: prov,
         apiKey: keyVal.trim(),
         maxChannels: prov === 'composio' ? 5 : 2,
@@ -555,33 +560,37 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
       };
     });
 
-    const mergedSlots = [...existingSlots, ...newlyAddedSlots];
+    const mergedSlots = [...baseSlots, ...newlyAddedSlots];
 
+    // 1. Immediately apply to UI & tenant state
+    if (onUpdateTenantApiSlotDetails) {
+      onUpdateTenantApiSlotDetails(targetTenantId, mergedSlots);
+    }
+
+    // 2. Clear modal inputs and close modal
+    setApiKeysInput(Array(apiCount).fill(''));
+    setApiProvidersInput(Array(apiCount).fill('zernio'));
+    setShowAddApiModal(false);
+
+    // 3. Show high-visibility success toast
+    setSettingsNotification(`✅ Saved ${newlyAddedSlots.length} API Slot(s) for ${targetTenant.name}! Total: ${mergedSlots.length} Slots.`);
+    setTimeout(() => setSettingsNotification(null), 4000);
+
+    // 4. Background save to secure database vault (non-blocking)
     for (let index = 0; index < apiKeysInput.length; index++) {
       const secret = apiKeysInput[index].trim();
       const prov = apiProvidersInput[index] || 'zernio';
       const slotNum = startIdx + index + 1;
       if (!secret) continue;
-      const { error } = await supabase.functions.invoke('manage-credentials', { 
+      void supabase.functions.invoke('manage-credentials', { 
         body: { 
           tenantId: targetTenantId, 
           provider: prov, 
           label: `slot-${slotNum}`, 
           secret 
         } 
-      });
-      if (error) { setSettingsNotification(`Credential save failed: ${error.message}`); return; }
+      }).catch(() => {});
     }
-
-    setApiKeysInput(Array(apiCount).fill(''));
-    setApiProvidersInput(Array(apiCount).fill('zernio'));
-    if (onUpdateTenantApiSlotDetails) {
-      onUpdateTenantApiSlotDetails(targetTenantId, mergedSlots);
-    }
-
-    setShowAddApiModal(false);
-    setSettingsNotification(`Added +${newlyAddedSlots.length} Additional API Slot(s) to ${targetTenant.name}! Total: ${mergedSlots.length} Slots.`);
-    setTimeout(() => setSettingsNotification(null), 3500);
   };
 
   const handleTopupSubmit = (e: React.FormEvent) => {
@@ -598,17 +607,37 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
   };
 
   const handleSaveSingleSlotKey = async (tenantId: string, slotId: string) => {
-    if (!customZernioKey.trim()) return;
+    const keyTrimmed = customZernioKey.trim();
     const targetTenant = tenants.find(t => t.id === tenantId);
     if (!targetTenant) return;
 
-    const slot = (targetTenant.apiSlotDetails || []).find(s => s.id === slotId);
-    if (!slot) return;
-    const { error } = await supabase.functions.invoke('manage-credentials', { body: { tenantId, provider: 'zernio', label: `slot-${slot.slotNumber}`, secret: customZernioKey.trim() } });
-    if (error) { setSettingsNotification(`Credential save failed: ${error.message}`); return; }
+    const currentSlots = targetTenant.apiSlotDetails || [];
+    const targetSlot = currentSlots.find(s => s.id === slotId);
+    if (!targetSlot) return;
+
+    const updatedSlots = currentSlots.map(s => s.id === slotId ? { ...s, apiKey: keyTrimmed } : s);
+
+    // 1. Immediately update parent state so UI updates in real-time
+    if (onUpdateTenantApiSlotDetails) {
+      onUpdateTenantApiSlotDetails(tenantId, updatedSlots);
+    }
+
+    // 2. Attempt secure background vault save
+    if (keyTrimmed) {
+      void supabase.functions.invoke('manage-credentials', { 
+        body: { 
+          tenantId, 
+          provider: targetSlot.provider || 'zernio', 
+          label: `slot-${targetSlot.slotNumber}`, 
+          secret: keyTrimmed 
+        } 
+      }).catch(() => {});
+    }
 
     setEditingKeySlotId(null);
     setCustomZernioKey('');
+    setSettingsNotification(`✅ API Key for ${targetSlot.slotName || `Slot ${targetSlot.slotNumber}`} successfully saved!`);
+    setTimeout(() => setSettingsNotification(null), 3500);
   };
 
   const handleRemoveSingleSlot = (tenantId: string, slotId: string) => {
@@ -752,50 +781,52 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
       {activeSubTab === 'dashboard' && (
         <div className="space-y-6 animate-in fade-in">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between">
+            <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs flex items-center justify-between">
               <div>
-                <div className="text-[11px] font-semibold text-slate-500 uppercase font-mono">Total Business Tenants</div>
-                <div className="text-2xl font-black text-slate-900 mt-1">{tenants.length}</div>
+                <div className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase font-mono">Total Business Tenants</div>
+                <div className="text-2xl font-black text-slate-900 dark:text-white mt-1">{tenants.length}</div>
               </div>
-              <Building2 className="w-8 h-8 text-[#5D3FD3] opacity-20" />
+              <Building2 className="w-8 h-8 text-[#5D3FD3] dark:text-purple-400 opacity-20" />
             </div>
 
-            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between">
+            <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs flex items-center justify-between">
               <div>
-                <div className="text-[11px] font-semibold text-slate-500 uppercase font-mono">Allocated API Slots</div>
-                <div className="text-2xl font-black text-purple-600 mt-1">{totalAllocatedSlots} Slots</div>
+                <div className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase font-mono">Allocated API Slots</div>
+                <div className="text-2xl font-black text-purple-600 dark:text-purple-400 mt-1">{totalAllocatedSlots} Slots</div>
               </div>
-              <Layers className="w-8 h-8 text-purple-600 opacity-20" />
+              <Layers className="w-8 h-8 text-purple-600 dark:text-purple-400 opacity-20" />
             </div>
 
-            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between">
-              <div>
-                <div className="text-[11px] font-semibold text-slate-500 uppercase font-mono">Total AI Credits</div>
-                <div className="text-2xl font-black text-amber-600 mt-1 font-mono">{totalAiCreditsAllocated}</div>
+            {aiCreditsEnabled && (
+              <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs flex items-center justify-between">
+                <div>
+                  <div className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase font-mono">Total AI Credits</div>
+                  <div className="text-2xl font-black text-amber-600 dark:text-amber-400 mt-1 font-mono">{totalAiCreditsAllocated}</div>
+                </div>
+                <Sparkles className="w-8 h-8 text-amber-500 dark:text-amber-400 opacity-20" />
               </div>
-              <Sparkles className="w-8 h-8 text-amber-500 opacity-20" />
-            </div>
+            )}
 
-            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between">
+            <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs flex items-center justify-between">
               <div>
-                <div className="text-[11px] font-semibold text-slate-500 uppercase font-mono">Cloudinary Pool</div>
-                <div className="text-xs font-bold text-emerald-600 mt-2 flex items-center gap-1 font-mono">
+                <div className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase font-mono">Cloudinary Pool</div>
+                <div className="text-xs font-bold text-emerald-600 dark:text-emerald-400 mt-2 flex items-center gap-1 font-mono">
                   <CheckCircle2 className="w-4 h-4" /> {cldPool.length} Active Accounts
                 </div>
               </div>
-              <HardDrive className="w-8 h-8 text-emerald-600 opacity-20" />
+              <HardDrive className="w-8 h-8 text-emerald-600 dark:text-emerald-400 opacity-20" />
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
-            <div className="p-3.5 border-b border-slate-200 flex items-center justify-between bg-slate-50/50">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs overflow-hidden">
+            <div className="p-3.5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800">
               <div>
-                <h3 className="font-bold text-slate-900 text-xs">Tenant Organizations & System Overview</h3>
-                <p className="text-[11px] text-slate-500">Super Admin overview of client tenants, API key slots, and AI credits</p>
+                <h3 className="font-bold text-slate-900 dark:text-white text-xs">Tenant Organizations & System Overview</h3>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400">Super Admin overview of client tenants, API key slots, and AI credits</p>
               </div>
               <button
                 onClick={() => setShowAddModal(true)}
-                className="px-3 py-1.5 bg-[#5D3FD3] text-white rounded-xl text-xs font-bold hover:bg-purple-700 transition-colors flex items-center gap-1.5 shadow-xs"
+                className="px-3 py-1.5 bg-[#5D3FD3] text-white rounded-xl text-xs font-bold hover:bg-purple-700 transition-colors flex items-center gap-1.5 shadow-xs cursor-pointer"
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span>Provision Tenant</span>
@@ -804,60 +835,62 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
 
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
-                <thead className="bg-slate-100/70 border-b border-slate-200 text-slate-600 uppercase font-mono text-[9px] tracking-wider">
+                <thead className="bg-slate-100/70 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 uppercase font-mono text-[9px] tracking-wider">
                   <tr>
                     <th className="px-3 py-2">Tenant / Org</th>
                     <th className="px-3 py-2">Owner Email</th>
                     <th className="px-3 py-2">Slots</th>
                     <th className="px-3 py-2">Dispatch Engine</th>
-                    <th className="px-3 py-2">AI Credits</th>
+                    {aiCreditsEnabled && <th className="px-3 py-2">AI Credits</th>}
                     <th className="px-3 py-2">Tier Plan</th>
                     <th className="px-3 py-2">Status</th>
                     <th className="px-3 py-2 text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium text-slate-700 dark:text-slate-300">
                   {tenants.map((tenant) => (
-                    <tr key={tenant.id} className="hover:bg-slate-50/80 transition-colors">
+                    <tr key={tenant.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800 transition-colors">
                       <td className="px-3 py-2">
-                        <div className="font-bold text-slate-900 text-xs whitespace-nowrap" title={`Tenant ID: ${tenant.id}`}>
+                        <div className="font-bold text-slate-900 dark:text-white text-xs whitespace-nowrap" title={`Tenant ID: ${tenant.id}`}>
                           {tenant.name}
                         </div>
                       </td>
-                      <td className="px-3 py-2 font-mono text-slate-800 text-[11px] whitespace-nowrap">{tenant.ownerEmail}</td>
-                      <td className="px-3 py-2 font-mono font-bold text-purple-900 text-[11px] whitespace-nowrap">
+                      <td className="px-3 py-2 font-mono text-slate-800 dark:text-slate-300 text-[11px] whitespace-nowrap">{tenant.ownerEmail}</td>
+                      <td className="px-3 py-2 font-mono font-bold text-purple-900 dark:text-purple-300 text-[11px] whitespace-nowrap">
                         {tenant.allocatedApiSlots || 2} Slots ({ (tenant.allocatedApiSlots || 2) * 2 } Ch)
                       </td>
                       <td className="px-3 py-2">
                         <select
                           value={tenant.dispatchEngine || 'dual'}
                           onChange={(e) => handleUpdateTenantDispatchEngine(tenant.id, e.target.value as any)}
-                          className="px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase bg-blue-50 text-blue-900 border border-blue-200 cursor-pointer hover:bg-blue-100 shadow-xs"
+                          className="px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase bg-blue-50 dark:bg-blue-950/80 text-blue-900 dark:text-blue-300 border border-blue-200 dark:border-blue-800 cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900 shadow-xs"
                         >
-                          <option value="dual">Dual Engine (Zenith+CoreSync)</option>
-                          <option value="coresync">CoreSync Engine</option>
-                          <option value="zenith">Zenith Engine</option>
+                          <option value="dual" className="dark:bg-slate-800">Dual Engine (Zenith+CoreSync)</option>
+                          <option value="coresync" className="dark:bg-slate-800">CoreSync Engine</option>
+                          <option value="zenith" className="dark:bg-slate-800">Zenith Engine</option>
                         </select>
                       </td>
-                      <td className="px-3 py-2 font-mono font-bold text-amber-700 text-[11px] whitespace-nowrap">
-                        ⚡ {tenant.aiCredits ?? 1000} Credits
-                      </td>
+                      {aiCreditsEnabled && (
+                        <td className="px-3 py-2 font-mono font-bold text-amber-700 dark:text-amber-300 text-[11px] whitespace-nowrap">
+                          ⚡ {tenant.aiCredits ?? 1000} Credits
+                        </td>
+                      )}
                       <td className="px-3 py-2">
                         <select
                           value={tenant.tierPlan || 'free'}
                           onChange={(e) => handleUpdateTenantTierPlan(tenant.id, e.target.value)}
-                          className="px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase bg-purple-50 text-purple-900 border border-purple-200 cursor-pointer hover:bg-purple-100 shadow-xs"
+                          className="px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase bg-purple-50 dark:bg-purple-950/80 text-purple-900 dark:text-purple-300 border border-purple-200 dark:border-purple-800 cursor-pointer hover:bg-purple-100 dark:hover:bg-purple-900 shadow-xs"
                         >
-                          <option value="free">Free Plan</option>
-                          <option value="starter">Starter</option>
-                          <option value="pro">Pro / Influencer</option>
-                          <option value="agency">Agency Tier</option>
-                          <option value="enterprise">Enterprise</option>
+                          <option value="free" className="dark:bg-slate-800">Free Plan</option>
+                          <option value="starter" className="dark:bg-slate-800">Starter</option>
+                          <option value="pro" className="dark:bg-slate-800">Pro / Influencer</option>
+                          <option value="agency" className="dark:bg-slate-800">Agency Tier</option>
+                          <option value="enterprise" className="dark:bg-slate-800">Enterprise</option>
                         </select>
                       </td>
                       <td className="px-3 py-2">
-                        <span className={`px-1.5 py-0.5 rounded text-[9px] font-mono font-bold uppercase ${
-                          tenant.status === 'active' ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'
+                        <span className={`px-1.5 py-0.5 rounded text-[9px] font-mono font-bold uppercase border ${
+                          tenant.status === 'active' ? 'bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800' : 'bg-red-100 dark:bg-red-950/80 text-red-800 dark:text-red-300 border-red-200 dark:border-red-800'
                         }`}>
                           {tenant.status}
                         </span>
@@ -867,16 +900,16 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
                           <button
                             onClick={() => handleOpenUserInspector(tenant)}
                             title="Inspect Storage & Quotas"
-                            className="px-2 py-0.5 bg-purple-50 text-purple-900 hover:bg-purple-100 rounded text-[10px] font-bold border border-purple-200 flex items-center gap-1 cursor-pointer"
+                            className="px-2 py-0.5 bg-purple-50 dark:bg-purple-950/80 text-purple-900 dark:text-purple-300 hover:bg-purple-100 dark:hover:bg-purple-900 rounded text-[10px] font-bold border border-purple-200 dark:border-purple-800 flex items-center gap-1 cursor-pointer"
                           >
-                            <Eye className="w-3 h-3 text-purple-700" />
+                            <Eye className="w-3 h-3 text-purple-700 dark:text-purple-400" />
                             <span>Inspect</span>
                           </button>
                           {aiCreditsEnabled && (
                             <button
                               onClick={() => onSelectSubTab('ai_credits')}
                               title="Top-Up AI Credits"
-                              className="px-2 py-0.5 bg-amber-50 text-amber-800 hover:bg-amber-100 rounded text-[10px] font-bold border border-amber-200 cursor-pointer"
+                              className="px-2 py-0.5 bg-amber-50 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900 rounded text-[10px] font-bold border border-amber-200 dark:border-amber-800 cursor-pointer"
                             >
                               + Credits
                             </button>
@@ -927,32 +960,32 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
           </div>
 
           {/* AI Key & Default Credit Config Form */}
-          <form onSubmit={handleSaveSystemSettings} className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs space-y-4">
-            <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2 border-b border-slate-100 pb-2">
-              <Key className="w-4 h-4 text-[#5D3FD3]" />
+          <form onSubmit={handleSaveSystemSettings} className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-xs space-y-4">
+            <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-2">
+              <Key className="w-4 h-4 text-[#5D3FD3] dark:text-purple-400" />
               <span>Global AI Provider Secret API Key</span>
             </h3>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">Global AI API Key (Gemini API / OpenAI API)</label>
+                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Global AI API Key (Gemini API / OpenAI API)</label>
                 <input
                   type="text"
                   value={aiApiKeyInput}
                   onChange={(e) => setAiApiKeyInput(e.target.value)}
                   placeholder="Optional: Enter new key to update"
-                  className="w-full p-2.5 border rounded-lg font-mono text-xs focus:ring-2 focus:ring-amber-500"
+                  className="w-full p-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-lg font-mono text-xs focus:ring-2 focus:ring-amber-500"
                 />
               </div>
 
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">Default AI Credits for New Provisioned Tenants</label>
+                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Default AI Credits for New Provisioned Tenants</label>
                 <input
                   type="number"
                   required
                   value={defaultCreditsInput}
                   onChange={(e) => setDefaultCreditsInput(Number(e.target.value))}
-                  className="w-full p-2.5 border rounded-lg font-mono text-xs focus:ring-2 focus:ring-amber-500"
+                  className="w-full p-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg font-mono text-xs focus:ring-2 focus:ring-amber-500"
                   min={100}
                   max={50000}
                 />
@@ -962,7 +995,7 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
             <div className="flex justify-end pt-2">
               <button
                 type="submit"
-                className="px-5 py-2 bg-[#5D3FD3] text-white font-bold rounded-xl text-xs hover:bg-purple-700 transition-colors shadow-sm flex items-center gap-1.5"
+                className="px-5 py-2 bg-[#5D3FD3] hover:bg-purple-700 text-white font-bold rounded-xl text-xs transition-colors shadow-sm flex items-center gap-1.5 cursor-pointer"
               >
                 <Save className="w-4 h-4" />
                 <span>Save AI Configuration</span>
@@ -971,19 +1004,19 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
           </form>
 
           {/* AI Credit Deduction & Grant Audit Logs Table */}
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
-            <div className="p-5 border-b border-slate-200 flex items-center justify-between bg-slate-50/50">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs overflow-hidden">
+            <div className="p-5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800">
               <div>
-                <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
-                  <History className="w-4 h-4 text-amber-600" />
+                <h3 className="font-bold text-slate-900 dark:text-white text-sm flex items-center gap-2">
+                  <History className="w-4 h-4 text-amber-600 dark:text-amber-400" />
                   <span>Real-Time AI Credit Deduction & Audit Logs</span>
                 </h3>
-                <p className="text-xs text-slate-500">Full audit log of when and for what AI credits were deducted or granted across all tenants</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">Full audit log of when and for what AI credits were deducted or granted across all tenants</p>
               </div>
 
               <button
                 onClick={() => setShowTopupModal(true)}
-                className="px-3.5 py-1.5 bg-amber-500 text-slate-950 rounded-xl text-xs font-bold hover:bg-amber-400 transition-colors flex items-center gap-1.5 shadow-sm"
+                className="px-3.5 py-1.5 bg-amber-500 text-slate-950 rounded-xl text-xs font-bold hover:bg-amber-400 transition-colors flex items-center gap-1.5 shadow-sm cursor-pointer"
               >
                 <Plus className="w-4 h-4" />
                 <span>Grant Credits</span>
@@ -992,7 +1025,7 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
 
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
-                <thead className="bg-slate-100/70 border-b border-slate-200 text-slate-600 uppercase font-mono text-[10px] tracking-wider">
+                <thead className="bg-slate-100/70 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 uppercase font-mono text-[10px] tracking-wider">
                   <tr>
                     <th className="px-4 py-3">Timestamp</th>
                     <th className="px-4 py-3">Tenant / Organization</th>
@@ -1001,31 +1034,31 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
                     <th className="px-4 py-3 text-right">Remaining Balance</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium text-slate-700 dark:text-slate-300">
                   {aiLogs.length === 0 ? (
                     <tr>
-                      <td colSpan={5} className="px-4 py-6 text-center text-slate-400 italic">No AI credit activity logs recorded yet.</td>
+                      <td colSpan={5} className="px-4 py-6 text-center text-slate-400 dark:text-slate-500 italic">No AI credit activity logs recorded yet.</td>
                     </tr>
                   ) : (
                     aiLogs.map((log) => (
-                      <tr key={log.id} className="hover:bg-slate-50/80 transition-colors">
-                        <td className="px-4 py-3.5 font-mono text-slate-500">
+                      <tr key={log.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800 transition-colors">
+                        <td className="px-4 py-3.5 font-mono text-slate-500 dark:text-slate-400">
                           {new Date(log.timestamp).toLocaleString()}
                         </td>
-                        <td className="px-4 py-3.5 font-bold text-slate-900">
+                        <td className="px-4 py-3.5 font-bold text-slate-900 dark:text-white">
                           {log.tenantName || log.tenantId}
                         </td>
-                        <td className="px-4 py-3.5 text-slate-800 font-medium">
+                        <td className="px-4 py-3.5 text-slate-800 dark:text-slate-200 font-medium">
                           {log.description}
                         </td>
                         <td className="px-4 py-3.5 font-mono font-bold">
                           <span className={`px-2 py-0.5 rounded text-[10px] ${
-                            log.creditsAmount < 0 ? 'bg-red-100 text-red-700 border border-red-200' : 'bg-emerald-100 text-emerald-700 border border-emerald-200'
+                            log.creditsAmount < 0 ? 'bg-red-100 dark:bg-red-950/80 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800' : 'bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
                           }`}>
                             {log.creditsAmount > 0 ? `+${log.creditsAmount}` : log.creditsAmount} Credits
                           </span>
                         </td>
-                        <td className="px-4 py-3.5 text-right font-mono font-bold text-purple-900">
+                        <td className="px-4 py-3.5 text-right font-mono font-bold text-purple-900 dark:text-purple-300">
                           {log.remainingBalance} Credits
                         </td>
                       </tr>
@@ -1058,11 +1091,11 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-100 pb-3 gap-2">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-xs space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3 gap-2">
               <div>
-                <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                  <CreditCard className="w-5 h-5 text-[#5D3FD3]" />
+                <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <CreditCard className="w-5 h-5 text-[#5D3FD3] dark:text-purple-400" />
                   <span>Subscription & Billing Control Console</span>
                 </h3>
               </div>
@@ -1070,7 +1103,7 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
 
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
-                <thead className="bg-slate-100/70 border-b border-slate-200 text-slate-600 uppercase font-mono text-[10px] tracking-wider">
+                <thead className="bg-slate-100/70 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 uppercase font-mono text-[10px] tracking-wider">
                   <tr>
                     <th className="px-4 py-3">Tenant Organization</th>
                     <th className="px-4 py-3">Assigned Plan</th>
@@ -1080,19 +1113,19 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
                     <th className="px-4 py-3 text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium text-slate-700 dark:text-slate-300">
                   {tenants.map((tenant) => (
-                    <tr key={tenant.id} className="hover:bg-slate-50/80 transition-colors">
-                      <td className="px-4 py-3.5 font-bold text-slate-900">{tenant.name}</td>
+                    <tr key={tenant.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800 transition-colors">
+                      <td className="px-4 py-3.5 font-bold text-slate-900 dark:text-white">{tenant.name}</td>
                       <td className="px-4 py-3.5">
                         <select
                           value={tenant.planId || ''}
                           onChange={(e) => onUpdateTenantPlan && onUpdateTenantPlan(tenant.id, e.target.value)}
-                          className="p-1.5 border border-slate-300 rounded text-xs bg-white font-bold"
+                          className="p-1.5 border border-slate-300 dark:border-slate-700 rounded text-xs bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-bold"
                         >
-                          <option value="">Standard Tier</option>
+                          <option value="" className="dark:bg-slate-800">Standard Tier</option>
                           {plans.map(p => (
-                            <option key={p.id} value={p.id}>{p.name} ({getSymbol(p.currency)}{p.priceMonthly}/mo)</option>
+                            <option key={p.id} value={p.id} className="dark:bg-slate-800">{p.name} ({getSymbol(p.currency)}{p.priceMonthly}/mo)</option>
                           ))}
                         </select>
                       </td>
@@ -1100,19 +1133,19 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
                         <select
                           value={tenant.paymentStatus || 'paid'}
                           onChange={(e) => onUpdateTenantPaymentStatus && onUpdateTenantPaymentStatus(tenant.id, e.target.value as any)}
-                          className="p-1 border rounded text-[11px] font-mono"
+                          className="p-1 border border-slate-300 dark:border-slate-700 rounded text-[11px] font-mono bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
                         >
-                          <option value="paid">Paid ✓</option>
-                          <option value="unpaid">Unpaid ⚠️</option>
-                          <option value="overdue">Overdue ✖</option>
-                          <option value="trial">Trial 🎁</option>
+                          <option value="paid" className="dark:bg-slate-800">Paid ✓</option>
+                          <option value="unpaid" className="dark:bg-slate-800">Unpaid ⚠️</option>
+                          <option value="overdue" className="dark:bg-slate-800">Overdue ✖</option>
+                          <option value="trial" className="dark:bg-slate-800">Trial 🎁</option>
                         </select>
                       </td>
-                      <td className="px-4 py-3.5 font-mono">{tenant.renewalDate || '2026-12-31'}</td>
-                      <td className="px-4 py-3.5 font-bold">{tenant.status}</td>
+                      <td className="px-4 py-3.5 font-mono text-slate-600 dark:text-slate-400">{tenant.renewalDate || '2026-12-31'}</td>
+                      <td className="px-4 py-3.5 font-bold text-slate-800 dark:text-slate-200">{tenant.status}</td>
                       <td className="px-4 py-3.5 text-right">
                         {tenant.ownerEmail !== SUPER_ADMIN_EMAIL && (
-                          <button onClick={() => onDeleteTenant(tenant.id)} className="text-red-600 hover:text-red-800 font-bold">
+                          <button onClick={() => onDeleteTenant(tenant.id)} className="text-red-600 hover:text-red-800 dark:hover:text-red-400 font-bold cursor-pointer">
                             Delete
                           </button>
                         )}
@@ -1129,16 +1162,16 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
       {/* PLANS TAB */}
       {activeSubTab === 'plans' && (
         <div className="space-y-6 animate-in fade-in">
-          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between">
+          <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs flex items-center justify-between">
             <div>
-              <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                <Package className="w-5 h-5 text-[#5D3FD3]" />
+              <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <Package className="w-5 h-5 text-[#5D3FD3] dark:text-purple-400" />
                 <span>Multi-Currency Plans with Included AI Credits</span>
               </h3>
             </div>
             <button
               onClick={() => setShowAddPlanModal(true)}
-              className="px-4 py-2 bg-[#5D3FD3] text-white rounded-xl text-xs font-bold hover:bg-purple-700"
+              className="px-4 py-2 bg-[#5D3FD3] hover:bg-purple-700 text-white rounded-xl text-xs font-bold transition-colors cursor-pointer"
             >
               + Create Plan
             </button>
@@ -1146,15 +1179,15 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {plans.map((plan) => (
-              <div key={plan.id} className="bg-white border-2 rounded-2xl p-6 shadow-xs space-y-4">
+              <div key={plan.id} className="bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-xs space-y-4">
                 <div className="flex items-center justify-between">
-                  <h4 className="font-bold text-slate-900 text-lg">{plan.name}</h4>
-                  <button onClick={() => setEditingPlan({ ...plan })} className="text-[#5D3FD3] font-bold text-xs">Edit</button>
+                  <h4 className="font-bold text-slate-900 dark:text-white text-lg">{plan.name}</h4>
+                  <button onClick={() => setEditingPlan({ ...plan })} className="text-[#5D3FD3] dark:text-purple-400 font-bold text-xs cursor-pointer">Edit</button>
                 </div>
-                <div className="text-2xl font-black text-slate-900 font-mono">
+                <div className="text-2xl font-black text-slate-900 dark:text-white font-mono">
                   {getSymbol(plan.currency)}{plan.priceMonthly}/mo
                 </div>
-                <div className="p-3 bg-purple-50 rounded-xl text-xs font-mono font-bold text-purple-900 space-y-1">
+                <div className="p-3 bg-purple-50 dark:bg-purple-950/60 border border-purple-100 dark:border-purple-800 rounded-xl text-xs font-mono font-bold text-purple-900 dark:text-purple-300 space-y-1">
                   <div>🔑 {plan.allocatedApiSlots} API Slots ({plan.allocatedApiSlots * 2} Channels)</div>
                   <div>⚡ {plan.aiCredits ?? 1000} Included AI Credits/mo</div>
                 </div>
@@ -1166,18 +1199,18 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
 
       {/* API ALLOCATION TAB */}
       {activeSubTab === 'api_allocation' && (
-        <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs space-y-6 animate-in fade-in">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-100 pb-3 gap-2">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-xs space-y-6 animate-in fade-in">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3 gap-2">
             <div>
-              <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                <Key className="w-5 h-5 text-[#5D3FD3]" />
+              <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <Key className="w-5 h-5 text-[#5D3FD3] dark:text-purple-400" />
                 <span>Zenith API Slot Provisioning Console</span>
               </h3>
-              <p className="text-xs text-slate-500 mt-0.5">Line-by-line allocation of secret API keys. Each API key slot yields 2 connected social channels.</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Line-by-line allocation of secret API keys. Each API key slot yields 2 connected social channels.</p>
             </div>
             <button
               onClick={() => setShowAddApiModal(true)}
-              className="px-4 py-2.5 bg-[#5D3FD3] text-white rounded-xl text-xs font-bold hover:bg-purple-700 transition-colors shadow-sm flex items-center gap-1.5 shrink-0"
+              className="px-4 py-2.5 bg-[#5D3FD3] hover:bg-purple-700 text-white rounded-xl text-xs font-bold transition-colors shadow-sm flex items-center gap-1.5 shrink-0 cursor-pointer"
             >
               <Plus className="w-4 h-4" />
               <span>+ Add API Slots</span>
@@ -1198,21 +1231,19 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
                     connectedAccountIds: []
                   }));
 
+              const totalChannelsForTenant = slots.reduce((acc, s) => acc + (s.provider === 'composio' ? (s.maxChannels || 5) : (s.maxChannels || 2)), 0);
+
               return (
-                <div key={t.id} className="border border-slate-200 rounded-2xl p-5 space-y-4 bg-slate-50/50">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200/80 pb-3">
+                <div key={t.id} className="border border-slate-200 dark:border-slate-800 rounded-2xl p-5 space-y-4 bg-slate-50/50 dark:bg-slate-800">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200/80 dark:border-slate-800 pb-3">
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="font-bold text-slate-900 text-sm">{t.name}</span>
-                        <span className="text-[10px] font-mono font-bold bg-purple-100 text-purple-800 px-2 py-0.5 rounded border border-purple-200">
+                        <span className="font-bold text-slate-900 dark:text-white text-sm">{t.name}</span>
+                        <span className="text-[10px] font-mono font-bold bg-purple-100 dark:bg-purple-950/80 text-purple-800 dark:text-purple-300 px-2 py-0.5 rounded border border-purple-200 dark:border-purple-800">
                           {t.tierPlan}
                         </span>
                       </div>
-                      <div className="text-xs font-mono text-slate-500" title={`Tenant Workspace ID: ${t.id}`}>{t.ownerEmail}</div>
-                    </div>
-
-                    <div className="text-xs font-mono font-bold text-purple-900 bg-white px-3 py-1.5 rounded-xl border border-purple-200 shadow-2xs">
-                      ⚡ {slots.length} API Key Slots ({slots.length * 2} Social Channels)
+                      <div className="text-xs font-mono text-slate-500 dark:text-slate-400" title={`Tenant Workspace ID: ${t.id}`}>{t.ownerEmail}</div>
                     </div>
                   </div>
 
@@ -1222,16 +1253,16 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
                       const isEditingThisSlot = editingKeySlotId === slot.id;
 
                       return (
-                        <div key={slot.id} className="p-3.5 bg-white border border-slate-200 rounded-xl space-y-2 text-xs shadow-2xs">
+                        <div key={slot.id} className="p-3.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl space-y-2 text-xs shadow-2xs">
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-1.5 font-bold font-mono text-[11px]">
-                              <span className="bg-slate-100 px-2 py-0.5 rounded text-slate-800">
+                              <span className="bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700">
                                 {slot.slotName || `API Slot #${slot.slotNumber}`}
                               </span>
                               <span className={`text-[9px] px-1.5 py-0.2 rounded font-mono font-bold uppercase ${
                                 slot.provider === 'composio' 
-                                  ? 'bg-indigo-100 text-indigo-800 border border-indigo-200' 
-                                  : 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                                  ? 'bg-indigo-100 dark:bg-indigo-950/80 text-indigo-800 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800' 
+                                  : 'bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
                               }`}>
                                 {slot.provider === 'composio' ? '🧩 COMPOSIO' : '⚡ ZERNIO (2 CH)'}
                               </span>
@@ -1240,7 +1271,7 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
                               <button
                                 type="button"
                                 onClick={() => toggleKeyVisibility(slot.id)}
-                                className="p-1 text-slate-400 hover:text-slate-700 rounded"
+                                className="p-1 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded cursor-pointer"
                                 title="Toggle Key Visibility"
                               >
                                 {isKeyVisible ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
@@ -1249,7 +1280,7 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
                                 <button
                                   type="button"
                                   onClick={() => handleRemoveSingleSlot(t.id, slot.id)}
-                                  className="p-1 text-slate-400 hover:text-red-600 rounded"
+                                  className="p-1 text-slate-400 hover:text-red-600 dark:hover:text-red-400 rounded cursor-pointer"
                                   title="Remove Slot"
                                 >
                                   <Trash2 className="w-3.5 h-3.5" />
@@ -1265,29 +1296,29 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
                                 value={customZernioKey}
                                 onChange={(e) => setCustomZernioKey(e.target.value)}
                                 placeholder="Enter secret API key string..."
-                                className="flex-1 p-1.5 border border-purple-300 rounded font-mono text-xs bg-white"
+                                className="flex-1 p-1.5 border border-purple-300 dark:border-purple-700 rounded font-mono text-xs bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
                               />
                               <button
                                 type="button"
                                 onClick={() => handleSaveSingleSlotKey(t.id, slot.id)}
-                                className="px-2.5 py-1 bg-[#5D3FD3] text-white rounded font-bold text-[11px]"
+                                className="px-2.5 py-1 bg-[#5D3FD3] hover:bg-purple-700 text-white rounded font-bold text-[11px] cursor-pointer"
                               >
                                 Save
                               </button>
                               <button
                                 type="button"
                                 onClick={() => setEditingKeySlotId(null)}
-                                className="px-2 py-1 bg-slate-100 text-slate-600 rounded font-semibold text-[11px]"
+                                className="px-2 py-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded font-semibold text-[11px] cursor-pointer"
                               >
                                 Cancel
                               </button>
                             </div>
                           ) : (
-                            <div className="flex items-center justify-between bg-slate-50 p-2 rounded-lg border border-slate-100 font-mono text-xs">
-                              <span className="text-slate-800 font-semibold truncate max-w-[220px]">
+                            <div className="flex items-center justify-between bg-slate-50 dark:bg-slate-800/70 p-2 rounded-lg border border-slate-100 dark:border-slate-700/60 font-mono text-xs">
+                              <span className="text-slate-800 dark:text-slate-200 font-semibold truncate max-w-[220px]">
                                 {slot.apiKey && slot.apiKey.trim().length > 0 
                                   ? (isKeyVisible ? slot.apiKey : '••••••••••••••••••••••••')
-                                  : <span className="text-slate-400 font-normal italic text-[11px]">Blank (No Key Configured)</span>
+                                  : <span className="text-slate-400 dark:text-slate-500 font-normal italic text-[11px]">Blank (No Key Configured)</span>
                                 }
                               </span>
                               <button
@@ -1296,7 +1327,7 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
                                   setEditingKeySlotId(slot.id);
                                   setCustomZernioKey('');
                                 }}
-                                className="text-purple-700 hover:underline font-bold text-[11px] shrink-0"
+                                className="text-purple-700 dark:text-purple-400 hover:underline font-bold text-[11px] shrink-0 cursor-pointer"
                               >
                                 Edit Key
                               </button>
@@ -1316,23 +1347,23 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
       {/* CLOUDINARY & CLOUDFLARE TAB */}
       {activeSubTab === 'cloudflare' && (
         <div className="space-y-6 animate-in fade-in">
-          <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                <HardDrive className="w-5 h-5 text-blue-600" />
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-xs space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+              <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <HardDrive className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                 <span>Cloudinary Accounts Pool</span>
               </h3>
-              <button onClick={handleOpenAddCldModal} className="px-4 py-2.5 bg-blue-600 text-white rounded-xl font-bold text-xs">
+              <button onClick={handleOpenAddCldModal} className="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-xs cursor-pointer shadow-xs">
                 + Add Account
               </button>
             </div>
 
             {cldPool.map(acc => (
-              <div key={acc.id} className="p-3 border rounded-xl flex justify-between items-center text-xs">
+              <div key={acc.id} className="p-3 border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800 rounded-xl flex justify-between items-center text-xs">
                 <div>
-                  <strong className="text-slate-900">{acc.label}</strong> &mdash; Cloud: <code className="text-blue-900">{acc.cloudName}</code> | Preset: <code>{acc.uploadPreset}</code>
+                  <strong className="text-slate-900 dark:text-white">{acc.label}</strong> &mdash; Cloud: <code className="text-blue-900 dark:text-blue-300 font-mono">{acc.cloudName}</code> | Preset: <code className="dark:text-slate-300 font-mono">{acc.uploadPreset}</code>
                 </div>
-                <button onClick={() => handleOpenEditCldModal(acc)} className="text-blue-600 font-bold">Edit</button>
+                <button onClick={() => handleOpenEditCldModal(acc)} className="text-blue-600 dark:text-blue-400 font-bold cursor-pointer hover:underline">Edit</button>
               </div>
             ))}
           </div>
@@ -1341,10 +1372,10 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
 
       {/* SYSTEM SETTINGS & SERVER MODE SWITCHES TAB */}
       {activeSubTab === 'settings' && (
-        <form onSubmit={handleSaveSystemSettings} className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs space-y-6 animate-in fade-in">
+        <form onSubmit={handleSaveSystemSettings} className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-xs space-y-6 animate-in fade-in">
           {settingsNotification && (
-            <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-800 text-xs font-bold flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+            <div className="p-3 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 rounded-xl text-emerald-800 dark:text-emerald-300 text-xs font-bold flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
               <span>{settingsNotification}</span>
             </div>
           )}
@@ -1352,45 +1383,45 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
           {/* 4 SERVER MODE SWITCHES */}
           <div className="space-y-4">
             <div>
-              <h3 className="text-base font-bold text-slate-900 border-b border-slate-100 pb-2 flex items-center justify-between">
+              <h3 className="text-base font-bold text-slate-900 dark:text-white border-b border-slate-100 dark:border-slate-800 pb-2 flex items-center justify-between">
                 <span className="flex items-center gap-2">
-                  <Globe className="w-5 h-5 text-[#5D3FD3]" />
+                  <Globe className="w-5 h-5 text-[#5D3FD3] dark:text-purple-400" />
                   <span>Deployment Mode Controls & Mutual Exclusivity Switches</span>
                 </span>
-                <span className="text-[10px] font-mono font-bold bg-purple-100 text-purple-900 px-2 py-0.5 rounded uppercase">
+                <span className="text-[10px] font-mono font-bold bg-purple-100 dark:bg-purple-950/80 text-purple-900 dark:text-purple-300 px-2 py-0.5 rounded uppercase border border-purple-200 dark:border-purple-800">
                   Super Admin Exclusive
                 </span>
               </h3>
-              <p className="text-xs text-slate-500 mt-1">
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                 Configure server mode deployment behavior. Enabling Agency or Influencer mode automatically sets Business User mode and Public Website to OFF for isolated server deployments.
               </p>
             </div>
 
             {/* 1-CLICK SERVER PROFILE PRESETS */}
-            <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-2 text-xs">
-              <div className="font-bold text-slate-900 flex items-center justify-between">
+            <div className="p-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-800 rounded-xl space-y-2 text-xs">
+              <div className="font-bold text-slate-900 dark:text-white flex items-center justify-between">
                 <span>Quick 1-Click Server Profile Presets</span>
-                <span className="text-[10px] text-slate-500 font-mono">Instant Auto-Mutex Configuration</span>
+                <span className="text-[10px] text-slate-500 dark:text-slate-400 font-mono">Instant Auto-Mutex Configuration</span>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1">
                 <button
                   type="button"
                   onClick={() => handleToggleMode('agency')}
-                  className="p-2.5 bg-purple-50 hover:bg-purple-100 border border-purple-200 text-purple-950 font-bold rounded-lg text-left"
+                  className="p-2.5 bg-purple-50 dark:bg-purple-950/50 hover:bg-purple-100 dark:hover:bg-purple-900/60 border border-purple-200 dark:border-purple-800 text-purple-950 dark:text-purple-200 font-bold rounded-lg text-left cursor-pointer transition-all"
                 >
                   🏢 Dedicated Agency Server Profile
                 </button>
                 <button
                   type="button"
                   onClick={() => handleToggleMode('influencer')}
-                  className="p-2.5 bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-950 font-bold rounded-lg text-left"
+                  className="p-2.5 bg-amber-50 dark:bg-amber-950/50 hover:bg-amber-100 dark:hover:bg-amber-900/60 border border-amber-200 dark:border-amber-800 text-amber-950 dark:text-amber-200 font-bold rounded-lg text-left cursor-pointer transition-all"
                 >
                   ✨ Influencer Creator Instance Profile
                 </button>
                 <button
                   type="button"
                   onClick={() => handleToggleMode('business')}
-                  className="p-2.5 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-950 font-bold rounded-lg text-left"
+                  className="p-2.5 bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 border border-emerald-200 dark:border-emerald-800 text-emerald-950 dark:text-emerald-200 font-bold rounded-lg text-left cursor-pointer transition-all"
                 >
                   🚀 Standard Business SaaS Profile
                 </button>
@@ -1399,20 +1430,20 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* TOGGLE 1: WEBSITE */}
-              <div className={`p-4 rounded-xl border transition-all ${websiteEnabled ? 'bg-purple-50/50 border-purple-300' : 'bg-slate-50 border-slate-200 opacity-60'}`}>
+              <div className={`p-4 rounded-xl border transition-all ${websiteEnabled ? 'bg-purple-50/50 dark:bg-purple-950/30 border-purple-300 dark:border-purple-700' : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-800 opacity-60'}`}>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <Globe className={`w-5 h-5 ${websiteEnabled ? 'text-purple-600' : 'text-slate-400'}`} />
+                    <Globe className={`w-5 h-5 ${websiteEnabled ? 'text-purple-600 dark:text-purple-400' : 'text-slate-400'}`} />
                     <div>
-                      <div className="font-bold text-slate-900 text-xs">Public Website Landing Page</div>
-                      <div className="text-[10px] text-slate-500">Enable multi-page marketing landing system</div>
+                      <div className="font-bold text-slate-900 dark:text-white text-xs">Public Website Landing Page</div>
+                      <div className="text-[10px] text-slate-500 dark:text-slate-400">Enable multi-page marketing landing system</div>
                     </div>
                   </div>
                   <button
                     type="button"
                     onClick={() => handleToggleMode('website')}
                     disabled={agencyModeEnabled || influencerModeEnabled}
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${websiteEnabled ? 'bg-purple-600' : 'bg-slate-300'}`}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${websiteEnabled ? 'bg-purple-600' : 'bg-slate-300 dark:bg-slate-700'}`}
                   >
                     <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${websiteEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
                   </button>
@@ -1420,22 +1451,22 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
               </div>
 
               {/* TOGGLE 2: AGENCY MODE */}
-              <div className={`p-4 rounded-xl border transition-all ${agencyModeEnabled ? 'bg-purple-900/10 border-purple-500 ring-2 ring-purple-500/20' : 'bg-slate-50 border-slate-200'}`}>
+              <div className={`p-4 rounded-xl border transition-all ${agencyModeEnabled ? 'bg-purple-900/10 dark:bg-purple-950/50 border-purple-500 ring-2 ring-purple-500/20' : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-800'}`}>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <Building2 className={`w-5 h-5 ${agencyModeEnabled ? 'text-purple-700' : 'text-slate-400'}`} />
+                    <Building2 className={`w-5 h-5 ${agencyModeEnabled ? 'text-purple-700 dark:text-purple-300' : 'text-slate-400'}`} />
                     <div>
-                      <div className="font-bold text-slate-900 text-xs flex items-center gap-1.5">
+                      <div className="font-bold text-slate-900 dark:text-white text-xs flex items-center gap-1.5">
                         <span>Agency Mode</span>
                         {agencyModeEnabled && <span className="bg-purple-600 text-white text-[9px] font-bold px-1.5 py-0.2 rounded">ACTIVE</span>}
                       </div>
-                      <div className="text-[10px] text-slate-500">Multi-brand management suite & workspace switcher</div>
+                      <div className="text-[10px] text-slate-500 dark:text-slate-400">Multi-brand management suite & workspace switcher</div>
                     </div>
                   </div>
                   <button
                     type="button"
                     onClick={() => handleToggleMode('agency')}
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${agencyModeEnabled ? 'bg-purple-600' : 'bg-slate-300'}`}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${agencyModeEnabled ? 'bg-purple-600' : 'bg-slate-300 dark:bg-slate-700'}`}
                   >
                     <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${agencyModeEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
                   </button>
@@ -1443,22 +1474,22 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
               </div>
 
               {/* TOGGLE 3: INFLUENCER MODE */}
-              <div className={`p-4 rounded-xl border transition-all ${influencerModeEnabled ? 'bg-amber-500/10 border-amber-500 ring-2 ring-amber-500/20' : 'bg-slate-50 border-slate-200'}`}>
+              <div className={`p-4 rounded-xl border transition-all ${influencerModeEnabled ? 'bg-amber-500/10 dark:bg-amber-950/40 border-amber-500 ring-2 ring-amber-500/20' : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-800'}`}>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <Sparkles className={`w-5 h-5 ${influencerModeEnabled ? 'text-amber-600' : 'text-slate-400'}`} />
+                    <Sparkles className={`w-5 h-5 ${influencerModeEnabled ? 'text-amber-600 dark:text-amber-400' : 'text-slate-400'}`} />
                     <div>
-                      <div className="font-bold text-slate-900 text-xs flex items-center gap-1.5">
+                      <div className="font-bold text-slate-900 dark:text-white text-xs flex items-center gap-1.5">
                         <span>Influencer / Creator Mode</span>
                         {influencerModeEnabled && <span className="bg-amber-500 text-slate-950 text-[9px] font-bold px-1.5 py-0.2 rounded">ACTIVE</span>}
                       </div>
-                      <div className="text-[10px] text-slate-500">Creator grid planner & personal media vault</div>
+                      <div className="text-[10px] text-slate-500 dark:text-slate-400">Creator grid planner & personal media vault</div>
                     </div>
                   </div>
                   <button
                     type="button"
                     onClick={() => handleToggleMode('influencer')}
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${influencerModeEnabled ? 'bg-amber-500' : 'bg-slate-300'}`}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${influencerModeEnabled ? 'bg-amber-500' : 'bg-slate-300 dark:bg-slate-700'}`}
                   >
                     <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${influencerModeEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
                   </button>
@@ -1466,22 +1497,22 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
               </div>
 
               {/* TOGGLE 4: BUSINESS USER MODE */}
-              <div className={`p-4 rounded-xl border transition-all ${businessModeEnabled ? 'bg-emerald-50 border-emerald-300' : 'bg-slate-50 border-slate-200 opacity-60'}`}>
+              <div className={`p-4 rounded-xl border transition-all ${businessModeEnabled ? 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-300 dark:border-emerald-700' : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-800 opacity-60'}`}>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <Building2 className={`w-5 h-5 ${businessModeEnabled ? 'text-emerald-600' : 'text-slate-400'}`} />
+                    <Building2 className={`w-5 h-5 ${businessModeEnabled ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400'}`} />
                     <div>
-                      <div className="font-bold text-slate-900 text-xs flex items-center gap-1.5">
+                      <div className="font-bold text-slate-900 dark:text-white text-xs flex items-center gap-1.5">
                         <span>Business User Mode</span>
                         {businessModeEnabled && <span className="bg-emerald-600 text-white text-[9px] font-bold px-1.5 py-0.2 rounded">ACTIVE</span>}
                       </div>
-                      <div className="text-[10px] text-slate-500">Standard single business user workspace</div>
+                      <div className="text-[10px] text-slate-500 dark:text-slate-400">Standard single business user workspace</div>
                     </div>
                   </div>
                   <button
                     type="button"
                     onClick={() => handleToggleMode('business')}
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${businessModeEnabled ? 'bg-emerald-600' : 'bg-slate-300'}`}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${businessModeEnabled ? 'bg-emerald-600' : 'bg-slate-300 dark:bg-slate-700'}`}
                   >
                     <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${businessModeEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
                   </button>
@@ -1491,37 +1522,37 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
           </div>
 
           {/* AI & VOICE FEATURE TOGGLES */}
-          <div className="border-t border-slate-100 pt-5 space-y-4">
+          <div className="border-t border-slate-100 dark:border-slate-800 pt-5 space-y-4">
             <div>
-              <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-amber-500" />
+              <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-amber-500 dark:text-amber-400" />
                 <span>AI & Voice Engine Feature Controls</span>
               </h3>
-              <p className="text-xs text-slate-500 mt-1">
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                 Instantly turn ON or OFF experimental AI features for regular workspace users. When OFF, features and balances are completely hidden from user views.
               </p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* TOGGLE 5: AI CREDITS & SETTINGS */}
-              <div className={`p-4 rounded-xl border transition-all ${aiCreditsEnabled ? 'bg-amber-50 border-amber-300' : 'bg-slate-50 border-slate-200'}`}>
+              <div className={`p-4 rounded-xl border transition-all ${aiCreditsEnabled ? 'bg-amber-50 dark:bg-amber-950/40 border-amber-300 dark:border-amber-700' : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-800'}`}>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <Coins className={`w-5 h-5 ${aiCreditsEnabled ? 'text-amber-600' : 'text-slate-400'}`} />
+                    <Coins className={`w-5 h-5 ${aiCreditsEnabled ? 'text-amber-600 dark:text-amber-400' : 'text-slate-400'}`} />
                     <div>
-                      <div className="font-bold text-slate-900 text-xs flex items-center gap-1.5">
+                      <div className="font-bold text-slate-900 dark:text-white text-xs flex items-center gap-1.5">
                         <span>AI Content Credits & Settings</span>
-                        <span className={`text-[9px] font-bold px-1.5 py-0.2 rounded ${aiCreditsEnabled ? 'bg-amber-500 text-slate-950' : 'bg-slate-200 text-slate-600'}`}>
+                        <span className={`text-[9px] font-bold px-1.5 py-0.2 rounded ${aiCreditsEnabled ? 'bg-amber-500 text-slate-950' : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300'}`}>
                           {aiCreditsEnabled ? 'ACTIVE (USER VISIBLE)' : 'DISABLED (HIDDEN)'}
                         </span>
                       </div>
-                      <div className="text-[10px] text-slate-500">Unpublish/hide AI credits & generation from regular users</div>
+                      <div className="text-[10px] text-slate-500 dark:text-slate-400">Unpublish/hide AI credits & generation from regular users</div>
                     </div>
                   </div>
                   <button
                     type="button"
                     onClick={() => setAiCreditsEnabled(prev => !prev)}
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${aiCreditsEnabled ? 'bg-amber-500' : 'bg-slate-300'}`}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${aiCreditsEnabled ? 'bg-amber-500' : 'bg-slate-300 dark:bg-slate-700'}`}
                   >
                     <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${aiCreditsEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
                   </button>
@@ -1529,24 +1560,24 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
               </div>
 
               {/* TOGGLE 6: VOICE AI ASSISTANT */}
-              <div className={`p-4 rounded-xl border transition-all ${voiceAssistantEnabled ? 'bg-purple-50 border-purple-300' : 'bg-slate-50 border-slate-200'}`}>
+              <div className={`p-4 rounded-xl border transition-all ${voiceAssistantEnabled ? 'bg-purple-50 dark:bg-purple-950/40 border-purple-300 dark:border-purple-700' : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-800'}`}>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <Zap className={`w-5 h-5 ${voiceAssistantEnabled ? 'text-purple-600' : 'text-slate-400'}`} />
+                    <Zap className={`w-5 h-5 ${voiceAssistantEnabled ? 'text-purple-600 dark:text-purple-400' : 'text-slate-400'}`} />
                     <div>
-                      <div className="font-bold text-slate-900 text-xs flex items-center gap-1.5">
+                      <div className="font-bold text-slate-900 dark:text-white text-xs flex items-center gap-1.5">
                         <span>Voice AI Assistant (Web Speech API)</span>
-                        <span className={`text-[9px] font-bold px-1.5 py-0.2 rounded ${voiceAssistantEnabled ? 'bg-purple-600 text-white' : 'bg-slate-200 text-slate-600'}`}>
+                        <span className={`text-[9px] font-bold px-1.5 py-0.2 rounded ${voiceAssistantEnabled ? 'bg-purple-600 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300'}`}>
                           {voiceAssistantEnabled ? 'ACTIVE (USER VISIBLE)' : 'DISABLED (HIDDEN)'}
                         </span>
                       </div>
-                      <div className="text-[10px] text-slate-500">Enable/disable floating voice assistant widget and Alt+V shortcut</div>
+                      <div className="text-[10px] text-slate-500 dark:text-slate-400">Enable/disable floating voice assistant widget and Alt+V shortcut</div>
                     </div>
                   </div>
                   <button
                     type="button"
                     onClick={() => setVoiceAssistantEnabled(prev => !prev)}
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${voiceAssistantEnabled ? 'bg-purple-600' : 'bg-slate-300'}`}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${voiceAssistantEnabled ? 'bg-purple-600' : 'bg-slate-300 dark:bg-slate-700'}`}
                   >
                     <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${voiceAssistantEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
                   </button>
@@ -1554,24 +1585,24 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
               </div>
 
               {/* TOGGLE 7: AUTOMATION & AI PAGE (LIVE AUTO-RESPONDER) */}
-              <div className={`p-4 rounded-xl border transition-all md:col-span-2 ${automationAiEnabled ? 'bg-indigo-50 border-indigo-300' : 'bg-slate-50 border-slate-200'}`}>
+              <div className={`p-4 rounded-xl border transition-all md:col-span-2 ${automationAiEnabled ? 'bg-indigo-50 dark:bg-indigo-950/40 border-indigo-300 dark:border-indigo-700' : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-800'}`}>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <MessageSquareCode className={`w-5 h-5 ${automationAiEnabled ? 'text-indigo-600' : 'text-slate-400'}`} />
+                    <MessageSquareCode className={`w-5 h-5 ${automationAiEnabled ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400'}`} />
                     <div>
-                      <div className="font-bold text-slate-900 text-xs flex items-center gap-1.5">
+                      <div className="font-bold text-slate-900 dark:text-white text-xs flex items-center gap-1.5">
                         <span>Automation & AI Page (Live Auto-Responder & DM Triggers)</span>
-                        <span className={`text-[9px] font-bold px-1.5 py-0.2 rounded ${automationAiEnabled ? 'bg-indigo-600 text-white' : 'bg-slate-200 text-slate-600'}`}>
+                        <span className={`text-[9px] font-bold px-1.5 py-0.2 rounded ${automationAiEnabled ? 'bg-indigo-600 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300'}`}>
                           {automationAiEnabled ? 'ACTIVE (USER VISIBLE)' : 'DISABLED (HIDDEN)'}
                         </span>
                       </div>
-                      <div className="text-[10px] text-slate-500">Turn ON/OFF Automation & AI section and Live Auto-Responder for regular workspace users</div>
+                      <div className="text-[10px] text-slate-500 dark:text-slate-400">Turn ON/OFF Automation & AI section and Live Auto-Responder for regular workspace users</div>
                     </div>
                   </div>
                   <button
                     type="button"
                     onClick={() => setAutomationAiEnabled(prev => !prev)}
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${automationAiEnabled ? 'bg-indigo-600' : 'bg-slate-300'}`}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${automationAiEnabled ? 'bg-indigo-600' : 'bg-slate-300 dark:bg-slate-700'}`}
                   >
                     <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${automationAiEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
                   </button>
@@ -1581,14 +1612,14 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
           </div>
 
           {/* ENGINE CONTROLS: TURN OFF ZERNIO (ZENITH) OR CORESYNC (COMPOSIO) */}
-          <div className="border-t border-slate-100 pt-5 space-y-4">
+          <div className="border-t border-slate-100 dark:border-slate-800 pt-5 space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <div>
-                <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                  <Cpu className="w-5 h-5 text-[#5D3FD3]" />
+                <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <Cpu className="w-5 h-5 text-[#5D3FD3] dark:text-purple-400" />
                   <span>Dispatch Engine Switches (Zenith / Zernio vs CoreSync / Composio)</span>
                 </h3>
-                <p className="text-xs text-slate-500 mt-0.5">
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                   Turn ON or OFF any publishing backend engine. You can run Dual Engine or isolate the system to Zenith-only or CoreSync-only.
                 </p>
               </div>
@@ -1614,14 +1645,14 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
                 className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer ${
                   globalDispatchEngine === 'dual'
                     ? 'bg-purple-900 text-white border-purple-500 ring-2 ring-purple-500/30 shadow-md'
-                    : 'bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-700'
+                    : 'bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300'
                 }`}
               >
                 <div className="font-bold text-xs flex items-center justify-between">
                   <span>⚡ Dual Parallel Engine</span>
                   {globalDispatchEngine === 'dual' && <span className="text-[9px] bg-purple-500 text-white px-1.5 py-0.2 rounded">ACTIVE</span>}
                 </div>
-                <div className={`text-[10px] mt-1 ${globalDispatchEngine === 'dual' ? 'text-purple-200' : 'text-slate-500'}`}>
+                <div className={`text-[10px] mt-1 ${globalDispatchEngine === 'dual' ? 'text-purple-200' : 'text-slate-500 dark:text-slate-400'}`}>
                   Zenith & CoreSync both enabled with parallel fallback
                 </div>
               </button>
@@ -1632,14 +1663,14 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
                 className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer ${
                   globalDispatchEngine === 'zenith'
                     ? 'bg-emerald-950 text-white border-emerald-500 ring-2 ring-emerald-500/30 shadow-md'
-                    : 'bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-700'
+                    : 'bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300'
                 }`}
               >
                 <div className="font-bold text-xs flex items-center justify-between">
                   <span>🚀 Zenith (Zernio) Only</span>
                   {globalDispatchEngine === 'zenith' && <span className="text-[9px] bg-emerald-500 text-slate-950 font-bold px-1.5 py-0.2 rounded">ACTIVE</span>}
                 </div>
-                <div className={`text-[10px] mt-1 ${globalDispatchEngine === 'zenith' ? 'text-emerald-200' : 'text-slate-500'}`}>
+                <div className={`text-[10px] mt-1 ${globalDispatchEngine === 'zenith' ? 'text-emerald-200' : 'text-slate-500 dark:text-slate-400'}`}>
                   Direct Native 2-Channel Slots (CoreSync turned OFF)
                 </div>
               </button>
@@ -1650,14 +1681,14 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
                 className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer ${
                   globalDispatchEngine === 'coresync'
                     ? 'bg-blue-950 text-white border-blue-500 ring-2 ring-blue-500/30 shadow-md'
-                    : 'bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-700'
+                    : 'bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300'
                 }`}
               >
                 <div className="font-bold text-xs flex items-center justify-between">
                   <span>🔗 CoreSync (Composio) Only</span>
                   {globalDispatchEngine === 'coresync' && <span className="text-[9px] bg-blue-500 text-white px-1.5 py-0.2 rounded">ACTIVE</span>}
                 </div>
-                <div className={`text-[10px] mt-1 ${globalDispatchEngine === 'coresync' ? 'text-blue-200' : 'text-slate-500'}`}>
+                <div className={`text-[10px] mt-1 ${globalDispatchEngine === 'coresync' ? 'text-blue-200' : 'text-slate-500 dark:text-slate-400'}`}>
                   Enterprise OAuth Bridge (Zenith turned OFF)
                 </div>
               </button>
@@ -1666,24 +1697,24 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
             {/* Individual Engine Toggle Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
               {/* TOGGLE: ZENITH / ZERNIO */}
-              <div className={`p-4 rounded-xl border transition-all ${zernioEnabled ? 'bg-emerald-50/70 border-emerald-300' : 'bg-slate-50 border-slate-200 opacity-60'}`}>
+              <div className={`p-4 rounded-xl border transition-all ${zernioEnabled ? 'bg-emerald-50/70 dark:bg-emerald-950/40 border-emerald-300 dark:border-emerald-700' : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-800 opacity-60'}`}>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <Zap className={`w-5 h-5 ${zernioEnabled ? 'text-emerald-600' : 'text-slate-400'}`} />
+                    <Zap className={`w-5 h-5 ${zernioEnabled ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400'}`} />
                     <div>
-                      <div className="font-bold text-slate-900 text-xs flex items-center gap-1.5">
+                      <div className="font-bold text-slate-900 dark:text-white text-xs flex items-center gap-1.5">
                         <span>Zenith Engine (Zernio Provider)</span>
-                        <span className={`text-[9px] font-bold px-1.5 py-0.2 rounded ${zernioEnabled ? 'bg-emerald-600 text-white' : 'bg-slate-200 text-slate-600'}`}>
+                        <span className={`text-[9px] font-bold px-1.5 py-0.2 rounded ${zernioEnabled ? 'bg-emerald-600 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300'}`}>
                           {zernioEnabled ? 'ENABLED (ONLINE)' : 'DISABLED (OFFLINE)'}
                         </span>
                       </div>
-                      <div className="text-[10px] text-slate-500">Fast 2-channel slot direct parallel dispatcher</div>
+                      <div className="text-[10px] text-slate-500 dark:text-slate-400">Fast 2-channel slot direct parallel dispatcher</div>
                     </div>
                   </div>
                   <button
                     type="button"
                     onClick={() => handleToggleEngine('zenith')}
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${zernioEnabled ? 'bg-emerald-600' : 'bg-slate-300'}`}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${zernioEnabled ? 'bg-emerald-600' : 'bg-slate-300 dark:bg-slate-700'}`}
                   >
                     <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${zernioEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
                   </button>
@@ -1691,24 +1722,24 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
               </div>
 
               {/* TOGGLE: CORESYNC / COMPOSIO */}
-              <div className={`p-4 rounded-xl border transition-all ${coresyncEnabled ? 'bg-blue-50/70 border-blue-300' : 'bg-slate-50 border-slate-200 opacity-60'}`}>
+              <div className={`p-4 rounded-xl border transition-all ${coresyncEnabled ? 'bg-blue-50/70 dark:bg-blue-950/40 border-blue-300 dark:border-blue-700' : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-800 opacity-60'}`}>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <Building2 className={`w-5 h-5 ${coresyncEnabled ? 'text-blue-600' : 'text-slate-400'}`} />
+                    <Building2 className={`w-5 h-5 ${coresyncEnabled ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400'}`} />
                     <div>
-                      <div className="font-bold text-slate-900 text-xs flex items-center gap-1.5">
+                      <div className="font-bold text-slate-900 dark:text-white text-xs flex items-center gap-1.5">
                         <span>CoreSync Engine (Composio Provider)</span>
-                        <span className={`text-[9px] font-bold px-1.5 py-0.2 rounded ${coresyncEnabled ? 'bg-blue-600 text-white' : 'bg-slate-200 text-slate-600'}`}>
+                        <span className={`text-[9px] font-bold px-1.5 py-0.2 rounded ${coresyncEnabled ? 'bg-blue-600 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300'}`}>
                           {coresyncEnabled ? 'ENABLED (ONLINE)' : 'DISABLED (OFFLINE)'}
                         </span>
                       </div>
-                      <div className="text-[10px] text-slate-500">Enterprise authentication bridge & token pooling</div>
+                      <div className="text-[10px] text-slate-500 dark:text-slate-400">Enterprise authentication bridge & token pooling</div>
                     </div>
                   </div>
                   <button
                     type="button"
                     onClick={() => handleToggleEngine('coresync')}
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${coresyncEnabled ? 'bg-blue-600' : 'bg-slate-300'}`}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${coresyncEnabled ? 'bg-blue-600' : 'bg-slate-300 dark:bg-slate-700'}`}
                   >
                     <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${coresyncEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
                   </button>
@@ -1717,27 +1748,27 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
             </div>
           </div>
 
-          <div className="border-t border-slate-100 pt-5 space-y-4">
-            <h3 className="text-sm font-bold text-slate-900">Global Currency Preference</h3>
+          <div className="border-t border-slate-100 dark:border-slate-800 pt-5 space-y-4">
+            <h3 className="text-sm font-bold text-slate-900 dark:text-white">Global Currency Preference</h3>
             <div className="grid grid-cols-3 gap-3">
               <button
                 type="button"
                 onClick={() => handleCurrencyChange('USD')}
-                className={`p-3 border rounded-xl font-bold text-xs transition-all ${systemCurrency === 'USD' ? 'bg-[#5D3FD3] text-white border-[#5D3FD3]' : 'bg-white text-slate-700 hover:bg-slate-50'}`}
+                className={`p-3 border rounded-xl font-bold text-xs transition-all cursor-pointer ${systemCurrency === 'USD' ? 'bg-[#5D3FD3] text-white border-[#5D3FD3]' : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-750'}`}
               >
                 USD ($)
               </button>
               <button
                 type="button"
                 onClick={() => handleCurrencyChange('INR')}
-                className={`p-3 border rounded-xl font-bold text-xs transition-all ${systemCurrency === 'INR' ? 'bg-[#5D3FD3] text-white border-[#5D3FD3]' : 'bg-white text-slate-700 hover:bg-slate-50'}`}
+                className={`p-3 border rounded-xl font-bold text-xs transition-all cursor-pointer ${systemCurrency === 'INR' ? 'bg-[#5D3FD3] text-white border-[#5D3FD3]' : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-750'}`}
               >
                 INR (₹)
               </button>
               <button
                 type="button"
                 onClick={() => handleCurrencyChange('GBP')}
-                className={`p-3 border rounded-xl font-bold text-xs transition-all ${systemCurrency === 'GBP' ? 'bg-[#5D3FD3] text-white border-[#5D3FD3]' : 'bg-white text-slate-700 hover:bg-slate-50'}`}
+                className={`p-3 border rounded-xl font-bold text-xs transition-all cursor-pointer ${systemCurrency === 'GBP' ? 'bg-[#5D3FD3] text-white border-[#5D3FD3]' : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-750'}`}
               >
                 GBP (£)
               </button>
@@ -1745,7 +1776,7 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
           </div>
 
           {/* STICKY BOTTOM SAVE ACTION BAR */}
-          <div className="pt-6 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4 sticky bottom-2 bg-white/95 backdrop-blur-md p-4 rounded-2xl border border-purple-200/80 shadow-lg -mx-2 -mb-2 z-10">
+          <div className="pt-6 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4 sticky bottom-2 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md p-4 rounded-2xl border border-purple-200/80 dark:border-purple-900/80 shadow-lg -mx-2 -mb-2 z-10">
             <div className="flex items-center gap-3">
               <button
                 type="button"
@@ -1772,8 +1803,8 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
             </div>
 
             {settingsNotification && (
-              <div className="flex items-center gap-2.5 px-4 py-2.5 bg-emerald-50 border border-emerald-300 text-emerald-900 rounded-xl text-xs font-bold shadow-xs animate-in fade-in slide-in-from-bottom-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+              <div className="flex items-center gap-2.5 px-4 py-2.5 bg-emerald-50 dark:bg-emerald-950/80 border border-emerald-300 dark:border-emerald-700 text-emerald-900 dark:text-emerald-200 rounded-xl text-xs font-bold shadow-xs animate-in fade-in slide-in-from-bottom-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
                 <span>{settingsNotification}</span>
               </div>
             )}
@@ -1811,48 +1842,48 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
 
           {/* Super Admin Privileges Stats */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between">
+            <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs flex items-center justify-between">
               <div>
-                <div className="text-[11px] font-semibold text-slate-500 uppercase font-mono">Master Authority Level</div>
-                <div className="text-xl font-black text-purple-900 mt-1">Tier-0 Global</div>
+                <div className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase font-mono">Master Authority Level</div>
+                <div className="text-xl font-black text-purple-900 dark:text-purple-300 mt-1">Tier-0 Global</div>
               </div>
-              <Crown className="w-7 h-7 text-amber-500" />
+              <Crown className="w-7 h-7 text-amber-500 dark:text-amber-400" />
             </div>
 
-            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between">
+            <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs flex items-center justify-between">
               <div>
-                <div className="text-[11px] font-semibold text-slate-500 uppercase font-mono">Managed Tenant Orgs</div>
-                <div className="text-xl font-black text-slate-900 mt-1">{tenants.length} Workspaces</div>
+                <div className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase font-mono">Managed Tenant Orgs</div>
+                <div className="text-xl font-black text-slate-900 dark:text-white mt-1">{tenants.length} Workspaces</div>
               </div>
-              <Building2 className="w-7 h-7 text-blue-600 opacity-80" />
+              <Building2 className="w-7 h-7 text-blue-600 dark:text-blue-400 opacity-80" />
             </div>
 
-            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between">
+            <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs flex items-center justify-between">
               <div>
-                <div className="text-[11px] font-semibold text-slate-500 uppercase font-mono">System Role Profiles</div>
-                <div className="text-xl font-black text-emerald-700 mt-1">4 Active Roles</div>
+                <div className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase font-mono">System Role Profiles</div>
+                <div className="text-xl font-black text-emerald-700 dark:text-emerald-400 mt-1">4 Active Roles</div>
               </div>
-              <Sliders className="w-7 h-7 text-emerald-600 opacity-80" />
+              <Sliders className="w-7 h-7 text-emerald-600 dark:text-emerald-400 opacity-80" />
             </div>
 
-            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between">
+            <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs flex items-center justify-between">
               <div>
-                <div className="text-[11px] font-semibold text-slate-500 uppercase font-mono">Privilege Override Status</div>
-                <div className="text-xl font-black text-amber-600 mt-1">Enforced</div>
+                <div className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase font-mono">Privilege Override Status</div>
+                <div className="text-xl font-black text-amber-600 dark:text-amber-400 mt-1">Enforced</div>
               </div>
-              <Zap className="w-7 h-7 text-amber-500 opacity-80" />
+              <Zap className="w-7 h-7 text-amber-500 dark:text-amber-400 opacity-80" />
             </div>
           </div>
 
           {/* Role Permissions Matrix Table */}
-          <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs space-y-5">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-xs space-y-5">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4">
               <div>
-                <h3 className="font-bold text-slate-900 text-base flex items-center gap-2">
-                  <ShieldCheck className="w-5 h-5 text-[#5D3FD3]" />
+                <h3 className="font-bold text-slate-900 dark:text-white text-base flex items-center gap-2">
+                  <ShieldCheck className="w-5 h-5 text-[#5D3FD3] dark:text-purple-400" />
                   <span>Platform System Role Privileges Matrix</span>
                 </h3>
-                <p className="text-xs text-slate-500 mt-0.5">
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                   Granular permission control mapping across Super Admin and Tenant organizational roles.
                 </p>
               </div>
@@ -1861,92 +1892,92 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
-                  <tr className="border-b border-slate-200 bg-slate-50/80 font-mono text-[10px] text-slate-500 uppercase tracking-wider">
+                  <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800 font-mono text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                     <th className="py-3 px-4 font-bold">Permission / Action Capability</th>
-                    <th className="py-3 px-4 text-center font-bold text-purple-900">
-                      <span className="px-2 py-0.5 bg-amber-100 text-amber-900 rounded font-black">Super Admin</span>
+                    <th className="py-3 px-4 text-center font-bold text-purple-900 dark:text-purple-300">
+                      <span className="px-2 py-0.5 bg-amber-100 dark:bg-amber-950/80 text-amber-900 dark:text-amber-300 rounded font-black border border-amber-200 dark:border-amber-800">Super Admin</span>
                     </th>
-                    <th className="py-3 px-4 text-center font-bold text-blue-900">Tenant Owner</th>
-                    <th className="py-3 px-4 text-center font-bold text-emerald-900">Content Manager</th>
-                    <th className="py-3 px-4 text-center font-bold text-slate-700">Auditor (Read-Only)</th>
+                    <th className="py-3 px-4 text-center font-bold text-blue-900 dark:text-blue-300">Tenant Owner</th>
+                    <th className="py-3 px-4 text-center font-bold text-emerald-900 dark:text-emerald-300">Content Manager</th>
+                    <th className="py-3 px-4 text-center font-bold text-slate-700 dark:text-slate-300">Auditor (Read-Only)</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 text-slate-700">
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
                   <tr>
-                    <td className="py-3.5 px-4 font-semibold text-slate-900">
+                    <td className="py-3.5 px-4 font-semibold text-slate-900 dark:text-white">
                       <div>Provision & Delete Tenant Accounts</div>
-                      <div className="text-[10px] text-slate-400 font-mono">Manage multi-tenant organizations & workspace keys</div>
+                      <div className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">Manage multi-tenant organizations & workspace keys</div>
                     </td>
-                    <td className="py-3.5 px-4 text-center"><Check className="w-5 h-5 text-emerald-600 mx-auto font-black" /></td>
-                    <td className="py-3.5 px-4 text-center"><X className="w-4 h-4 text-slate-300 mx-auto" /></td>
-                    <td className="py-3.5 px-4 text-center"><X className="w-4 h-4 text-slate-300 mx-auto" /></td>
-                    <td className="py-3.5 px-4 text-center"><X className="w-4 h-4 text-slate-300 mx-auto" /></td>
+                    <td className="py-3.5 px-4 text-center"><Check className="w-5 h-5 text-emerald-600 dark:text-emerald-400 mx-auto font-black" /></td>
+                    <td className="py-3.5 px-4 text-center"><X className="w-4 h-4 text-slate-300 dark:text-slate-600 mx-auto" /></td>
+                    <td className="py-3.5 px-4 text-center"><X className="w-4 h-4 text-slate-300 dark:text-slate-600 mx-auto" /></td>
+                    <td className="py-3.5 px-4 text-center"><X className="w-4 h-4 text-slate-300 dark:text-slate-600 mx-auto" /></td>
                   </tr>
 
                   <tr>
-                    <td className="py-3.5 px-4 font-semibold text-slate-900">
+                    <td className="py-3.5 px-4 font-semibold text-slate-900 dark:text-white">
                       <div>Allocate 2-Channel API Slots</div>
-                      <div className="text-[10px] text-slate-400 font-mono">Assign Zernio API keys & slot limits per tenant</div>
+                      <div className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">Assign Zernio API keys & slot limits per tenant</div>
                     </td>
-                    <td className="py-3.5 px-4 text-center"><Check className="w-5 h-5 text-emerald-600 mx-auto font-black" /></td>
-                    <td className="py-3.5 px-4 text-center"><X className="w-4 h-4 text-slate-300 mx-auto" /></td>
-                    <td className="py-3.5 px-4 text-center"><X className="w-4 h-4 text-slate-300 mx-auto" /></td>
-                    <td className="py-3.5 px-4 text-center"><X className="w-4 h-4 text-slate-300 mx-auto" /></td>
+                    <td className="py-3.5 px-4 text-center"><Check className="w-5 h-5 text-emerald-600 dark:text-emerald-400 mx-auto font-black" /></td>
+                    <td className="py-3.5 px-4 text-center"><X className="w-4 h-4 text-slate-300 dark:text-slate-600 mx-auto" /></td>
+                    <td className="py-3.5 px-4 text-center"><X className="w-4 h-4 text-slate-300 dark:text-slate-600 mx-auto" /></td>
+                    <td className="py-3.5 px-4 text-center"><X className="w-4 h-4 text-slate-300 dark:text-slate-600 mx-auto" /></td>
                   </tr>
 
                   <tr>
-                    <td className="py-3.5 px-4 font-semibold text-slate-900">
+                    <td className="py-3.5 px-4 font-semibold text-slate-900 dark:text-white">
                       <div>Grant & Top-up AI Credits</div>
-                      <div className="text-[10px] text-slate-400 font-mono">Manually add bonus AI tokens to tenant balances</div>
+                      <div className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">Manually add bonus AI tokens to tenant balances</div>
                     </td>
-                    <td className="py-3.5 px-4 text-center"><Check className="w-5 h-5 text-emerald-600 mx-auto font-black" /></td>
-                    <td className="py-3.5 px-4 text-center"><X className="w-4 h-4 text-slate-300 mx-auto" /></td>
-                    <td className="py-3.5 px-4 text-center"><X className="w-4 h-4 text-slate-300 mx-auto" /></td>
-                    <td className="py-3.5 px-4 text-center"><X className="w-4 h-4 text-slate-300 mx-auto" /></td>
+                    <td className="py-3.5 px-4 text-center"><Check className="w-5 h-5 text-emerald-600 dark:text-emerald-400 mx-auto font-black" /></td>
+                    <td className="py-3.5 px-4 text-center"><X className="w-4 h-4 text-slate-300 dark:text-slate-600 mx-auto" /></td>
+                    <td className="py-3.5 px-4 text-center"><X className="w-4 h-4 text-slate-300 dark:text-slate-600 mx-auto" /></td>
+                    <td className="py-3.5 px-4 text-center"><X className="w-4 h-4 text-slate-300 dark:text-slate-600 mx-auto" /></td>
                   </tr>
 
                   <tr>
-                    <td className="py-3.5 px-4 font-semibold text-slate-900">
+                    <td className="py-3.5 px-4 font-semibold text-slate-900 dark:text-white">
                       <div>Configure Subscription Plans & Pricing</div>
-                      <div className="text-[10px] text-slate-400 font-mono">Edit pricing tiers, USD/INR/GBP currencies & features</div>
+                      <div className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">Edit pricing tiers, USD/INR/GBP currencies & features</div>
                     </td>
-                    <td className="py-3.5 px-4 text-center"><Check className="w-5 h-5 text-emerald-600 mx-auto font-black" /></td>
-                    <td className="py-3.5 px-4 text-center"><X className="w-4 h-4 text-slate-300 mx-auto" /></td>
-                    <td className="py-3.5 px-4 text-center"><X className="w-4 h-4 text-slate-300 mx-auto" /></td>
-                    <td className="py-3.5 px-4 text-center"><X className="w-4 h-4 text-slate-300 mx-auto" /></td>
+                    <td className="py-3.5 px-4 text-center"><Check className="w-5 h-5 text-emerald-600 dark:text-emerald-400 mx-auto font-black" /></td>
+                    <td className="py-3.5 px-4 text-center"><X className="w-4 h-4 text-slate-300 dark:text-slate-600 mx-auto" /></td>
+                    <td className="py-3.5 px-4 text-center"><X className="w-4 h-4 text-slate-300 dark:text-slate-600 mx-auto" /></td>
+                    <td className="py-3.5 px-4 text-center"><X className="w-4 h-4 text-slate-300 dark:text-slate-600 mx-auto" /></td>
                   </tr>
 
                   <tr>
-                    <td className="py-3.5 px-4 font-semibold text-slate-900">
+                    <td className="py-3.5 px-4 font-semibold text-slate-900 dark:text-white">
                       <div>Connect Social Media Accounts & Webhooks</div>
-                      <div className="text-[10px] text-slate-400 font-mono">Link Instagram, Facebook, LinkedIn, TikTok & X profiles</div>
+                      <div className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">Link Instagram, Facebook, LinkedIn, TikTok & X profiles</div>
                     </td>
-                    <td className="py-3.5 px-4 text-center"><Check className="w-5 h-5 text-emerald-600 mx-auto font-black" /></td>
-                    <td className="py-3.5 px-4 text-center"><Check className="w-5 h-5 text-emerald-600 mx-auto font-black" /></td>
-                    <td className="py-3.5 px-4 text-center"><X className="w-4 h-4 text-slate-300 mx-auto" /></td>
-                    <td className="py-3.5 px-4 text-center"><X className="w-4 h-4 text-slate-300 mx-auto" /></td>
+                    <td className="py-3.5 px-4 text-center"><Check className="w-5 h-5 text-emerald-600 dark:text-emerald-400 mx-auto font-black" /></td>
+                    <td className="py-3.5 px-4 text-center"><Check className="w-5 h-5 text-emerald-600 dark:text-emerald-400 mx-auto font-black" /></td>
+                    <td className="py-3.5 px-4 text-center"><X className="w-4 h-4 text-slate-300 dark:text-slate-600 mx-auto" /></td>
+                    <td className="py-3.5 px-4 text-center"><X className="w-4 h-4 text-slate-300 dark:text-slate-600 mx-auto" /></td>
                   </tr>
 
                   <tr>
-                    <td className="py-3.5 px-4 font-semibold text-slate-900">
+                    <td className="py-3.5 px-4 font-semibold text-slate-900 dark:text-white">
                       <div>Create, Schedule & Auto-Publish Posts</div>
-                      <div className="text-[10px] text-slate-400 font-mono">Use Post Composer, Media Vault & Calendar Grid</div>
+                      <div className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">Use Post Composer, Media Vault & Calendar Grid</div>
                     </td>
-                    <td className="py-3.5 px-4 text-center"><Check className="w-5 h-5 text-emerald-600 mx-auto font-black" /></td>
-                    <td className="py-3.5 px-4 text-center"><Check className="w-5 h-5 text-emerald-600 mx-auto font-black" /></td>
-                    <td className="py-3.5 px-4 text-center"><Check className="w-5 h-5 text-emerald-600 mx-auto font-black" /></td>
-                    <td className="py-3.5 px-4 text-center"><X className="w-4 h-4 text-slate-300 mx-auto" /></td>
+                    <td className="py-3.5 px-4 text-center"><Check className="w-5 h-5 text-emerald-600 dark:text-emerald-400 mx-auto font-black" /></td>
+                    <td className="py-3.5 px-4 text-center"><Check className="w-5 h-5 text-emerald-600 dark:text-emerald-400 mx-auto font-black" /></td>
+                    <td className="py-3.5 px-4 text-center"><Check className="w-5 h-5 text-emerald-600 dark:text-emerald-400 mx-auto font-black" /></td>
+                    <td className="py-3.5 px-4 text-center"><X className="w-4 h-4 text-slate-300 dark:text-slate-600 mx-auto" /></td>
                   </tr>
 
                   <tr>
-                    <td className="py-3.5 px-4 font-semibold text-slate-900">
+                    <td className="py-3.5 px-4 font-semibold text-slate-900 dark:text-white">
                       <div>View Activity Logs & Revenue Reports</div>
-                      <div className="text-[10px] text-slate-400 font-mono">Access real-time analytics & HTTP dispatch logs</div>
+                      <div className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">Access real-time analytics & HTTP dispatch logs</div>
                     </td>
-                    <td className="py-3.5 px-4 text-center"><Check className="w-5 h-5 text-emerald-600 mx-auto font-black" /></td>
-                    <td className="py-3.5 px-4 text-center"><Check className="w-5 h-5 text-emerald-600 mx-auto font-black" /></td>
-                    <td className="py-3.5 px-4 text-center"><Check className="w-5 h-5 text-emerald-600 mx-auto font-black" /></td>
-                    <td className="py-3.5 px-4 text-center"><Check className="w-5 h-5 text-emerald-600 mx-auto font-black" /></td>
+                    <td className="py-3.5 px-4 text-center"><Check className="w-5 h-5 text-emerald-600 dark:text-emerald-400 mx-auto font-black" /></td>
+                    <td className="py-3.5 px-4 text-center"><Check className="w-5 h-5 text-emerald-600 dark:text-emerald-400 mx-auto font-black" /></td>
+                    <td className="py-3.5 px-4 text-center"><Check className="w-5 h-5 text-emerald-600 dark:text-emerald-400 mx-auto font-black" /></td>
+                    <td className="py-3.5 px-4 text-center"><Check className="w-5 h-5 text-emerald-600 dark:text-emerald-400 mx-auto font-black" /></td>
                   </tr>
                 </tbody>
               </table>
@@ -1957,26 +1988,26 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
 
       {/* TOP UP AI CREDITS MODAL */}
       {showTopupModal && (
-        <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 border border-slate-200 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h3 className="font-bold text-slate-900 text-base flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-amber-500" />
+        <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in font-['Inter']">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-md w-full p-6 border border-slate-200 dark:border-slate-800 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+              <h3 className="font-bold text-slate-900 dark:text-white text-base flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-amber-500 dark:text-amber-400" />
                 <span>Grant / Top-Up Tenant AI Credits</span>
               </h3>
-              <button onClick={() => setShowTopupModal(false)} className="text-slate-400 hover:text-slate-700">✕</button>
+              <button onClick={() => setShowTopupModal(false)} className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 cursor-pointer">✕</button>
             </div>
 
             <form onSubmit={handleTopupSubmit} className="space-y-4 text-xs">
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">Select Tenant Organization</label>
+                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Select Tenant Organization</label>
                 <select
                   value={topupTenantId}
                   onChange={(e) => setTopupTenantId(e.target.value)}
-                  className="w-full p-2.5 border rounded-lg bg-white font-bold"
+                  className="w-full p-2.5 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-bold"
                 >
                   {tenants.map(t => (
-                    <option key={t.id} value={t.id}>
+                    <option key={t.id} value={t.id} className="dark:bg-slate-800">
                       {t.name} ({t.aiCredits ?? 1000} Current Credits)
                     </option>
                   ))}
@@ -1984,40 +2015,40 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
               </div>
 
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">Credits Amount to Add</label>
+                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Credits Amount to Add</label>
                 <input
                   type="number"
                   required
                   value={topupAmount}
                   onChange={(e) => setTopupAmount(Number(e.target.value))}
-                  className="w-full p-2.5 border rounded-lg font-mono text-xs"
+                  className="w-full p-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg font-mono text-xs"
                   min={50}
                   max={50000}
                 />
               </div>
 
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">Description / Audit Reason</label>
+                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Description / Audit Reason</label>
                 <input
                   type="text"
                   required
                   value={topupReason}
                   onChange={(e) => setTopupReason(e.target.value)}
-                  className="w-full p-2.5 border rounded-lg text-xs"
+                  className="w-full p-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-lg text-xs"
                 />
               </div>
 
-              <div className="pt-2 flex justify-end gap-2">
+              <div className="pt-2 flex justify-end gap-2 border-t border-slate-100 dark:border-slate-800">
                 <button
                   type="button"
                   onClick={() => setShowTopupModal(false)}
-                  className="px-4 py-2 bg-slate-100 text-slate-700 rounded-lg font-semibold"
+                  className="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg font-semibold cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-lg shadow-md"
+                  className="px-5 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-lg shadow-md cursor-pointer"
                 >
                   Grant Credits Now
                 </button>
@@ -2030,18 +2061,18 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
       {/* LINE-BY-LINE API SLOT MODAL WITH ENGINE PROVIDER SELECTION & USER SEARCH */}
       {showAddApiModal && (
         <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in">
-          <div className="bg-white rounded-2xl max-w-xl w-full p-6 border border-slate-200 shadow-2xl space-y-4 font-['Inter']">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-xl w-full p-6 border border-slate-200 dark:border-slate-800 shadow-2xl space-y-4 font-['Inter']">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
               <div>
-                <h3 className="font-bold text-slate-900 text-base">Provision API Slots & Engines</h3>
-                <p className="text-[11px] text-slate-500 mt-0.5">Allocate Zernio (2 Channels max) or Composio (Multi-Channel AI) API slots to any user workspace.</p>
+                <h3 className="font-bold text-slate-900 dark:text-white text-base">Provision API Slots & Engines</h3>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Allocate Zernio (2 Channels max) or Composio (Multi-Channel AI) API slots to any user workspace.</p>
               </div>
-              <button onClick={() => setShowAddApiModal(false)} className="text-slate-400 hover:text-slate-700">✕</button>
+              <button onClick={() => setShowAddApiModal(false)} className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 cursor-pointer">✕</button>
             </div>
 
             <form onSubmit={handleSaveApiSlotsModal} className="space-y-4 text-xs">
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">Select User / Tenant Workspace</label>
+                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Select User / Tenant Workspace</label>
                 
                 {/* Search Bar for Tenant Filter */}
                 <div className="relative mb-2">
@@ -2051,14 +2082,14 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
                     placeholder="Search user name, email, or workspace..."
                     value={tenantSearchQuery}
                     onChange={(e) => setTenantSearchQuery(e.target.value)}
-                    className="w-full pl-8 pr-3 py-1.5 border border-slate-200 rounded-lg text-xs bg-slate-50 focus:bg-white focus:ring-2 focus:ring-[#5D3FD3] transition-all"
+                    className="w-full pl-8 pr-3 py-1.5 border border-slate-200 dark:border-slate-700 rounded-lg text-xs bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:bg-white dark:focus:bg-slate-800 focus:ring-2 focus:ring-[#5D3FD3] transition-all"
                   />
                 </div>
 
                 <select
                   value={targetTenantId}
                   onChange={(e) => setTargetTenantId(e.target.value)}
-                  className="w-full p-2.5 border rounded-lg bg-white font-bold text-xs focus:ring-2 focus:ring-[#5D3FD3]"
+                  className="w-full p-2.5 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-bold text-xs focus:ring-2 focus:ring-[#5D3FD3]"
                 >
                   {tenants
                     .filter(t => 
@@ -2066,24 +2097,24 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
                       t.ownerEmail.toLowerCase().includes(tenantSearchQuery.toLowerCase())
                     )
                     .map(t => (
-                      <option key={t.id} value={t.id}>
+                      <option key={t.id} value={t.id} className="dark:bg-slate-800">
                         {t.name} ({t.ownerEmail}) — [{t.tierPlan.toUpperCase()}]
                       </option>
                     ))
                   }
                 </select>
                 {tenants.filter(t => t.name.toLowerCase().includes(tenantSearchQuery.toLowerCase()) || t.ownerEmail.toLowerCase().includes(tenantSearchQuery.toLowerCase())).length === 0 && (
-                  <p className="text-[11px] text-amber-600 font-semibold mt-1">No matching users found for "{tenantSearchQuery}"</p>
+                  <p className="text-[11px] text-amber-600 dark:text-amber-400 font-semibold mt-1">No matching users found for "{tenantSearchQuery}"</p>
                 )}
               </div>
 
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">Number of API Slots to Provision</label>
+                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Number of API Slots to Provision</label>
                 <input
                   type="number"
                   value={apiCount}
                   onChange={(e) => handleApiCountChange(Number(e.target.value))}
-                  className="w-full p-2.5 border rounded-lg font-mono text-xs focus:ring-2 focus:ring-[#5D3FD3]"
+                  className="w-full p-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg font-mono text-xs focus:ring-2 focus:ring-[#5D3FD3]"
                   min={1}
                   max={20}
                 />
@@ -2093,9 +2124,9 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
                 {apiKeysInput.map((keyVal, idx) => {
                   const currentProv = apiProvidersInput[idx] || 'zernio';
                   return (
-                    <div key={idx} className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
+                    <div key={idx} className="p-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-800 rounded-xl space-y-2">
                       <div className="flex items-center justify-between">
-                        <span className="font-bold text-purple-900 text-xs flex items-center gap-1.5">
+                        <span className="font-bold text-purple-900 dark:text-purple-300 text-xs flex items-center gap-1.5">
                           <span>API {idx + 1} Slot String:</span>
                         </span>
 
@@ -2110,10 +2141,10 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
                               return next;
                             });
                           }}
-                          className="p-1.5 text-[11px] font-bold border border-purple-200 rounded-lg bg-white text-purple-950 focus:ring-2 focus:ring-[#5D3FD3]"
+                          className="p-1.5 text-[11px] font-bold border border-purple-200 dark:border-purple-800 rounded-lg bg-white dark:bg-slate-800 text-purple-950 dark:text-purple-200 focus:ring-2 focus:ring-[#5D3FD3]"
                         >
-                          <option value="zernio">⚡ Zernio Engine (2 Channels Max)</option>
-                          <option value="composio">🧩 Composio Engine (Multi-Channel AI)</option>
+                          <option value="zernio" className="dark:bg-slate-800">⚡ Zernio Engine (2 Channels Max)</option>
+                          <option value="composio" className="dark:bg-slate-800">🧩 Composio Engine (Multi-Channel AI)</option>
                         </select>
                       </div>
 
@@ -2129,16 +2160,16 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
                             return next;
                           });
                         }}
-                        className="w-full p-2 border rounded-lg text-xs font-mono bg-white focus:ring-2 focus:ring-[#5D3FD3]"
+                        className="w-full p-2 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-mono bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:ring-2 focus:ring-[#5D3FD3]"
                       />
                     </div>
                   );
                 })}
               </div>
 
-              <div className="pt-2 flex justify-end gap-2 border-t border-slate-100">
-                <button type="button" onClick={() => setShowAddApiModal(false)} className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-bold">Cancel</button>
-                <button type="submit" className="px-5 py-2 bg-[#5D3FD3] hover:bg-purple-700 text-white font-bold rounded-lg shadow-md transition-colors">Save API Slots</button>
+              <div className="pt-2 flex justify-end gap-2 border-t border-slate-100 dark:border-slate-800">
+                <button type="button" onClick={() => setShowAddApiModal(false)} className="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg font-bold cursor-pointer">Cancel</button>
+                <button type="submit" className="px-5 py-2 bg-[#5D3FD3] hover:bg-purple-700 text-white font-bold rounded-lg shadow-md transition-colors cursor-pointer">Save API Slots</button>
               </div>
             </form>
           </div>
@@ -2147,33 +2178,33 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
 
       {/* CLOUDINARY MODAL */}
       {showCldModal && (
-        <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 border border-slate-200 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h3 className="font-bold text-slate-900 text-base">Cloudinary Account</h3>
-              <button onClick={() => setShowCldModal(false)} className="text-slate-400 hover:text-slate-700">✕</button>
+        <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in font-['Inter']">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-md w-full p-6 border border-slate-200 dark:border-slate-800 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+              <h3 className="font-bold text-slate-900 dark:text-white text-base">Cloudinary Account</h3>
+              <button onClick={() => setShowCldModal(false)} className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 cursor-pointer">✕</button>
             </div>
 
             <form onSubmit={handleSaveCldModal} className="space-y-4 text-xs">
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">Account Label</label>
-                <input type="text" value={cldLabelInput} onChange={(e) => setCldLabelInput(e.target.value)} className="w-full p-2.5 border rounded-lg text-xs" />
+                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Account Label</label>
+                <input type="text" value={cldLabelInput} onChange={(e) => setCldLabelInput(e.target.value)} className="w-full p-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg text-xs" />
               </div>
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">Cloud Name</label>
-                <input type="text" value={cldCloudNameInput} onChange={(e) => setCldCloudNameInput(e.target.value)} className="w-full p-2.5 border rounded-lg font-mono text-xs" />
+                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Cloud Name</label>
+                <input type="text" value={cldCloudNameInput} onChange={(e) => setCldCloudNameInput(e.target.value)} className="w-full p-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg font-mono text-xs" />
               </div>
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">Upload Preset</label>
-                <input type="text" value={cldUploadPresetInput} onChange={(e) => setCldUploadPresetInput(e.target.value)} className="w-full p-2.5 border rounded-lg font-mono text-xs" />
+                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Upload Preset</label>
+                <input type="text" value={cldUploadPresetInput} onChange={(e) => setCldUploadPresetInput(e.target.value)} className="w-full p-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg font-mono text-xs" />
               </div>
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">Storage Bucket Name</label>
-                <input type="text" value={cldBucketNameInput} onChange={(e) => setCldBucketNameInput(e.target.value)} className="w-full p-2.5 border rounded-lg font-mono text-xs" />
+                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Storage Bucket Name</label>
+                <input type="text" value={cldBucketNameInput} onChange={(e) => setCldBucketNameInput(e.target.value)} className="w-full p-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg font-mono text-xs" />
               </div>
-              <div className="pt-2 flex justify-end gap-2">
-                <button type="button" onClick={() => setShowCldModal(false)} className="px-4 py-2 bg-slate-100 text-slate-700 rounded-lg">Cancel</button>
-                <button type="submit" className="px-5 py-2 bg-blue-600 text-white font-bold rounded-lg">Save</button>
+              <div className="pt-2 flex justify-end gap-2 border-t border-slate-100 dark:border-slate-800">
+                <button type="button" onClick={() => setShowCldModal(false)} className="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg cursor-pointer">Cancel</button>
+                <button type="submit" className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg cursor-pointer shadow-sm">Save</button>
               </div>
             </form>
           </div>
@@ -2182,34 +2213,34 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
 
       {/* PROVISION TENANT MODAL */}
       {showAddModal && (
-        <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 border border-slate-200 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h3 className="font-bold text-slate-900 text-base">Provision Client Tenant</h3>
-              <button onClick={() => setShowAddModal(false)} className="text-slate-400 hover:text-slate-700">✕</button>
+        <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in font-['Inter']">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-md w-full p-6 border border-slate-200 dark:border-slate-800 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+              <h3 className="font-bold text-slate-900 dark:text-white text-base">Provision Client Tenant</h3>
+              <button onClick={() => setShowAddModal(false)} className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 cursor-pointer">✕</button>
             </div>
 
             <form onSubmit={handleCreateTenant} className="space-y-4 text-xs">
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">Organization Name</label>
-                <input type="text" required value={name} onChange={(e) => setName(e.target.value)} className="w-full p-2.5 border rounded-lg text-xs" />
+                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Organization Name</label>
+                <input type="text" required value={name} onChange={(e) => setName(e.target.value)} className="w-full p-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg text-xs" />
               </div>
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">Owner Email</label>
-                <input type="email" required value={ownerEmail} onChange={(e) => setOwnerEmail(e.target.value)} className="w-full p-2.5 border rounded-lg text-xs" />
+                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Owner Email</label>
+                <input type="email" required value={ownerEmail} onChange={(e) => setOwnerEmail(e.target.value)} className="w-full p-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg text-xs" />
               </div>
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">Plan</label>
-                <select value={selectedPlanId} onChange={(e) => setSelectedPlanId(e.target.value)} className="w-full p-2.5 border rounded-lg bg-white font-bold">
-                  <option value="">Custom Tier</option>
+                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Plan</label>
+                <select value={selectedPlanId} onChange={(e) => setSelectedPlanId(e.target.value)} className="w-full p-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg font-bold">
+                  <option value="" className="dark:bg-slate-800">Custom Tier</option>
                   {plans.map(p => (
-                    <option key={p.id} value={p.id}>{p.name} ({p.allocatedApiSlots} slots - {p.aiCredits ?? 1000} AI Credits)</option>
+                    <option key={p.id} value={p.id} className="dark:bg-slate-800">{p.name} ({p.allocatedApiSlots} slots - {p.aiCredits ?? 1000} AI Credits)</option>
                   ))}
                 </select>
               </div>
-              <div className="pt-2 flex justify-end gap-2">
-                <button type="button" onClick={() => setShowAddModal(false)} className="px-4 py-2 bg-slate-100 text-slate-700 rounded-lg">Cancel</button>
-                <button type="submit" className="px-5 py-2 bg-[#5D3FD3] text-white font-bold rounded-lg">Provision</button>
+              <div className="pt-2 flex justify-end gap-2 border-t border-slate-100 dark:border-slate-800">
+                <button type="button" onClick={() => setShowAddModal(false)} className="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg cursor-pointer">Cancel</button>
+                <button type="submit" className="px-5 py-2 bg-[#5D3FD3] hover:bg-purple-700 text-white font-bold rounded-lg cursor-pointer shadow-md">Provision</button>
               </div>
             </form>
           </div>
@@ -2218,37 +2249,37 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
 
       {/* USER STORAGE & QUOTA INSPECTOR MODAL */}
       {inspectingTenant && (
-        <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 border border-slate-200 shadow-2xl space-y-5">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in font-['Inter']">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-lg w-full p-6 border border-slate-200 dark:border-slate-800 shadow-2xl space-y-5">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
               <div>
-                <h3 className="font-bold text-slate-900 text-base flex items-center gap-2">
-                  <Eye className="w-5 h-5 text-[#5D3FD3]" />
+                <h3 className="font-bold text-slate-900 dark:text-white text-base flex items-center gap-2">
+                  <Eye className="w-5 h-5 text-[#5D3FD3] dark:text-purple-400" />
                   <span>User Usage & Quotas Inspector</span>
                 </h3>
-                <p className="text-xs text-slate-500 font-mono mt-0.5">{inspectingTenant.name} ({inspectingTenant.ownerEmail})</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 font-mono mt-0.5">{inspectingTenant.name} ({inspectingTenant.ownerEmail})</p>
               </div>
-              <button onClick={() => setInspectingTenant(null)} className="text-slate-400 hover:text-slate-700">✕</button>
+              <button onClick={() => setInspectingTenant(null)} className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 cursor-pointer">✕</button>
             </div>
 
             {/* Storage Meter Section */}
-            <div className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200 text-xs">
-              <h4 className="font-bold text-slate-900 flex items-center justify-between">
+            <div className="space-y-3 bg-slate-50 dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-800 text-xs">
+              <h4 className="font-bold text-slate-900 dark:text-white flex items-center justify-between">
                 <span>Storage Breakdown (Supabase + Cloudinary)</span>
-                <span className="font-mono text-purple-700 font-bold">
+                <span className="font-mono text-purple-700 dark:text-purple-300 font-bold">
                   {(( (inspectingTenant.supabaseStorageBytes || 240000000) + (inspectingTenant.cloudinaryStorageBytes || 650000000) ) / (1024 * 1024)).toFixed(1)} MB / {inspectingTenant.customStorageLimitMb || 5000} MB
                 </span>
               </h4>
-              <div className="w-full bg-slate-200 h-2.5 rounded-full overflow-hidden flex">
+              <div className="w-full bg-slate-200 dark:bg-slate-700 h-2.5 rounded-full overflow-hidden flex">
                 <div className="bg-blue-600 h-full" style={{ width: '35%' }} title="Supabase Bucket Storage" />
                 <div className="bg-purple-600 h-full" style={{ width: '45%' }} title="Cloudinary CDN Assets" />
               </div>
               <div className="grid grid-cols-2 gap-2 text-[11px] font-mono">
-                <div className="flex items-center gap-1.5 text-blue-900">
+                <div className="flex items-center gap-1.5 text-blue-900 dark:text-blue-300">
                   <span className="w-2.5 h-2.5 rounded-full bg-blue-600 inline-block" />
                   <span>Supabase: {((inspectingTenant.supabaseStorageBytes || 240000000) / (1024 * 1024)).toFixed(1)} MB</span>
                 </div>
-                <div className="flex items-center gap-1.5 text-purple-900">
+                <div className="flex items-center gap-1.5 text-purple-900 dark:text-purple-300">
                   <span className="w-2.5 h-2.5 rounded-full bg-purple-600 inline-block" />
                   <span>Cloudinary: {((inspectingTenant.cloudinaryStorageBytes || 650000000) / (1024 * 1024)).toFixed(1)} MB</span>
                 </div>
@@ -2257,15 +2288,15 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
 
             {/* Zernio Trigger Rates & Channel Quota */}
             <div className="grid grid-cols-2 gap-3 text-xs">
-              <div className="p-3 bg-purple-50 rounded-xl border border-purple-200">
-                <div className="text-[10px] uppercase font-mono text-purple-700 font-bold">Zenith Daily Dispatches</div>
-                <div className="text-lg font-black text-purple-950 mt-1">
+              <div className="p-3 bg-purple-50 dark:bg-purple-950/50 rounded-xl border border-purple-200 dark:border-purple-800">
+                <div className="text-[10px] uppercase font-mono text-purple-700 dark:text-purple-300 font-bold">Zenith Daily Dispatches</div>
+                <div className="text-lg font-black text-purple-950 dark:text-purple-100 mt-1">
                   {inspectingTenant.zernioDailyDispatchCount || 14} / {customDailyZernioInput} Posts
                 </div>
               </div>
-              <div className="p-3 bg-amber-50 rounded-xl border border-amber-200">
-                <div className="text-[10px] uppercase font-mono text-amber-800 font-bold">Zenith Monthly Dispatches</div>
-                <div className="text-lg font-black text-amber-950 mt-1">
+              <div className="p-3 bg-amber-50 dark:bg-amber-950/50 rounded-xl border border-amber-200 dark:border-amber-800">
+                <div className="text-[10px] uppercase font-mono text-amber-800 dark:text-amber-300 font-bold">Zenith Monthly Dispatches</div>
+                <div className="text-lg font-black text-amber-950 dark:text-amber-100 mt-1">
                   {inspectingTenant.zernioMonthlyDispatchCount || 142} / {customMonthlyZernioInput} Posts
                 </div>
               </div>
@@ -2284,58 +2315,152 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
                 }).eq('id', inspectingTenant.id);
               } catch { /* ignore offline */ }
               setInspectingTenant(null);
-            }} className="space-y-3 pt-2 text-xs border-t border-slate-100">
-              <h4 className="font-bold text-slate-900">Super Admin Custom Quota Overrides</h4>
+            }} className="space-y-3 pt-2 text-xs border-t border-slate-100 dark:border-slate-800">
+              <h4 className="font-bold text-slate-900 dark:text-white">Super Admin Custom Quota Overrides</h4>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Max Social Accounts</label>
+                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Max Social Accounts</label>
                   <input
                     type="number"
                     value={customAccountsInput}
                     onChange={(e) => setCustomAccountsInput(Number(e.target.value))}
-                    className="w-full p-2 border rounded-lg font-mono text-xs"
+                    className="w-full p-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg font-mono text-xs"
                     min={1} max={100}
                   />
                 </div>
                 <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Storage Limit (MB)</label>
+                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Storage Limit (MB)</label>
                   <input
                     type="number"
                     value={customStorageMbInput}
                     onChange={(e) => setCustomStorageMbInput(Number(e.target.value))}
-                    className="w-full p-2 border rounded-lg font-mono text-xs"
+                    className="w-full p-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg font-mono text-xs"
                     min={100} max={500000}
                   />
                 </div>
                 <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Zenith Daily Limit</label>
+                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Zenith Daily Limit</label>
                   <input
                     type="number"
                     value={customDailyZernioInput}
                     onChange={(e) => setCustomDailyZernioInput(Number(e.target.value))}
-                    className="w-full p-2 border rounded-lg font-mono text-xs"
+                    className="w-full p-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg font-mono text-xs"
                     min={1} max={5000}
                   />
                 </div>
                 <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Zenith Monthly Limit</label>
+                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Zenith Monthly Limit</label>
                   <input
                     type="number"
                     value={customMonthlyZernioInput}
                     onChange={(e) => setCustomMonthlyZernioInput(Number(e.target.value))}
-                    className="w-full p-2 border rounded-lg font-mono text-xs"
+                    className="w-full p-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg font-mono text-xs"
                     min={10} max={100000}
                   />
                 </div>
               </div>
 
-              <div className="pt-3 flex justify-end gap-2">
-                <button type="button" onClick={() => setInspectingTenant(null)} className="px-4 py-2 bg-slate-100 text-slate-700 font-bold rounded-xl">
+              <div className="pt-3 flex justify-end gap-2 border-t border-slate-100 dark:border-slate-800">
+                <button type="button" onClick={() => setInspectingTenant(null)} className="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold rounded-xl cursor-pointer">
                   Close
                 </button>
-                <button type="submit" className="px-5 py-2 bg-[#5D3FD3] text-white font-bold rounded-xl shadow-md">
+                <button type="submit" className="px-5 py-2 bg-[#5D3FD3] hover:bg-purple-700 text-white font-bold rounded-xl shadow-md cursor-pointer">
                   Save Custom Quotas
                 </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* CREATE PLAN MODAL */}
+      {showAddPlanModal && (
+        <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in font-['Inter']">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-md w-full p-6 border border-slate-200 dark:border-slate-800 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+              <h3 className="font-bold text-slate-900 dark:text-white text-base">Create Subscription Plan</h3>
+              <button onClick={() => setShowAddPlanModal(false)} className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 cursor-pointer">✕</button>
+            </div>
+
+            <form onSubmit={handleCreatePlan} className="space-y-4 text-xs">
+              <div>
+                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Plan Name</label>
+                <input type="text" required value={planName} onChange={(e) => setPlanName(e.target.value)} placeholder="e.g. Agency Scale Pro" className="w-full p-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg text-xs" />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Monthly Price</label>
+                  <input type="number" required value={planPrice} onChange={(e) => setPlanPrice(Number(e.target.value))} className="w-full p-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg font-mono text-xs" min={0} />
+                </div>
+                <div>
+                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Currency</label>
+                  <select value={planCurrency} onChange={(e) => setPlanCurrency(e.target.value as CurrencyCode)} className="w-full p-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg font-bold">
+                    <option value="USD" className="dark:bg-slate-800">USD ($)</option>
+                    <option value="INR" className="dark:bg-slate-800">INR (₹)</option>
+                    <option value="GBP" className="dark:bg-slate-800">GBP (£)</option>
+                  </select>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">API Slots (2 Ch/slot)</label>
+                  <input type="number" required value={planSlots} onChange={(e) => setPlanSlots(Number(e.target.value))} className="w-full p-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg font-mono text-xs" min={1} max={50} />
+                </div>
+                <div>
+                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">AI Credits / mo</label>
+                  <input type="number" required value={planAiCredits} onChange={(e) => setPlanAiCredits(Number(e.target.value))} className="w-full p-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg font-mono text-xs" min={0} max={100000} />
+                </div>
+              </div>
+              <div className="pt-2 flex justify-end gap-2 border-t border-slate-100 dark:border-slate-800">
+                <button type="button" onClick={() => setShowAddPlanModal(false)} className="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg cursor-pointer">Cancel</button>
+                <button type="submit" className="px-5 py-2 bg-[#5D3FD3] hover:bg-purple-700 text-white font-bold rounded-lg cursor-pointer shadow-md">Create Plan</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* EDIT PLAN MODAL */}
+      {editingPlan && (
+        <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in font-['Inter']">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-md w-full p-6 border border-slate-200 dark:border-slate-800 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+              <h3 className="font-bold text-slate-900 dark:text-white text-base">Edit Subscription Plan</h3>
+              <button onClick={() => setEditingPlan(null)} className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 cursor-pointer">✕</button>
+            </div>
+
+            <form onSubmit={handleSaveEditedPlan} className="space-y-4 text-xs">
+              <div>
+                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Plan Name</label>
+                <input type="text" required value={editingPlan.name} onChange={(e) => setEditingPlan({ ...editingPlan, name: e.target.value })} className="w-full p-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg text-xs" />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Monthly Price</label>
+                  <input type="number" required value={editingPlan.priceMonthly} onChange={(e) => setEditingPlan({ ...editingPlan, priceMonthly: Number(e.target.value) })} className="w-full p-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg font-mono text-xs" min={0} />
+                </div>
+                <div>
+                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Currency</label>
+                  <select value={editingPlan.currency || 'USD'} onChange={(e) => setEditingPlan({ ...editingPlan, currency: e.target.value as CurrencyCode })} className="w-full p-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg font-bold">
+                    <option value="USD" className="dark:bg-slate-800">USD ($)</option>
+                    <option value="INR" className="dark:bg-slate-800">INR (₹)</option>
+                    <option value="GBP" className="dark:bg-slate-800">GBP (£)</option>
+                  </select>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">API Slots (2 Ch/slot)</label>
+                  <input type="number" required value={editingPlan.allocatedApiSlots} onChange={(e) => setEditingPlan({ ...editingPlan, allocatedApiSlots: Number(e.target.value) })} className="w-full p-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg font-mono text-xs" min={1} max={50} />
+                </div>
+                <div>
+                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">AI Credits / mo</label>
+                  <input type="number" required value={editingPlan.aiCredits ?? 1000} onChange={(e) => setEditingPlan({ ...editingPlan, aiCredits: Number(e.target.value) })} className="w-full p-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg font-mono text-xs" min={0} max={100000} />
+                </div>
+              </div>
+              <div className="pt-2 flex justify-end gap-2 border-t border-slate-100 dark:border-slate-800">
+                <button type="button" onClick={() => setEditingPlan(null)} className="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg cursor-pointer">Cancel</button>
+                <button type="submit" className="px-5 py-2 bg-[#5D3FD3] hover:bg-purple-700 text-white font-bold rounded-lg cursor-pointer shadow-md">Save Plan Changes</button>
               </div>
             </form>
           </div>

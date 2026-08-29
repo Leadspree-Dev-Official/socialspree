@@ -100,3 +100,15 @@ Database schema defined in [`supabase_schema.sql`](file:///Users/aniruddhadas/An
   4. Manage Tier Plans (`Standard / Free` vs `Pro`).
   5. Adjust Max Social Account limits per tenant.
   6. Global audit log tracking across all business clients.
+
+---
+
+## 🔑 6. Native Supabase Authentication (Clerk-Free Architecture)
+- **Primary Auth Engine:** 100% Native Supabase Auth (`@supabase/supabase-js`) connected strictly to `https://qglhbesenigpspgkgbac.supabase.co`.
+- **Clerk Dropped:** Complete removal of `@clerk/react` across all UI views, providers, and headers.
+- **Native Auth Views & Flow:**
+  - `src/components/auth/AuthView.tsx`: Sign In (`supabase.auth.signInWithPassword`), Sign Up (`supabase.auth.signUp`), Forgot Password / Recovery email submission (`supabase.auth.resetPasswordForEmail`), and Instant Demo Sandbox launchers (`business_user`, `agency`, `super_admin`).
+  - `src/components/auth/SetNewPasswordView.tsx`: Password recovery view picking up recovery tokens and executing `supabase.auth.updateUser({ password })`, with auto-redirect to `/login`.
+  - `src/components/settings/SettingsView.tsx`: In-app password change and account security card via `supabase.auth.updateUser({ password })`.
+- **Profile Synchronization:** `auth.getProfile()` queries `supabase.auth.getSession()` and syncs authenticated credentials directly to `public.profiles` table with automatic row provisioning.
+

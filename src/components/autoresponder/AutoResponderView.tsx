@@ -413,12 +413,12 @@ export const AutoResponderView: React.FC<AutoResponderViewProps> = ({
       </div>
 
       {notification && (
-        <div className="p-4 bg-emerald-50 border border-emerald-300 text-emerald-900 rounded-2xl text-xs font-semibold animate-in fade-in flex items-center justify-between shadow-xs">
+        <div className="p-4 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800 text-emerald-900 dark:text-emerald-200 rounded-2xl text-xs font-semibold animate-in fade-in flex items-center justify-between shadow-xs">
           <div className="flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
             <span>{notification}</span>
           </div>
-          <button onClick={() => setNotification(null)} className="text-slate-400 hover:text-slate-700">
+          <button onClick={() => setNotification(null)} className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 cursor-pointer">
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -431,17 +431,17 @@ export const AutoResponderView: React.FC<AutoResponderViewProps> = ({
         <div className="lg:col-span-7 space-y-6">
           
           {/* Active Rules Card */}
-          <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h3 className="font-bold text-sm text-slate-900 flex items-center gap-2">
-                <Zap className="w-4 h-4 text-[#5D3FD3]" />
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 shadow-xs space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+              <h3 className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
+                <Zap className="w-4 h-4 text-[#5D3FD3] dark:text-purple-400" />
                 <span>Active Auto-Responder Rules ({rules.length})</span>
               </h3>
-              <span className="text-xs text-slate-500 font-mono">Meta Graph Webhook Active</span>
+              <span className="text-xs text-slate-500 dark:text-slate-400 font-mono">Meta Graph Webhook Active</span>
             </div>
 
             {rules.length === 0 ? (
-              <div className="text-center py-12 text-slate-400 text-xs italic">
+              <div className="text-center py-12 text-slate-400 dark:text-slate-500 text-xs italic">
                 No active auto-responder rules configured. Click &quot;+ Create Auto-Reply Rule&quot; to begin.
               </div>
             ) : (
@@ -450,7 +450,9 @@ export const AutoResponderView: React.FC<AutoResponderViewProps> = ({
                   <div
                     key={rule.id}
                     className={`p-4 rounded-2xl border transition-all ${
-                      rule.isActive ? 'bg-white border-slate-200 shadow-xs' : 'bg-slate-50 border-slate-200 opacity-60'
+                      rule.isActive
+                        ? 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 shadow-xs'
+                        : 'bg-slate-50 dark:bg-slate-900/60 border-slate-200 dark:border-slate-800 opacity-60'
                     }`}
                   >
                     <div className="flex items-start justify-between gap-3">
@@ -468,19 +470,19 @@ export const AutoResponderView: React.FC<AutoResponderViewProps> = ({
                         )}
                         <div>
                           <div className="flex items-center gap-2 flex-wrap">
-                            <h4 className="font-bold text-slate-900 text-xs">{rule.name}</h4>
+                            <h4 className="font-bold text-slate-900 dark:text-white text-xs">{rule.name}</h4>
                             {rule.targetPostScope === 'all_posts' && (
-                              <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 font-mono text-[9px] font-bold rounded-full">
+                              <span className="px-2 py-0.5 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 font-mono text-[9px] font-bold rounded-full">
                                 ANY POST (UNIVERSAL)
                               </span>
                             )}
                             {rule.triggerType === 'all_comments' && (
-                              <span className="px-2 py-0.5 bg-amber-50 text-amber-800 border border-amber-200 font-mono text-[9px] font-bold rounded-full">
+                              <span className="px-2 py-0.5 bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800 font-mono text-[9px] font-bold rounded-full">
                                 CATCH-ALL
                               </span>
                             )}
                           </div>
-                          <div className="text-[10px] text-slate-500 font-mono mt-0.5 flex items-center gap-2 flex-wrap">
+                          <div className="text-[10px] text-slate-500 dark:text-slate-400 font-mono mt-0.5 flex items-center gap-2 flex-wrap">
                             <span>Platform: {rule.platform === 'both' ? 'IG & FB DUAL' : rule.platform.toUpperCase()}</span>
                             <span>•</span>
                             <span>Triggers: {rule.triggerCount} times</span>
@@ -493,7 +495,7 @@ export const AutoResponderView: React.FC<AutoResponderViewProps> = ({
                       <div className="flex items-center gap-1.5">
                         <button
                           onClick={() => handleDuplicateRule(rule)}
-                          className="px-2.5 py-1 bg-purple-50 hover:bg-purple-100 text-[#5D3FD3] border border-purple-200 rounded-lg text-[10px] font-bold flex items-center gap-1 transition-all"
+                          className="px-2.5 py-1 bg-purple-50 dark:bg-purple-950/60 hover:bg-purple-100 dark:hover:bg-purple-900/60 text-[#5D3FD3] dark:text-purple-300 border border-purple-200 dark:border-purple-800 rounded-lg text-[10px] font-bold flex items-center gap-1 transition-all cursor-pointer"
                           title="Duplicate rule for both IG & FB"
                         >
                           <Copy className="w-3 h-3" />
@@ -502,19 +504,19 @@ export const AutoResponderView: React.FC<AutoResponderViewProps> = ({
 
                         <button
                           onClick={() => handleToggleRule(rule.id)}
-                          className="text-slate-500 hover:text-slate-900 ml-1"
+                          className="text-slate-500 hover:text-slate-900 dark:hover:text-slate-200 ml-1 cursor-pointer"
                           title={rule.isActive ? 'Pause Rule' : 'Activate Rule'}
                         >
                           {rule.isActive ? (
-                            <ToggleRight className="w-6 h-6 text-emerald-600" />
+                            <ToggleRight className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
                           ) : (
-                            <ToggleLeft className="w-6 h-6 text-slate-400" />
+                            <ToggleLeft className="w-6 h-6 text-slate-400 dark:text-slate-600" />
                           )}
                         </button>
 
                         <button
                           onClick={() => handleDeleteRule(rule.id)}
-                          className="p-1 text-slate-400 hover:text-red-600 rounded"
+                          className="p-1 text-slate-400 hover:text-red-600 dark:hover:text-red-400 rounded cursor-pointer"
                           title="Delete Rule"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -524,18 +526,18 @@ export const AutoResponderView: React.FC<AutoResponderViewProps> = ({
 
                     {/* Trigger Badges & Keywords */}
                     <div className="mt-3 flex flex-wrap gap-1.5 items-center">
-                      <span className="text-[10px] font-mono text-slate-400 uppercase font-bold">Trigger:</span>
+                      <span className="text-[10px] font-mono text-slate-400 dark:text-slate-500 uppercase font-bold">Trigger:</span>
                       {rule.triggerType === 'all_comments' ? (
-                        <span className="px-2 py-0.5 bg-purple-50 text-[#5D3FD3] border border-purple-200 rounded-md font-mono text-[10px] font-bold">
+                        <span className="px-2 py-0.5 bg-purple-50 dark:bg-purple-950/60 text-[#5D3FD3] dark:text-purple-300 border border-purple-200 dark:border-purple-800 rounded-md font-mono text-[10px] font-bold">
                           ✨ Any comment on any post
                         </span>
                       ) : rule.triggerType === 'sentiment' ? (
-                        <span className="px-2 py-0.5 bg-blue-50 text-blue-700 border border-blue-200 rounded-md font-mono text-[10px] font-bold">
+                        <span className="px-2 py-0.5 bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 rounded-md font-mono text-[10px] font-bold">
                           💡 Question / Inquiries Intent
                         </span>
                       ) : (
                         rule.triggerKeywords.map((kw, idx) => (
-                          <span key={idx} className="px-2 py-0.5 bg-purple-50 text-[#5D3FD3] border border-purple-200 rounded-md font-mono text-[10px] font-bold">
+                          <span key={idx} className="px-2 py-0.5 bg-purple-50 dark:bg-purple-950/60 text-[#5D3FD3] dark:text-purple-300 border border-purple-200 dark:border-purple-800 rounded-md font-mono text-[10px] font-bold">
                             &quot;{kw}&quot;
                           </span>
                         ))
@@ -543,48 +545,48 @@ export const AutoResponderView: React.FC<AutoResponderViewProps> = ({
                     </div>
 
                     {/* Reply Templates Preview */}
-                    <div className="mt-3 p-3 bg-slate-50 rounded-xl space-y-2 text-xs font-sans">
+                    <div className="mt-3 p-3 bg-slate-50 dark:bg-slate-900 rounded-xl space-y-2 text-xs font-sans">
                       {rule.actionType !== 'private_dm' && (
-                        <div className="flex items-start gap-2 text-slate-700">
-                          <MessageCircle className="w-3.5 h-3.5 text-[#5D3FD3] shrink-0 mt-0.5" />
+                        <div className="flex items-start gap-2 text-slate-700 dark:text-slate-300">
+                          <MessageCircle className="w-3.5 h-3.5 text-[#5D3FD3] dark:text-purple-400 shrink-0 mt-0.5" />
                           <div className="w-full">
                             <div className="flex items-center justify-between">
-                              <span className="font-bold text-[10px] text-slate-500 uppercase font-mono">Public Comment Reply:</span>
+                              <span className="font-bold text-[10px] text-slate-500 dark:text-slate-400 uppercase font-mono">Public Comment Reply:</span>
                               {(rule.publicReplyTemplates && rule.publicReplyTemplates.length > 1) && (
-                                <span className="text-[9px] font-mono bg-purple-100 text-purple-800 px-1.5 py-0.5 rounded font-bold">
+                                <span className="text-[9px] font-mono bg-purple-100 dark:bg-purple-950/80 text-purple-800 dark:text-purple-300 px-1.5 py-0.5 rounded font-bold border border-purple-200 dark:border-purple-800">
                                   Rotating {rule.publicReplyTemplates.length} Anti-Spam Variants
                                 </span>
                               )}
                             </div>
-                            <p className="text-slate-800 text-[11px] mt-0.5 font-medium">{rule.publicReplyTemplate}</p>
+                            <p className="text-slate-800 dark:text-slate-200 text-[11px] mt-0.5 font-medium">{rule.publicReplyTemplate}</p>
                           </div>
                         </div>
                       )}
 
                       {rule.actionType !== 'comment_reply' && (
-                        <div className={`flex items-start gap-2 text-slate-700 ${rule.actionType === 'both' ? 'pt-2 border-t border-slate-200/60' : ''}`}>
-                          <Mail className="w-3.5 h-3.5 text-blue-600 shrink-0 mt-0.5" />
+                        <div className={`flex items-start gap-2 text-slate-700 dark:text-slate-300 ${rule.actionType === 'both' ? 'pt-2 border-t border-slate-200/60 dark:border-slate-800' : ''}`}>
+                          <Mail className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
                           <div className="w-full">
                             <div className="flex items-center justify-between">
-                              <span className="font-bold text-[10px] text-slate-500 uppercase font-mono">Private DM Response:</span>
+                              <span className="font-bold text-[10px] text-slate-500 dark:text-slate-400 uppercase font-mono">Private DM Response:</span>
                               {(rule.privateDmTemplates && rule.privateDmTemplates.length > 1) && (
-                                <span className="text-[9px] font-mono bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded font-bold">
+                                <span className="text-[9px] font-mono bg-blue-100 dark:bg-blue-950/80 text-blue-800 dark:text-blue-300 px-1.5 py-0.5 rounded font-bold border border-blue-200 dark:border-blue-800">
                                   Rotating {rule.privateDmTemplates.length} DM Variants
                                 </span>
                               )}
                             </div>
-                            <p className="text-slate-800 text-[11px] mt-0.5 font-medium">{rule.privateDmTemplate || '(Default DM Template)'}</p>
+                            <p className="text-slate-800 dark:text-slate-200 text-[11px] mt-0.5 font-medium">{rule.privateDmTemplate || '(Default DM Template)'}</p>
                             
                             {rule.attachedMediaUrl && (
-                              <div className="mt-2 p-2 bg-white border border-purple-200 rounded-xl flex items-center justify-between gap-2">
+                              <div className="mt-2 p-2 bg-white dark:bg-slate-800 border border-purple-200 dark:border-purple-800 rounded-xl flex items-center justify-between gap-2">
                                 <div className="flex items-center gap-2 min-w-0">
-                                  <img src={rule.attachedMediaUrl} alt="Attached Media" className="w-8 h-8 rounded-lg object-cover border shrink-0" />
+                                  <img src={rule.attachedMediaUrl} alt="Attached Media" className="w-8 h-8 rounded-lg object-cover border border-slate-200 dark:border-slate-700 shrink-0" />
                                   <div className="truncate">
-                                    <span className="text-[10px] font-mono font-bold text-purple-900 block">Cloudinary Media Attached</span>
-                                    <span className="text-[9px] text-slate-500 font-mono truncate block">{rule.attachedMediaUrl}</span>
+                                    <span className="text-[10px] font-mono font-bold text-purple-900 dark:text-purple-300 block">Cloudinary Media Attached</span>
+                                    <span className="text-[9px] text-slate-500 dark:text-slate-400 font-mono truncate block">{rule.attachedMediaUrl}</span>
                                   </div>
                                 </div>
-                                <a href={rule.attachedMediaUrl} target="_blank" rel="noreferrer" className="p-1 text-purple-700 hover:text-purple-900">
+                                <a href={rule.attachedMediaUrl} target="_blank" rel="noreferrer" className="p-1 text-purple-700 dark:text-purple-300 hover:text-purple-900 dark:hover:text-white">
                                   <LinkIcon className="w-3.5 h-3.5" />
                                 </a>
                               </div>
@@ -622,7 +624,7 @@ export const AutoResponderView: React.FC<AutoResponderViewProps> = ({
                   <button
                     type="button"
                     onClick={() => setSimPlatform('instagram')}
-                    className={`py-2 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
+                    className={`py-2 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                       simPlatform === 'instagram'
                         ? 'bg-gradient-to-tr from-amber-500 to-pink-600 text-white shadow-md'
                         : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
@@ -635,7 +637,7 @@ export const AutoResponderView: React.FC<AutoResponderViewProps> = ({
                   <button
                     type="button"
                     onClick={() => setSimPlatform('facebook')}
-                    className={`py-2 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
+                    className={`py-2 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                       simPlatform === 'facebook'
                         ? 'bg-blue-600 text-white shadow-md'
                         : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
@@ -673,7 +675,7 @@ export const AutoResponderView: React.FC<AutoResponderViewProps> = ({
                   type="button"
                   onClick={handleRunSimulation}
                   disabled={isSimulating || !simComment.trim()}
-                  className="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-slate-950 font-bold rounded-xl text-xs shadow-md transition-all flex items-center gap-1.5 shrink-0"
+                  className="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-slate-950 font-bold rounded-xl text-xs shadow-md transition-all flex items-center gap-1.5 shrink-0 cursor-pointer"
                 >
                   <Play className={`w-3.5 h-3.5 ${isSimulating ? 'animate-spin' : ''}`} />
                   <span>{isSimulating ? 'Dispatched...' : 'Simulate Event'}</span>
@@ -707,46 +709,46 @@ export const AutoResponderView: React.FC<AutoResponderViewProps> = ({
 
         {/* Right Column: Real-Time Webhook Logs Feed */}
         <div className="lg:col-span-5 space-y-6">
-          <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h3 className="font-bold text-sm text-slate-900 flex items-center gap-2">
-                <MessageSquareCode className="w-4 h-4 text-emerald-600" />
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 shadow-xs space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+              <h3 className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
+                <MessageSquareCode className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                 <span>Live Webhook Ingestion Log ({logs.length})</span>
               </h3>
-              <span className="text-[10px] font-mono bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded font-bold">
+              <span className="text-[10px] font-mono bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded font-bold border border-emerald-200 dark:border-emerald-800">
                 REAL-TIME STREAM
               </span>
             </div>
 
             <div className="space-y-3 max-h-[640px] overflow-y-auto pr-1">
               {logs.map((log) => (
-                <div key={log.id} className="p-3.5 rounded-xl border border-slate-200/80 bg-slate-50 space-y-2 text-xs">
+                <div key={log.id} className="p-3.5 rounded-xl border border-slate-200/80 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 space-y-2 text-xs">
                   <div className="flex items-center justify-between text-[11px]">
-                    <div className="flex items-center gap-1.5 font-bold text-slate-900">
+                    <div className="flex items-center gap-1.5 font-bold text-slate-900 dark:text-white">
                       {log.platform === 'instagram' ? (
-                        <Instagram className="w-3.5 h-3.5 text-pink-600" />
+                        <Instagram className="w-3.5 h-3.5 text-pink-600 dark:text-pink-400" />
                       ) : (
-                        <Facebook className="w-3.5 h-3.5 text-blue-600" />
+                        <Facebook className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
                       )}
                       <span>@{log.senderUsername}</span>
                     </div>
-                    <span className="text-[10px] text-slate-400 font-mono">{log.timestamp}</span>
+                    <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">{log.timestamp}</span>
                   </div>
 
-                  <div className="p-2 bg-white rounded-lg border border-slate-200/60 font-mono text-[11px] text-slate-800">
+                  <div className="p-2 bg-white dark:bg-slate-800 rounded-lg border border-slate-200/60 dark:border-slate-700 font-mono text-[11px] text-slate-800 dark:text-slate-200">
                     &quot;{log.commentText}&quot;
                   </div>
 
                   {log.publicReplySent && (
-                    <div className="text-[11px] text-purple-900 bg-purple-50 p-2 rounded-lg border border-purple-100">
-                      <span className="font-bold text-[9px] uppercase font-mono block text-[#5D3FD3]">Public Reply Sent:</span>
+                    <div className="text-[11px] text-purple-900 dark:text-purple-200 bg-purple-50 dark:bg-purple-950/40 p-2 rounded-lg border border-purple-100 dark:border-purple-800/60">
+                      <span className="font-bold text-[9px] uppercase font-mono block text-[#5D3FD3] dark:text-purple-400">Public Reply Sent:</span>
                       {log.publicReplySent}
                     </div>
                   )}
 
                   {log.privateDmSent && (
-                    <div className="text-[11px] text-blue-900 bg-blue-50 p-2 rounded-lg border border-blue-100">
-                      <span className="font-bold text-[9px] uppercase font-mono block text-blue-700">Private DM Dispatched:</span>
+                    <div className="text-[11px] text-blue-900 dark:text-blue-200 bg-blue-50 dark:bg-blue-950/40 p-2 rounded-lg border border-blue-100 dark:border-blue-800/60">
+                      <span className="font-bold text-[9px] uppercase font-mono block text-blue-700 dark:text-blue-400">Private DM Dispatched:</span>
                       {log.privateDmSent}
                     </div>
                   )}
@@ -759,40 +761,40 @@ export const AutoResponderView: React.FC<AutoResponderViewProps> = ({
 
       {/* MODAL 1: Create Auto-Reply Rule */}
       {showAddModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in">
-          <div className="bg-white rounded-3xl max-w-2xl w-full p-6 shadow-2xl border border-slate-100 max-h-[90vh] overflow-y-auto space-y-5">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in font-['Inter']">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-2xl w-full p-6 shadow-2xl border border-slate-100 dark:border-slate-800 max-h-[90vh] overflow-y-auto space-y-5">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-xl bg-purple-100 text-[#5D3FD3] flex items-center justify-center font-bold">
+                <div className="w-8 h-8 rounded-xl bg-purple-100 dark:bg-purple-950 text-[#5D3FD3] dark:text-purple-300 flex items-center justify-center font-bold">
                   <Plus className="w-5 h-5" />
                 </div>
-                <h3 className="text-base font-bold text-slate-900">Create Universal Auto-Reply Rule</h3>
+                <h3 className="text-base font-bold text-slate-900 dark:text-white">Create Universal Auto-Reply Rule</h3>
               </div>
-              <button onClick={() => setShowAddModal(false)} className="text-slate-400 hover:text-slate-600">
+              <button onClick={() => setShowAddModal(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             <form onSubmit={handleCreateRule} className="space-y-4 text-xs">
               <div>
-                <label className="block font-bold text-slate-700 mb-1">Rule Name</label>
+                <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Rule Name</label>
                 <input
                   type="text"
                   required
                   value={ruleNameInput}
                   onChange={(e) => setRuleNameInput(e.target.value)}
-                  className="w-full p-2.5 border rounded-xl font-medium focus:ring-2 focus:ring-purple-500/20"
+                  className="w-full p-2.5 border border-slate-200 dark:border-slate-750 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl font-medium focus:ring-2 focus:ring-purple-500/20"
                   placeholder="e.g. Universal Pricing & Checkout DM Bot"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">Platform Coverage</label>
+                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Platform Coverage</label>
                   <select
                     value={platformInput}
                     onChange={(e) => setPlatformInput(e.target.value as any)}
-                    className="w-full p-2.5 border rounded-xl font-semibold bg-white"
+                    className="w-full p-2.5 border border-slate-200 dark:border-slate-750 rounded-xl font-semibold bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
                   >
                     <option value="both">Both (Instagram + Facebook)</option>
                     <option value="instagram">Instagram Only</option>
@@ -801,11 +803,11 @@ export const AutoResponderView: React.FC<AutoResponderViewProps> = ({
                 </div>
 
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">Target Post Scope</label>
+                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Target Post Scope</label>
                   <select
                     value={targetScopeInput}
                     onChange={(e) => setTargetScopeInput(e.target.value as any)}
-                    className="w-full p-2.5 border rounded-xl font-semibold bg-white"
+                    className="w-full p-2.5 border border-slate-200 dark:border-slate-750 rounded-xl font-semibold bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
                   >
                     <option value="all_posts">All Posts (Universal Monitoring)</option>
                     <option value="specific_posts">Specific Posts Only</option>
@@ -814,16 +816,16 @@ export const AutoResponderView: React.FC<AutoResponderViewProps> = ({
               </div>
 
               {/* Trigger Mode */}
-              <div className="space-y-2 p-3 bg-slate-50 rounded-2xl border border-slate-200/80">
-                <label className="block font-bold text-slate-800">Comment Trigger Mode</label>
+              <div className="space-y-2 p-3 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200/80 dark:border-slate-700">
+                <label className="block font-bold text-slate-800 dark:text-slate-200">Comment Trigger Mode</label>
                 <div className="grid grid-cols-3 gap-2">
                   <button
                     type="button"
                     onClick={() => setTriggerTypeInput('keyword')}
-                    className={`p-2.5 rounded-xl font-bold text-center border transition-all ${
+                    className={`p-2.5 rounded-xl font-bold text-center border transition-all cursor-pointer ${
                       triggerTypeInput === 'keyword'
                         ? 'bg-[#5D3FD3] text-white border-[#5D3FD3] shadow-xs'
-                        : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100'
+                        : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-750'
                     }`}
                   >
                     Keywords
@@ -832,10 +834,10 @@ export const AutoResponderView: React.FC<AutoResponderViewProps> = ({
                   <button
                     type="button"
                     onClick={() => setTriggerTypeInput('all_comments')}
-                    className={`p-2.5 rounded-xl font-bold text-center border transition-all ${
+                    className={`p-2.5 rounded-xl font-bold text-center border transition-all cursor-pointer ${
                       triggerTypeInput === 'all_comments'
                         ? 'bg-[#5D3FD3] text-white border-[#5D3FD3] shadow-xs'
-                        : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100'
+                        : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-750'
                     }`}
                   >
                     All Comments (Catch-All)
@@ -844,10 +846,10 @@ export const AutoResponderView: React.FC<AutoResponderViewProps> = ({
                   <button
                     type="button"
                     onClick={() => setTriggerTypeInput('sentiment')}
-                    className={`p-2.5 rounded-xl font-bold text-center border transition-all ${
+                    className={`p-2.5 rounded-xl font-bold text-center border transition-all cursor-pointer ${
                       triggerTypeInput === 'sentiment'
                         ? 'bg-[#5D3FD3] text-white border-[#5D3FD3] shadow-xs'
-                        : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100'
+                        : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-750'
                     }`}
                   >
                     Inquiries / Intent
@@ -856,12 +858,12 @@ export const AutoResponderView: React.FC<AutoResponderViewProps> = ({
 
                 {triggerTypeInput === 'keyword' && (
                   <div className="pt-2">
-                    <label className="block font-semibold text-slate-600 mb-1">Trigger Keywords (comma separated)</label>
+                    <label className="block font-semibold text-slate-600 dark:text-slate-400 mb-1">Trigger Keywords (comma separated)</label>
                     <input
                       type="text"
                       value={keywordsInput}
                       onChange={(e) => setKeywordsInput(e.target.value)}
-                      className="w-full p-2.5 border rounded-xl font-mono text-xs bg-white"
+                      className="w-full p-2.5 border border-slate-200 dark:border-slate-700 rounded-xl font-mono text-xs bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500"
                       placeholder="e.g. price, link, cost, deal, buy"
                     />
                   </div>
@@ -870,13 +872,13 @@ export const AutoResponderView: React.FC<AutoResponderViewProps> = ({
 
               {/* Action Type */}
               <div>
-                <label className="block font-bold text-slate-700 mb-1">Action Dispatched</label>
+                <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Action Dispatched</label>
                 <div className="grid grid-cols-3 gap-2">
                   <button
                     type="button"
                     onClick={() => setActionTypeInput('both')}
-                    className={`p-2 rounded-xl font-bold text-center border ${
-                      actionTypeInput === 'both' ? 'bg-purple-50 text-[#5D3FD3] border-[#5D3FD3]' : 'border-slate-200'
+                    className={`p-2 rounded-xl font-bold text-center border cursor-pointer ${
+                      actionTypeInput === 'both' ? 'bg-purple-50 dark:bg-purple-950/60 text-[#5D3FD3] dark:text-purple-300 border-[#5D3FD3] dark:border-purple-600' : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300'
                     }`}
                   >
                     Public Reply + DM
@@ -884,8 +886,8 @@ export const AutoResponderView: React.FC<AutoResponderViewProps> = ({
                   <button
                     type="button"
                     onClick={() => setActionTypeInput('comment_reply')}
-                    className={`p-2 rounded-xl font-bold text-center border ${
-                      actionTypeInput === 'comment_reply' ? 'bg-purple-50 text-[#5D3FD3] border-[#5D3FD3]' : 'border-slate-200'
+                    className={`p-2 rounded-xl font-bold text-center border cursor-pointer ${
+                      actionTypeInput === 'comment_reply' ? 'bg-purple-50 dark:bg-purple-950/60 text-[#5D3FD3] dark:text-purple-300 border-[#5D3FD3] dark:border-purple-600' : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300'
                     }`}
                   >
                     Public Reply Only
@@ -893,8 +895,8 @@ export const AutoResponderView: React.FC<AutoResponderViewProps> = ({
                   <button
                     type="button"
                     onClick={() => setActionTypeInput('private_dm')}
-                    className={`p-2 rounded-xl font-bold text-center border ${
-                      actionTypeInput === 'private_dm' ? 'bg-purple-50 text-[#5D3FD3] border-[#5D3FD3]' : 'border-slate-200'
+                    className={`p-2 rounded-xl font-bold text-center border cursor-pointer ${
+                      actionTypeInput === 'private_dm' ? 'bg-purple-50 dark:bg-purple-950/60 text-[#5D3FD3] dark:text-purple-300 border-[#5D3FD3] dark:border-purple-600' : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300'
                     }`}
                   >
                     Private DM Only
@@ -904,16 +906,16 @@ export const AutoResponderView: React.FC<AutoResponderViewProps> = ({
 
               {/* Multi-Template Public Reply Variants */}
               {actionTypeInput !== 'private_dm' && (
-                <div className="space-y-2 p-3 bg-purple-50/60 rounded-2xl border border-purple-100">
+                <div className="space-y-2 p-3 bg-purple-50/60 dark:bg-purple-950/30 rounded-2xl border border-purple-100 dark:border-purple-800">
                   <div className="flex items-center justify-between">
-                    <label className="font-bold text-purple-950 flex items-center gap-1.5">
-                      <Repeat className="w-3.5 h-3.5 text-[#5D3FD3]" />
+                    <label className="font-bold text-purple-950 dark:text-purple-200 flex items-center gap-1.5">
+                      <Repeat className="w-3.5 h-3.5 text-[#5D3FD3] dark:text-purple-400" />
                       <span>Rotating Public Comment Reply Variants (Anti-Spam)</span>
                     </label>
                     <button
                       type="button"
                       onClick={() => setPublicTemplates([...publicTemplates, 'Hi @{username}! Thanks for your comment 🎉'])}
-                      className="text-[10px] font-bold text-[#5D3FD3] hover:underline"
+                      className="text-[10px] font-bold text-[#5D3FD3] dark:text-purple-300 hover:underline cursor-pointer"
                     >
                       + Add Variation
                     </button>
@@ -928,14 +930,14 @@ export const AutoResponderView: React.FC<AutoResponderViewProps> = ({
                           next[idx] = e.target.value;
                           setPublicTemplates(next);
                         }}
-                        className="flex-1 p-2 bg-white border border-purple-200 rounded-xl text-xs"
+                        className="flex-1 p-2 bg-white dark:bg-slate-800 border border-purple-200 dark:border-purple-700 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl text-xs"
                         placeholder="Use {username} as placeholder"
                       />
                       {publicTemplates.length > 1 && (
                         <button
                           type="button"
                           onClick={() => setPublicTemplates(publicTemplates.filter((_, i) => i !== idx))}
-                          className="p-1.5 text-slate-400 hover:text-red-600"
+                          className="p-1.5 text-slate-400 hover:text-red-600 dark:hover:text-red-400 cursor-pointer"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -947,16 +949,16 @@ export const AutoResponderView: React.FC<AutoResponderViewProps> = ({
 
               {/* Multi-Template Private DM Variants */}
               {actionTypeInput !== 'comment_reply' && (
-                <div className="space-y-2 p-3 bg-blue-50/60 rounded-2xl border border-blue-100">
+                <div className="space-y-2 p-3 bg-blue-50/60 dark:bg-blue-950/30 rounded-2xl border border-blue-100 dark:border-blue-800">
                   <div className="flex items-center justify-between">
-                    <label className="font-bold text-blue-950 flex items-center gap-1.5">
-                      <Mail className="w-3.5 h-3.5 text-blue-600" />
+                    <label className="font-bold text-blue-950 dark:text-blue-200 flex items-center gap-1.5">
+                      <Mail className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
                       <span>Rotating Private DM Message Variants</span>
                     </label>
                     <button
                       type="button"
                       onClick={() => setPrivateTemplates([...privateTemplates, 'Hi {username}! Here are the details you requested.'])}
-                      className="text-[10px] font-bold text-blue-600 hover:underline"
+                      className="text-[10px] font-bold text-blue-600 dark:text-blue-300 hover:underline cursor-pointer"
                     >
                       + Add Variation
                     </button>
@@ -971,14 +973,14 @@ export const AutoResponderView: React.FC<AutoResponderViewProps> = ({
                           next[idx] = e.target.value;
                           setPrivateTemplates(next);
                         }}
-                        className="flex-1 p-2 bg-white border border-blue-200 rounded-xl text-xs"
+                        className="flex-1 p-2 bg-white dark:bg-slate-800 border border-blue-200 dark:border-blue-700 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl text-xs"
                         placeholder="Use {username} as placeholder"
                       />
                       {privateTemplates.length > 1 && (
                         <button
                           type="button"
                           onClick={() => setPrivateTemplates(privateTemplates.filter((_, i) => i !== idx))}
-                          className="p-1.5 text-slate-400 hover:text-red-600"
+                          className="p-1.5 text-slate-400 hover:text-red-600 dark:hover:text-red-400 cursor-pointer"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -988,20 +990,20 @@ export const AutoResponderView: React.FC<AutoResponderViewProps> = ({
 
                   {/* Cloudinary Media Attachment */}
                   <div className="pt-2">
-                    <label className="block font-semibold text-slate-700 mb-1">Attached Media Vault URL (Optional)</label>
+                    <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Attached Media Vault URL (Optional)</label>
                     <div className="flex gap-2">
                       <input
                         type="text"
                         value={attachedMediaUrlInput}
                         onChange={(e) => setAttachedMediaUrlInput(e.target.value)}
-                        className="flex-1 p-2 bg-white border border-slate-200 rounded-xl text-xs font-mono"
+                        className="flex-1 p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl text-xs font-mono"
                         placeholder="https://res.cloudinary.com/..."
                       />
                       {mediaAssets.length > 0 && (
                         <button
                           type="button"
                           onClick={() => setShowCloudinaryPicker(!showCloudinaryPicker)}
-                          className="px-3 py-2 bg-purple-100 text-[#5D3FD3] font-bold rounded-xl text-xs hover:bg-purple-200"
+                          className="px-3 py-2 bg-purple-100 dark:bg-purple-950 text-[#5D3FD3] dark:text-purple-300 font-bold rounded-xl text-xs hover:bg-purple-200 dark:hover:bg-purple-900 cursor-pointer"
                         >
                           Media Vault
                         </button>
@@ -1009,7 +1011,7 @@ export const AutoResponderView: React.FC<AutoResponderViewProps> = ({
                     </div>
 
                     {showCloudinaryPicker && (
-                      <div className="grid grid-cols-4 gap-2 p-2 bg-white border rounded-xl mt-2 max-h-32 overflow-y-auto">
+                      <div className="grid grid-cols-4 gap-2 p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl mt-2 max-h-32 overflow-y-auto">
                         {mediaAssets.map((asset) => (
                           <div
                             key={asset.id}
@@ -1017,7 +1019,7 @@ export const AutoResponderView: React.FC<AutoResponderViewProps> = ({
                               setAttachedMediaUrlInput(asset.url);
                               setShowCloudinaryPicker(false);
                             }}
-                            className="aspect-square rounded-lg border overflow-hidden cursor-pointer hover:border-purple-500"
+                            className="aspect-square rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden cursor-pointer hover:border-purple-500"
                           >
                             <img src={asset.url} alt={asset.title} className="w-full h-full object-cover" />
                           </div>
@@ -1031,11 +1033,11 @@ export const AutoResponderView: React.FC<AutoResponderViewProps> = ({
               {/* Anti-Spam Rate Limit Setting */}
               <div className="grid grid-cols-2 gap-3 pt-1">
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">Per-User Cooldown Rate Limit</label>
+                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Per-User Cooldown Rate Limit</label>
                   <select
                     value={rateLimitMinutesInput}
                     onChange={(e) => setRateLimitMinutesInput(Number(e.target.value))}
-                    className="w-full p-2.5 border rounded-xl font-semibold bg-white"
+                    className="w-full p-2.5 border border-slate-200 dark:border-slate-700 rounded-xl font-semibold bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
                   >
                     <option value={15}>15 Minutes Cooldown</option>
                     <option value={30}>30 Minutes Cooldown</option>
@@ -1045,7 +1047,7 @@ export const AutoResponderView: React.FC<AutoResponderViewProps> = ({
                 </div>
 
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">AI Context & Sentiment</label>
+                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">AI Context & Sentiment</label>
                   <div className="flex items-center gap-2 h-10">
                     <input
                       type="checkbox"
@@ -1054,18 +1056,18 @@ export const AutoResponderView: React.FC<AutoResponderViewProps> = ({
                       onChange={(e) => setUseAiInput(e.target.checked)}
                       className="w-4 h-4 text-[#5D3FD3] rounded"
                     />
-                    <label htmlFor="aiContextToggle" className="font-semibold text-slate-800">
+                    <label htmlFor="aiContextToggle" className="font-semibold text-slate-800 dark:text-slate-200 cursor-pointer">
                       Enable Context Intelligence
                     </label>
                   </div>
                 </div>
               </div>
 
-              <div className="pt-4 flex justify-end gap-2 border-t border-slate-100">
+              <div className="pt-4 flex justify-end gap-2 border-t border-slate-100 dark:border-slate-800">
                 <button
                   type="button"
                   onClick={() => setShowAddModal(false)}
-                  className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl"
+                  className="px-4 py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold rounded-xl cursor-pointer"
                 >
                   Cancel
                 </button>
@@ -1083,38 +1085,38 @@ export const AutoResponderView: React.FC<AutoResponderViewProps> = ({
 
       {/* MODAL 2: Meta Webhook Setup Drawer */}
       {showWebhookGuide && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in">
-          <div className="bg-white rounded-3xl max-w-xl w-full p-6 shadow-2xl border border-slate-100 space-y-5">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in font-['Inter']">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-xl w-full p-6 shadow-2xl border border-slate-100 dark:border-slate-800 space-y-5">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center font-bold">
+                <div className="w-8 h-8 rounded-xl bg-blue-100 dark:bg-blue-950 text-blue-600 dark:text-blue-300 flex items-center justify-center font-bold">
                   <Globe className="w-5 h-5" />
                 </div>
-                <h3 className="text-base font-bold text-slate-900">Meta Graph Webhook Setup</h3>
+                <h3 className="text-base font-bold text-slate-900 dark:text-white">Meta Graph Webhook Setup</h3>
               </div>
-              <button onClick={() => setShowWebhookGuide(false)} className="text-slate-400 hover:text-slate-600">
+              <button onClick={() => setShowWebhookGuide(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <p className="text-xs text-slate-600 leading-relaxed">
+            <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
               Connect this Webhook URL inside your Meta App Developer Portal (Instagram Graph API & Page Webhooks) to enable instant comment and DM auto-dispatches.
             </p>
 
             <div className="space-y-3 text-xs">
               <div>
-                <label className="block font-bold text-slate-700 mb-1">Callback URL (Webhook Endpoint)</label>
+                <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Callback URL (Webhook Endpoint)</label>
                 <div className="flex gap-2">
                   <input
                     type="text"
                     readOnly
                     value={webhookEndpointUrl}
-                    className="flex-1 p-2.5 bg-slate-50 border rounded-xl font-mono text-[11px] text-slate-800"
+                    className="flex-1 p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-mono text-[11px] text-slate-800 dark:text-slate-200"
                   />
                   <button
                     type="button"
                     onClick={() => copyToClipboard(webhookEndpointUrl, 'url')}
-                    className="px-3 py-2 bg-[#5D3FD3] text-white font-bold rounded-xl text-xs flex items-center gap-1 shrink-0"
+                    className="px-3 py-2 bg-[#5D3FD3] hover:bg-purple-700 text-white font-bold rounded-xl text-xs flex items-center gap-1 shrink-0 cursor-pointer"
                   >
                     {copiedField === 'url' ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
                     <span>{copiedField === 'url' ? 'Copied' : 'Copy'}</span>
@@ -1123,18 +1125,18 @@ export const AutoResponderView: React.FC<AutoResponderViewProps> = ({
               </div>
 
               <div>
-                <label className="block font-bold text-slate-700 mb-1">Verify Token</label>
+                <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Verify Token</label>
                 <div className="flex gap-2">
                   <input
                     type="text"
                     readOnly
                     value={webhookVerifyToken}
-                    className="flex-1 p-2.5 bg-slate-50 border rounded-xl font-mono text-[11px] text-slate-800"
+                    className="flex-1 p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-mono text-[11px] text-slate-800 dark:text-slate-200"
                   />
                   <button
                     type="button"
                     onClick={() => copyToClipboard(webhookVerifyToken, 'token')}
-                    className="px-3 py-2 bg-slate-900 text-white font-bold rounded-xl text-xs flex items-center gap-1 shrink-0"
+                    className="px-3 py-2 bg-slate-900 dark:bg-slate-700 hover:bg-slate-800 dark:hover:bg-slate-600 text-white font-bold rounded-xl text-xs flex items-center gap-1 shrink-0 cursor-pointer"
                   >
                     {copiedField === 'token' ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
                     <span>{copiedField === 'token' ? 'Copied' : 'Copy'}</span>
@@ -1142,7 +1144,7 @@ export const AutoResponderView: React.FC<AutoResponderViewProps> = ({
                 </div>
               </div>
 
-              <div className="p-3 bg-blue-50 rounded-xl border border-blue-200 text-blue-900 space-y-1">
+              <div className="p-3 bg-blue-50 dark:bg-blue-950/40 rounded-xl border border-blue-200 dark:border-blue-800 text-blue-900 dark:text-blue-200 space-y-1">
                 <span className="font-bold text-[11px] block">Subscribed Webhook Fields:</span>
                 <p className="text-[11px] font-mono">
                   • Instagram: <code>comments</code>, <code>mentions</code>, <code>messages</code><br />
@@ -1155,7 +1157,7 @@ export const AutoResponderView: React.FC<AutoResponderViewProps> = ({
               <button
                 type="button"
                 onClick={() => setShowWebhookGuide(false)}
-                className="px-5 py-2 bg-[#5D3FD3] text-white font-bold rounded-xl text-xs"
+                className="px-5 py-2 bg-[#5D3FD3] hover:bg-purple-700 text-white font-bold rounded-xl text-xs cursor-pointer"
               >
                 Done
               </button>

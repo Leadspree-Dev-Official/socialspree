@@ -71,7 +71,7 @@ export const RazorpaySandbox: React.FC<RazorpaySandboxProps> = ({
   };
 
   return (
-    <div className="font-['Inter'] text-slate-900 bg-white rounded-3xl overflow-hidden border border-slate-200 shadow-2xl">
+    <div className="font-['Inter'] text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-900 rounded-3xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-2xl">
       
       {/* Razorpay Authentic Navy Header */}
       <div className="bg-[#0C2340] text-white p-6 flex items-center justify-between">
@@ -103,55 +103,55 @@ export const RazorpaySandbox: React.FC<RazorpaySandboxProps> = ({
       {/* Main Body depending on state */}
       {state === 'form' && (
         <form onSubmit={handlePay} className="p-6 sm:p-8 space-y-6">
-          {errorMessage && <p className="rounded-xl bg-red-50 px-4 py-3 text-xs font-semibold text-red-700">{errorMessage}</p>}
+          {errorMessage && <p className="rounded-xl bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-800 px-4 py-3 text-xs font-semibold text-red-700 dark:text-red-300">{errorMessage}</p>}
           
           {/* Customer Details Form */}
           <div className="space-y-4">
-            <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-slate-500">
+            <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
               Subscriber Business Info
             </h4>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Organization Name *</label>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Organization Name *</label>
                 <input
                   type="text"
                   required
                   value={orgName}
                   onChange={(e) => setOrgName(e.target.value)}
                   placeholder="e.g. Apex Growth Media"
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-[#0052FF] focus:outline-none"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 text-xs focus:ring-2 focus:ring-[#0052FF] focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Owner Email *</label>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Owner Email *</label>
                 <input
                   type="email"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="alex@apexgrowth.com"
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-[#0052FF] focus:outline-none"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 text-xs focus:ring-2 focus:ring-[#0052FF] focus:outline-none"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">Contact Phone</label>
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Contact Phone</label>
               <input
                 type="tel"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 placeholder="+91 98765 43210"
-                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-[#0052FF] focus:outline-none"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 text-xs focus:ring-2 focus:ring-[#0052FF] focus:outline-none"
               />
             </div>
           </div>
 
           {/* Payment Method Selector Tabs */}
           <div className="space-y-3">
-            <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-slate-500">
+            <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
               Select Payment Option
             </h4>
 
@@ -161,8 +161,8 @@ export const RazorpaySandbox: React.FC<RazorpaySandboxProps> = ({
                 onClick={() => setPaymentMethod('card')}
                 className={`p-3 rounded-xl border text-xs font-bold flex flex-col items-center gap-1 transition-all ${
                   paymentMethod === 'card'
-                    ? 'bg-blue-50 border-[#0052FF] text-[#0052FF] shadow-xs'
-                    : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                    ? 'bg-blue-50 dark:bg-blue-950/40 border-[#0052FF] text-[#0052FF] dark:text-blue-400 shadow-xs'
+                    : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-750'
                 }`}
               >
                 <CreditCard className="w-5 h-5" />
@@ -174,8 +174,8 @@ export const RazorpaySandbox: React.FC<RazorpaySandboxProps> = ({
                 onClick={() => setPaymentMethod('upi')}
                 className={`p-3 rounded-xl border text-xs font-bold flex flex-col items-center gap-1 transition-all ${
                   paymentMethod === 'upi'
-                    ? 'bg-blue-50 border-[#0052FF] text-[#0052FF] shadow-xs'
-                    : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                    ? 'bg-blue-50 dark:bg-blue-950/40 border-[#0052FF] text-[#0052FF] dark:text-blue-400 shadow-xs'
+                    : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-750'
                 }`}
               >
                 <QrCode className="w-5 h-5" />
@@ -187,8 +187,8 @@ export const RazorpaySandbox: React.FC<RazorpaySandboxProps> = ({
                 onClick={() => setPaymentMethod('netbanking')}
                 className={`p-3 rounded-xl border text-xs font-bold flex flex-col items-center gap-1 transition-all ${
                   paymentMethod === 'netbanking'
-                    ? 'bg-blue-50 border-[#0052FF] text-[#0052FF] shadow-xs'
-                    : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                    ? 'bg-blue-50 dark:bg-blue-950/40 border-[#0052FF] text-[#0052FF] dark:text-blue-400 shadow-xs'
+                    : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-750'
                 }`}
               >
                 <Building className="w-5 h-5" />
@@ -197,35 +197,35 @@ export const RazorpaySandbox: React.FC<RazorpaySandboxProps> = ({
             </div>
 
             {/* Payment Method Inputs Simulation */}
-            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-3">
+            <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-800 space-y-3">
               {paymentMethod === 'card' && (
                 <div className="space-y-3">
                   <div>
-                    <label className="block text-[11px] font-bold text-slate-600 mb-1">Card Number (Sandbox Test)</label>
+                    <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1">Card Number (Sandbox Test)</label>
                     <input
                       type="text"
                       readOnly
                       value="4111 2222 3333 4444"
-                      className="w-full px-3 py-2 bg-white rounded-lg border border-slate-200 font-mono text-xs text-slate-700"
+                      className="w-full px-3 py-2 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700 font-mono text-xs text-slate-700 dark:text-slate-300"
                     />
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-[11px] font-bold text-slate-600 mb-1">Expiry</label>
+                      <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1">Expiry</label>
                       <input
                         type="text"
                         readOnly
                         value="12 / 28"
-                        className="w-full px-3 py-2 bg-white rounded-lg border border-slate-200 font-mono text-xs text-slate-700"
+                        className="w-full px-3 py-2 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700 font-mono text-xs text-slate-700 dark:text-slate-300"
                       />
                     </div>
                     <div>
-                      <label className="block text-[11px] font-bold text-slate-600 mb-1">CVV</label>
+                      <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1">CVV</label>
                       <input
                         type="password"
                         readOnly
                         value="123"
-                        className="w-full px-3 py-2 bg-white rounded-lg border border-slate-200 font-mono text-xs text-slate-700"
+                        className="w-full px-3 py-2 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700 font-mono text-xs text-slate-700 dark:text-slate-300"
                       />
                     </div>
                   </div>
@@ -237,14 +237,14 @@ export const RazorpaySandbox: React.FC<RazorpaySandboxProps> = ({
                   <div className="w-32 h-32 bg-white rounded-xl border border-slate-300 mx-auto flex items-center justify-center p-2">
                     <QrCode className="w-24 h-24 text-slate-800" />
                   </div>
-                  <p className="text-xs font-mono text-slate-600">Scan QR or Pay via VPA: <strong>agency@okhdfcbank</strong></p>
+                  <p className="text-xs font-mono text-slate-600 dark:text-slate-400">Scan QR or Pay via VPA: <strong>agency@okhdfcbank</strong></p>
                 </div>
               )}
 
               {paymentMethod === 'netbanking' && (
                 <div className="space-y-2">
-                  <label className="block text-[11px] font-bold text-slate-600">Select Bank</label>
-                  <select className="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs bg-white font-medium">
+                  <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300">Select Bank</label>
+                  <select className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 text-xs bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-medium">
                     <option>HDFC Bank (Sandbox)</option>
                     <option>ICICI Bank (Sandbox)</option>
                     <option>State Bank of India (Sandbox)</option>
@@ -257,18 +257,18 @@ export const RazorpaySandbox: React.FC<RazorpaySandboxProps> = ({
           </div>
 
           {/* Action Buttons */}
-          <div className="pt-4 border-t border-slate-100 flex items-center justify-between gap-3">
+          <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-3">
             <button
               type="button"
               onClick={handleCancel}
-              className="px-4 py-3 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-100 text-xs font-bold transition-all"
+              className="px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-bold transition-all cursor-pointer"
             >
               Cancel
             </button>
 
             <button
               type="submit"
-              className="flex-1 py-3.5 px-6 rounded-xl bg-[#0052FF] hover:bg-[#0042CC] text-white text-xs font-bold shadow-lg shadow-blue-500/25 transition-all flex items-center justify-center gap-2"
+              className="flex-1 py-3.5 px-6 rounded-xl bg-[#0052FF] hover:bg-[#0042CC] text-white text-xs font-bold shadow-lg shadow-blue-500/25 transition-all flex items-center justify-center gap-2 cursor-pointer"
             >
               <Lock className="w-3.5 h-3.5" />
               <span>Pay {plan.currencySymbol}{totalAmount.toLocaleString()} via Razorpay</span>
@@ -282,12 +282,12 @@ export const RazorpaySandbox: React.FC<RazorpaySandboxProps> = ({
       {/* Processing State */}
       {state === 'processing' && (
         <div className="p-12 text-center space-y-6">
-          <div className="w-16 h-16 rounded-full bg-blue-50 text-[#0052FF] flex items-center justify-center mx-auto animate-spin">
+          <div className="w-16 h-16 rounded-full bg-blue-50 dark:bg-blue-950/40 text-[#0052FF] dark:text-blue-400 flex items-center justify-center mx-auto animate-spin">
             <RefreshCw className="w-8 h-8" />
           </div>
           <div className="space-y-2">
-            <h4 className="text-xl font-black text-slate-900">Opening secure Razorpay Checkout...</h4>
-            <p className="text-xs text-slate-500 font-medium">
+            <h4 className="text-xl font-black text-slate-900 dark:text-white">Opening secure Razorpay Checkout...</h4>
+            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
               Your order is being created server-side. Paid access is activated only after webhook verification.
             </p>
           </div>
@@ -297,12 +297,12 @@ export const RazorpaySandbox: React.FC<RazorpaySandboxProps> = ({
       {/* Success State */}
       {state === 'success' && (
         <div className="p-12 text-center space-y-6">
-          <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto animate-bounce">
+          <div className="w-16 h-16 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto animate-bounce">
             <CheckCircle2 className="w-10 h-10" />
           </div>
           <div className="space-y-2">
-            <h4 className="text-2xl font-black text-emerald-900">Payment submitted</h4>
-            <p className="text-xs text-slate-600 font-medium">
+            <h4 className="text-2xl font-black text-emerald-900 dark:text-emerald-200">Payment submitted</h4>
+            <p className="text-xs text-slate-600 dark:text-slate-300 font-medium">
               Razorpay will notify the server. Your subscription activates after the verified payment webhook is received.
             </p>
           </div>

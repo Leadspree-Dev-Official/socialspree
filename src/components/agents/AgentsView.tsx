@@ -591,12 +591,12 @@ How can I assist you today? 😊`;
       </div>
 
       {notification && (
-        <div className="p-4 bg-amber-50 border border-amber-300 text-amber-900 rounded-2xl text-xs font-semibold animate-in fade-in flex items-center justify-between">
+        <div className="p-4 bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 text-amber-900 dark:text-amber-200 rounded-2xl text-xs font-semibold animate-in fade-in flex items-center justify-between shadow-xs">
           <div className="flex items-center gap-2">
-            <Zap className="w-4 h-4 text-amber-600" />
+            <Zap className="w-4 h-4 text-amber-600 dark:text-amber-400" />
             <span>{notification}</span>
           </div>
-          <button onClick={() => setNotification(null)} className="text-slate-400 hover:text-slate-700">
+          <button onClick={() => setNotification(null)} className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 cursor-pointer">
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -609,8 +609,8 @@ How can I assist you today? 😊`;
         <div className="lg:col-span-4 space-y-6">
           
           {/* Agent Selection Cards */}
-          <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-4">
-            <h3 className="text-xs font-bold uppercase font-mono tracking-wider text-slate-500">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 shadow-xs space-y-4">
+            <h3 className="text-xs font-bold uppercase font-mono tracking-wider text-slate-500 dark:text-slate-400">
               Select Active AI Agent
             </h3>
 
@@ -623,10 +623,10 @@ How can I assist you today? 😊`;
                   <button
                     key={agent.id}
                     onClick={() => setSelectedAgent(agent.id as any)}
-                    className={`w-full p-4 rounded-xl border-2 text-left transition-all flex items-start gap-3 ${
+                    className={`w-full p-4 rounded-xl border-2 text-left transition-all flex items-start gap-3 cursor-pointer ${
                       isSelected
-                        ? 'border-[#5D3FD3] bg-purple-50/50 shadow-sm'
-                        : 'border-slate-200 bg-slate-50/50 hover:bg-slate-100/70'
+                        ? 'border-[#5D3FD3] dark:border-purple-500 bg-purple-50/50 dark:bg-purple-950/30 shadow-sm'
+                        : 'border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 hover:bg-slate-100/70 dark:hover:bg-slate-800'
                     }`}
                   >
                     <div className={`p-2.5 rounded-xl shrink-0 ${agent.color}`}>
@@ -635,12 +635,12 @@ How can I assist you today? 😊`;
 
                     <div>
                       <div className="flex items-center justify-between">
-                        <span className="font-bold text-xs text-slate-900">{agent.name}</span>
-                        <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-purple-100 text-purple-800">
+                        <span className="font-bold text-xs text-slate-900 dark:text-white">{agent.name}</span>
+                        <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-purple-100 dark:bg-purple-950/80 text-purple-800 dark:text-purple-300">
                           {agent.badge}
                         </span>
                       </div>
-                      <p className="text-[11px] text-slate-500 mt-1 leading-normal">
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 leading-normal">
                         {agent.description}
                       </p>
                     </div>
@@ -651,8 +651,8 @@ How can I assist you today? 😊`;
           </div>
 
           {/* Quick Prompts Panel */}
-          <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-3">
-            <h3 className="text-xs font-bold uppercase font-mono tracking-wider text-slate-500 flex items-center gap-1.5">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 shadow-xs space-y-3">
+            <h3 className="text-xs font-bold uppercase font-mono tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
               <Sparkles className="w-3.5 h-3.5 text-amber-500" />
               <span>Suggested AI Prompts</span>
             </h3>
@@ -662,10 +662,10 @@ How can I assist you today? 😊`;
                 <button
                   key={idx}
                   onClick={() => handleSendMessage(prompt)}
-                  className="w-full p-3 bg-slate-50 hover:bg-purple-50/60 border border-slate-200 hover:border-purple-200 rounded-xl text-xs text-slate-700 text-left transition-all font-medium flex items-center justify-between group"
+                  className="w-full p-3 bg-slate-50 dark:bg-slate-800/60 hover:bg-purple-50/60 dark:hover:bg-purple-950/40 border border-slate-200 dark:border-slate-700 hover:border-purple-200 dark:hover:border-purple-800 rounded-xl text-xs text-slate-700 dark:text-slate-300 text-left transition-all font-medium flex items-center justify-between group cursor-pointer"
                 >
                   <span className="truncate pr-2">{prompt}</span>
-                  <ArrowRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-[#5D3FD3] shrink-0" />
+                  <ArrowRight className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 group-hover:text-[#5D3FD3] dark:group-hover:text-purple-400 shrink-0" />
                 </button>
               ))}
             </div>
@@ -673,27 +673,27 @@ How can I assist you today? 😊`;
         </div>
 
         {/* Right Column: Interactive Agent Chat Console */}
-        <div className="lg:col-span-8 bg-white border border-slate-200 rounded-2xl shadow-xs flex flex-col h-[650px] overflow-hidden">
+        <div className="lg:col-span-8 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xs flex flex-col h-[650px] overflow-hidden">
           
           {/* Chat Header Bar */}
-          <div className="p-4 border-b border-slate-200 bg-slate-50/80 flex items-center justify-between">
+          <div className="p-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-xl bg-[#5D3FD3] text-white flex items-center justify-center font-bold">
                 <Bot className="w-5 h-5 text-amber-300" />
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <h3 className="font-bold text-slate-900 text-sm">SocialSpree Autonomous Agent</h3>
+                  <h3 className="font-bold text-slate-900 dark:text-white text-sm">SocialSpree Autonomous Agent</h3>
                   <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                  <span className="text-[10px] text-emerald-700 font-mono font-bold">ONLINE</span>
+                  <span className="text-[10px] text-emerald-700 dark:text-emerald-400 font-mono font-bold">ONLINE</span>
                 </div>
-                <p className="text-[11px] text-slate-500">Connected to {tenantAccounts.length} Social Accounts & Cloud Dispatcher</p>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400">Connected to {tenantAccounts.length} Social Accounts & Cloud Dispatcher</p>
               </div>
             </div>
 
             <button
               onClick={() => setMessages(messages.length > 0 ? [messages[0]] : [])}
-              className="px-3 py-1.5 text-slate-500 hover:text-slate-900 hover:bg-slate-200/50 rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors"
+              className="px-3 py-1.5 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/50 dark:hover:bg-slate-800 rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer"
             >
               <RefreshCw className="w-3.5 h-3.5" />
               <span>Clear Chat</span>
@@ -701,7 +701,7 @@ How can I assist you today? 😊`;
           </div>
 
           {/* Chat Messages Stream Area */}
-          <div className="flex-1 p-5 overflow-y-auto space-y-4 bg-slate-50/30">
+          <div className="flex-1 p-5 overflow-y-auto space-y-4 bg-slate-50/30 dark:bg-slate-950/30">
             {messages.map((msg) => (
               <div
                 key={msg.id}
@@ -719,10 +719,10 @@ How can I assist you today? 😊`;
                   <div className={`p-4 rounded-2xl text-xs leading-relaxed ${
                     msg.sender === 'user'
                       ? 'bg-[#5D3FD3] text-white font-medium rounded-tr-none shadow-md'
-                      : 'bg-white border border-slate-200 text-slate-800 rounded-tl-none shadow-xs'
+                      : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-tl-none shadow-xs'
                   }`}>
                     {msg.sender === 'agent' && (
-                      <div className="text-[10px] font-mono font-bold text-[#5D3FD3] mb-1">
+                      <div className="text-[10px] font-mono font-bold text-[#5D3FD3] dark:text-purple-400 mb-1">
                         {msg.agentName || 'AI Agent'}
                       </div>
                     )}
@@ -737,7 +737,7 @@ How can I assist you today? 😊`;
                             key={i}
                             src={url}
                             alt="Attached media"
-                            className="max-h-36 max-w-[200px] object-cover rounded-lg border border-slate-200"
+                            className="max-h-36 max-w-[200px] object-cover rounded-lg border border-slate-200 dark:border-slate-700"
                           />
                         ))}
                       </div>
@@ -748,25 +748,25 @@ How can I assist you today? 😊`;
                   {msg.scheduledPosts && msg.scheduledPosts.length > 0 && (
                     <div className="space-y-3 w-full">
                       {msg.scheduledPosts.map((postItem, idx) => (
-                        <div key={postItem.postId} className="p-4 rounded-2xl bg-white border-2 border-emerald-500 shadow-md space-y-3 animate-in fade-in">
-                          <div className="flex items-center justify-between border-b border-emerald-100 pb-2">
-                            <span className="text-xs font-black text-emerald-900 flex items-center gap-1.5">
-                              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                        <div key={postItem.postId} className="p-4 rounded-2xl bg-white dark:bg-slate-800 border-2 border-emerald-500 dark:border-emerald-600 shadow-md space-y-3 animate-in fade-in">
+                          <div className="flex items-center justify-between border-b border-emerald-100 dark:border-emerald-900 pb-2">
+                            <span className="text-xs font-black text-emerald-900 dark:text-emerald-300 flex items-center gap-1.5">
+                              <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                               <span>POST #{postItem.sequenceIndex || (idx + 1)} BOOKED & SCHEDULED</span>
                             </span>
-                            <span className="text-[10px] font-mono font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full">
+                            <span className="text-[10px] font-mono font-bold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800">
                               {msg.scheduledPosts && msg.scheduledPosts.length > 1 ? `DUPLICATE #${idx + 1}` : 'AUTO-DISPATCH QUEUED'}
                             </span>
                           </div>
 
                           {/* Content Preview */}
-                          <p className="text-xs text-slate-800 font-sans leading-relaxed">
+                          <p className="text-xs text-slate-800 dark:text-slate-200 font-sans leading-relaxed">
                             {postItem.content}
                           </p>
 
                           {/* Media Preview if attached */}
                           {postItem.mediaUrls && postItem.mediaUrls.length > 0 && (
-                            <div className="rounded-xl overflow-hidden flex flex-wrap gap-2 border border-slate-200 p-1 bg-slate-50">
+                            <div className="rounded-xl overflow-hidden flex flex-wrap gap-2 border border-slate-200 dark:border-slate-700 p-1 bg-slate-50 dark:bg-slate-900">
                               {postItem.mediaUrls.map((url, i) => (
                                 <img
                                   key={i}
@@ -779,20 +779,20 @@ How can I assist you today? 😊`;
                           )}
 
                           {/* Scheduled Details Footer */}
-                          <div className="p-3 bg-slate-50 rounded-xl space-y-2 text-xs">
+                          <div className="p-3 bg-slate-50 dark:bg-slate-900 rounded-xl space-y-2 text-xs">
                             <div className="flex items-center justify-between font-mono">
-                              <span className="text-slate-500">Scheduled Time:</span>
-                              <span className="font-bold text-slate-900 flex items-center gap-1">
-                                <Clock className="w-3.5 h-3.5 text-[#5D3FD3]" />
+                              <span className="text-slate-500 dark:text-slate-400">Scheduled Time:</span>
+                              <span className="font-bold text-slate-900 dark:text-slate-100 flex items-center gap-1">
+                                <Clock className="w-3.5 h-3.5 text-[#5D3FD3] dark:text-purple-400" />
                                 {postItem.scheduledFor}
                               </span>
                             </div>
 
                             <div className="flex items-center justify-between">
-                              <span className="text-slate-500 font-mono">Target Channels:</span>
+                              <span className="text-slate-500 dark:text-slate-400 font-mono">Target Channels:</span>
                               <div className="flex items-center gap-1.5">
                                 {postItem.channels.map((ch, chIdx) => (
-                                  <span key={chIdx} className="p-1 bg-white border rounded" title={ch}>
+                                  <span key={chIdx} className="p-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded" title={ch}>
                                     {getPlatformIcon(ch)}
                                   </span>
                                 ))}
@@ -804,14 +804,14 @@ How can I assist you today? 😊`;
                           <div className="grid grid-cols-2 gap-2">
                             <button
                               onClick={() => onNavigate('calendar')}
-                              className="py-2 bg-purple-50 hover:bg-purple-100 text-[#5D3FD3] border border-purple-200 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5"
+                              className="py-2 bg-purple-50 dark:bg-purple-950/60 hover:bg-purple-100 dark:hover:bg-purple-900/60 text-[#5D3FD3] dark:text-purple-300 border border-purple-200 dark:border-purple-800 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer"
                             >
                               <Calendar className="w-3.5 h-3.5" />
                               <span>View Calendar</span>
                             </button>
                             <button
                               onClick={() => onNavigate('composer')}
-                              className="py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5"
+                              className="py-2 bg-slate-900 dark:bg-purple-600 hover:bg-slate-800 dark:hover:bg-purple-500 text-white text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer"
                             >
                               <span>View Composer</span>
                               <ArrowRight className="w-3.5 h-3.5" />
@@ -822,7 +822,7 @@ How can I assist you today? 😊`;
                     </div>
                   )}
 
-                  <div className={`text-[10px] text-slate-400 font-mono ${msg.sender === 'user' ? 'text-right' : 'text-left'}`}>
+                  <div className={`text-[10px] text-slate-400 dark:text-slate-500 font-mono ${msg.sender === 'user' ? 'text-right' : 'text-left'}`}>
                     {msg.timestamp}
                   </div>
                 </div>
@@ -835,8 +835,8 @@ How can I assist you today? 😊`;
                 <div className="w-8 h-8 rounded-xl bg-[#5D3FD3] text-white flex items-center justify-center font-bold animate-pulse">
                   <Bot className="w-4 h-4 text-amber-300" />
                 </div>
-                <div className="p-3 bg-white border border-slate-200 rounded-2xl rounded-tl-none text-xs text-slate-500 font-medium flex items-center gap-2 shadow-xs">
-                  <RefreshCw className="w-3.5 h-3.5 animate-spin text-[#5D3FD3]" />
+                <div className="p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl rounded-tl-none text-xs text-slate-500 dark:text-slate-400 font-medium flex items-center gap-2 shadow-xs">
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin text-[#5D3FD3] dark:text-purple-400" />
                   <span>Agent is analyzing chat prompt, drafting caption & booking scheduled post...</span>
                 </div>
               </div>
@@ -846,19 +846,19 @@ How can I assist you today? 😊`;
           </div>
 
           {/* Chat Input & Media Attachment Controls */}
-          <div className="p-4 border-t border-slate-200 bg-white space-y-3">
+          <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-3">
             
             {/* Attached Media Chips List */}
             {attachedMediaUrls.length > 0 && (
-              <div className="p-3 bg-purple-50 border border-purple-200 rounded-xl space-y-2 animate-in fade-in">
+              <div className="p-3 bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800 rounded-xl space-y-2 animate-in fade-in">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="font-mono text-purple-900 font-bold flex items-center gap-1.5">
-                    <ImageIcon className="w-4 h-4 text-[#5D3FD3]" />
+                  <span className="font-mono text-purple-900 dark:text-purple-200 font-bold flex items-center gap-1.5">
+                    <ImageIcon className="w-4 h-4 text-[#5D3FD3] dark:text-purple-400" />
                     <span>{attachedMediaUrls.length} Media Assets Attached from Vault</span>
                   </span>
                   <button
                     onClick={() => setAttachedMediaUrls([])}
-                    className="text-[11px] font-bold text-purple-700 hover:text-red-600"
+                    className="text-[11px] font-bold text-purple-700 dark:text-purple-300 hover:text-red-600 cursor-pointer"
                   >
                     Clear All
                   </button>
@@ -866,12 +866,12 @@ How can I assist you today? 😊`;
 
                 <div className="flex flex-wrap gap-2 max-h-24 overflow-y-auto pt-1">
                   {attachedMediaUrls.map((url, idx) => (
-                    <div key={idx} className="flex items-center gap-1.5 pl-2 pr-1 py-1 bg-white border border-purple-200 rounded-lg text-[11px] font-mono text-slate-800 shadow-2xs">
+                    <div key={idx} className="flex items-center gap-1.5 pl-2 pr-1 py-1 bg-white dark:bg-slate-800 border border-purple-200 dark:border-purple-800 rounded-lg text-[11px] font-mono text-slate-800 dark:text-slate-200 shadow-2xs">
                       <span className="truncate max-w-[140px]">{url}</span>
                       <button
                         type="button"
                         onClick={() => setAttachedMediaUrls(attachedMediaUrls.filter((_, i) => i !== idx))}
-                        className="p-0.5 text-slate-400 hover:text-red-600 rounded"
+                        className="p-0.5 text-slate-400 hover:text-red-600 rounded cursor-pointer"
                       >
                         <X className="w-3.5 h-3.5" />
                       </button>
@@ -889,8 +889,8 @@ How can I assist you today? 😊`;
               className="flex items-center gap-2"
             >
               {/* Media File Upload Button */}
-              <label className="p-3 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-600 cursor-pointer transition-colors shrink-0" title="Attach Media Files">
-                <Upload className="w-4 h-4 text-slate-600" />
+              <label className="p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-750 text-slate-600 dark:text-slate-300 cursor-pointer transition-colors shrink-0" title="Attach Media Files">
+                <Upload className="w-4 h-4 text-slate-600 dark:text-slate-300" />
                 <input
                   type="file"
                   multiple
@@ -907,14 +907,14 @@ How can I assist you today? 😊`;
                 value={inputMessage}
                 onChange={(e) => setInputMessage(e.target.value)}
                 placeholder="Ask AI agent to book or schedule a post (e.g. Schedule post for tomorrow 10 AM)..."
-                className="flex-1 p-3 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-[#5D3FD3] focus:outline-none"
+                className="flex-1 p-3 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl text-xs focus:ring-2 focus:ring-[#5D3FD3] focus:outline-none"
               />
 
               {/* Submit Button */}
               <button
                 type="submit"
                 disabled={isThinking || isUploadingMedia || (!inputMessage.trim() && attachedMediaUrls.length === 0)}
-                className="px-5 py-3 bg-[#5D3FD3] hover:bg-purple-700 text-white rounded-xl font-bold text-xs transition-all shadow-md flex items-center gap-1.5 disabled:opacity-50 shrink-0"
+                className="px-5 py-3 bg-[#5D3FD3] hover:bg-purple-700 text-white rounded-xl font-bold text-xs transition-all shadow-md flex items-center gap-1.5 disabled:opacity-50 shrink-0 cursor-pointer"
               >
                 <Send className="w-4 h-4" />
                 <span className="hidden sm:inline">Send & Book</span>

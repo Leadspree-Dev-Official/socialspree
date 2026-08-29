@@ -79,27 +79,101 @@ export function clearAuthenticatedCache(): void {
 // ---- Auth helpers ------------------------------------------------------------
 export const auth = {
   async getProfile(userEmail?: string): Promise<Profile | null> {
-    const { data: uid } = await supabase.rpc('current_clerk_user_id');
     let data: any = null;
 
-    if (uid) {
-      const res = await supabase
-        .from('profiles')
-        .select('id,email,full_name,avatar_url,job_title,phone_number,timezone,notifications,tenant_id,is_super_admin,role,created_at,updated_at')
-        .eq('id', uid)
-        .maybeSingle();
-      data = res.data;
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const authUser = session?.user;
+
+      if (authUser) {
+        const emailLower = (authUser.email || userEmail || '').trim().toLowerCase();
+
+        // 1. Check profiles by authUser.id
+        const { data: profileRow } = await supabase
+          .from('profiles')
+          .select('id,email,full_name,avatar_url,job_title,phone_number,timezone,notifications,tenant_id,is_super_admin,role,created_at,updated_at')
+          .eq('id', authUser.id)
+          .maybeSingle();
+
+        if (profileRow) {
+          data = profileRow;
+          // If profileRow is missing name/avatar but authUser.user_metadata has newer ones, take them
+          const metaName = authUser.user_metadata?.full_name || authUser.user_metadata?.name;
+          const metaAvatar = authUser.user_metadata?.avatar_url || authUser.user_metadata?.picture;
+          if (metaName && (!data.full_name || data.full_name === 'User')) {
+            data.full_name = metaName;
+          }
+          if (metaAvatar && !data.avatar_url) {
+            data.avatar_url = metaAvatar;
+          }
+        } else {
+          // 2. Check profiles by email
+          const { data: profileByEmail } = await supabase
+            .from('profiles')
+            .select('id,email,full_name,avatar_url,job_title,phone_number,timezone,notifications,tenant_id,is_super_admin,role,created_at,updated_at')
+            .eq('email', emailLower)
+            .maybeSingle();
+
+          if (profileByEmail) {
+            data = { ...profileByEmail, id: authUser.id };
+            void (async () => {
+              try {
+                await supabase.from('profiles').upsert(data, { onConflict: 'id' });
+              } catch { /* ignore */ }
+            })();
+          } else {
+            // 3. Fallback: Initialize from Supabase Auth User metadata
+            const isAdmin = emailLower === 'leadspree24x7@gmail.com';
+            const metaName = authUser.user_metadata?.full_name || authUser.user_metadata?.name;
+            const metaAvatar = authUser.user_metadata?.avatar_url || authUser.user_metadata?.picture;
+
+            data = {
+              id: authUser.id,
+              email: emailLower,
+              full_name: metaName || (isAdmin ? 'Aniruddha' : emailLower.split('@')[0] || 'User'),
+              avatar_url: metaAvatar || null,
+              job_title: isAdmin ? 'Founder & CEO' : 'Social Media Manager',
+              phone_number: authUser.phone || null,
+              timezone: 'UTC',
+              notifications: { emailDigest: true, postFailureAlerts: true, securityAlerts: true },
+              tenant_id: isAdmin ? '00000000-0000-0000-0000-000000000001' : null,
+              is_super_admin: isAdmin,
+              role: isAdmin ? 'super_admin' : 'business_user',
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            };
+
+            void (async () => {
+              try {
+                await supabase.from('profiles').upsert(data, { onConflict: 'id' });
+              } catch { /* ignore */ }
+            })();
+          }
+        }
+      }
+    } catch { /* ignore */ }
+
+    if (!data && userEmail) {
+      try {
+        const emailLower = userEmail.trim().toLowerCase();
+        const res = await supabase
+          .from('profiles')
+          .select('id,email,full_name,avatar_url,job_title,phone_number,timezone,notifications,tenant_id,is_super_admin,role,created_at,updated_at')
+          .eq('email', emailLower)
+          .maybeSingle();
+        data = res.data;
+      } catch { /* ignore */ }
     }
 
     if (!data && userEmail) {
       const emailLower = userEmail.trim().toLowerCase();
       const isAdmin = emailLower === 'leadspree24x7@gmail.com';
       data = {
-        id: uid || `user_${crypto.randomUUID().slice(0, 12)}`,
+        id: `user_${crypto.randomUUID().slice(0, 12)}`,
         email: emailLower,
-        full_name: emailLower.split('@')[0],
+        full_name: isAdmin ? 'Aniruddha' : emailLower.split('@')[0],
         avatar_url: null,
-        job_title: null,
+        job_title: isAdmin ? 'Founder & CEO' : 'Social Media Manager',
         phone_number: null,
         timezone: 'UTC',
         notifications: { emailDigest: true, postFailureAlerts: true, securityAlerts: true },
@@ -111,7 +185,7 @@ export const auth = {
       };
       void (async () => {
         try {
-          await supabase.from('profiles').upsert(data);
+          await supabase.from('profiles').upsert(data, { onConflict: 'id' });
         } catch { /* ignore */ }
       })();
     }
@@ -169,25 +243,51 @@ export const auth = {
       localStorage.setItem('socialspree_user_profile_v1', JSON.stringify(updated));
     } catch { /* ignore */ }
 
-    // Sync to Supabase profiles database
+    // 1. Synchronize to Supabase Auth User Metadata (Authoritative cross-device token sync)
     try {
-      const dbRow: any = {
-        updated_at: new Date().toISOString(),
-      };
-      if (updates.fullName !== undefined) dbRow.full_name = updates.fullName;
-      if (updates.avatarUrl !== undefined) dbRow.avatar_url = updates.avatarUrl;
-      if (updates.jobTitle !== undefined) dbRow.job_title = updates.jobTitle;
-      if (updates.phoneNumber !== undefined) dbRow.phone_number = updates.phoneNumber;
-      if (updates.timezone !== undefined) dbRow.timezone = updates.timezone;
-      if (updates.notifications !== undefined) dbRow.notifications = updates.notifications;
+      const authMetaUpdates: Record<string, any> = {};
+      if (updated.fullName) {
+        authMetaUpdates.full_name = updated.fullName;
+        authMetaUpdates.name = updated.fullName;
+      }
+      if (updated.avatarUrl) {
+        authMetaUpdates.avatar_url = updated.avatarUrl;
+        authMetaUpdates.picture = updated.avatarUrl;
+      }
+      if (updated.jobTitle) {
+        authMetaUpdates.job_title = updated.jobTitle;
+      }
+      if (Object.keys(authMetaUpdates).length > 0) {
+        await supabase.auth.updateUser({ data: authMetaUpdates });
+      }
+    } catch (authErr) {
+      console.warn('Supabase Auth user metadata update notice:', authErr);
+    }
 
-      if (current?.id) {
-        const { error } = await supabase.from('profiles').update(dbRow).eq('id', current.id);
-        if (error && current?.email) {
-          await supabase.from('profiles').update(dbRow).eq('email', current.email.toLowerCase().trim());
-        }
-      } else if (current?.email) {
-        await supabase.from('profiles').update(dbRow).eq('email', current.email.toLowerCase().trim());
+    // 2. Synchronize to Supabase `profiles` database table
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const targetUserId = session?.user?.id || updated.id;
+      const targetEmail = (session?.user?.email || updated.email || '').toLowerCase().trim();
+
+      const fullDbRow: any = {
+        id: targetUserId,
+        email: targetEmail,
+        full_name: updated.fullName,
+        avatar_url: updated.avatarUrl || null,
+        job_title: updated.jobTitle,
+        phone_number: updated.phoneNumber || null,
+        timezone: updated.timezone || 'UTC',
+        notifications: updated.notifications,
+        tenant_id: updated.tenantId,
+        is_super_admin: updated.isSuperAdmin,
+        role: updated.role,
+        updated_at: new Date().toISOString()
+      };
+
+      const { error: upsertError } = await supabase.from('profiles').upsert(fullDbRow, { onConflict: 'id' });
+      if (upsertError) {
+        await supabase.from('profiles').update(fullDbRow).eq('email', targetEmail);
       }
     } catch (err) {
       console.warn('Supabase profile persistence sync info:', err);

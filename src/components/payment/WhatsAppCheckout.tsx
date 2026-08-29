@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useUser } from '@clerk/react';
+import { supabase } from '../../lib/supabase';
 import { SubscriptionPlan } from '../../types';
 import { Copy, ExternalLink, Check } from 'lucide-react';
 
@@ -19,22 +19,22 @@ export const WhatsAppCheckout: React.FC<WhatsAppCheckoutProps> = ({
   plan,
   billingCycle,
 }) => {
-  const { user, isSignedIn } = useUser();
   const [orgName, setOrgName] = useState('');
   const [email, setEmail] = useState('');
   const [paymentChannel] = useState('Bank Wire / UPI Direct');
   const [copied, setCopied] = useState(false);
 
-  // Auto-fill details ONLY if user is signed in
+  // Auto-fill details if Supabase user is logged in
   useEffect(() => {
-    if (isSignedIn && user) {
-      setOrgName(user.fullName ? `${user.fullName}'s Organization` : '');
-      setEmail(user.primaryEmailAddress?.emailAddress || '');
-    } else {
-      setOrgName('');
-      setEmail('');
-    }
-  }, [isSignedIn, user]);
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        const u = session.user;
+        const name = u.user_metadata?.full_name || u.email?.split('@')[0] || '';
+        setOrgName(name ? `${name}'s Organization` : '');
+        setEmail(u.email || '');
+      }
+    });
+  }, []);
 
   // Compute amounts based on selected billing cycle
   const baseMonthly = plan.priceMonthly ?? 49;
@@ -77,42 +77,42 @@ Please confirm offline payment instructions & instant key provisioning for our w
   };
 
   return (
-    <div className="font-['Inter'] text-slate-900 space-y-3">
+    <div className="font-['Inter'] text-slate-900 dark:text-slate-100 space-y-3">
       
       {/* Customer Info Input */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
         <div>
-          <label className="block text-[11px] font-bold text-slate-700 mb-1">Organization Name</label>
+          <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">Organization Name</label>
           <input
             type="text"
             value={orgName}
             onChange={(e) => setOrgName(e.target.value)}
             placeholder="Your Organization Name"
-            className="w-full px-3 py-1.5 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-[#25D366] focus:outline-none bg-slate-50/50"
+            className="w-full px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 text-xs focus:ring-2 focus:ring-[#25D366] focus:outline-none bg-slate-50/50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500"
           />
         </div>
 
         <div>
-          <label className="block text-[11px] font-bold text-slate-700 mb-1">Owner Email</label>
+          <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">Owner Email</label>
           <input
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="your.email@example.com"
-            className="w-full px-3 py-1.5 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-[#25D366] focus:outline-none bg-slate-50/50"
+            className="w-full px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 text-xs focus:ring-2 focus:ring-[#25D366] focus:outline-none bg-slate-50/50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500"
           />
         </div>
       </div>
 
       {/* Invoice Breakdown Preview Card */}
       <div className="space-y-1">
-        <div className="flex items-center justify-between text-[10px] font-mono font-bold uppercase text-slate-500">
+        <div className="flex items-center justify-between text-[10px] font-mono font-bold uppercase text-slate-500 dark:text-slate-400">
           <span>Formatted Invoice Preview</span>
           <button
             onClick={handleCopy}
             className="text-[#25D366] hover:underline flex items-center gap-1 font-bold text-[10px] cursor-pointer"
           >
-            {copied ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
+            {copied ? <Check className="w-3 h-3 text-emerald-600 dark:text-emerald-400" /> : <Copy className="w-3 h-3" />}
             <span>{copied ? 'Copied!' : 'Copy Text'}</span>
           </button>
         </div>
@@ -123,12 +123,12 @@ Please confirm offline payment instructions & instant key provisioning for our w
       </div>
 
       {/* Action Buttons */}
-      <div className="pt-2 border-t border-slate-100 flex flex-row items-center gap-2">
+      <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex flex-row items-center gap-2">
         <button
           onClick={handleCopy}
-          className="px-3 py-2 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-bold transition-all flex items-center justify-center gap-1 cursor-pointer shrink-0"
+          className="px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-bold transition-all flex items-center justify-center gap-1 cursor-pointer shrink-0"
         >
-          {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5 text-slate-500" />}
+          {copied ? <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" /> : <Copy className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />}
           <span>{copied ? 'Copied' : 'Copy'}</span>
         </button>
 

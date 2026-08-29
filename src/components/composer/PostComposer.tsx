@@ -420,14 +420,14 @@ export const PostComposer: React.FC<PostComposerProps> = ({
         
         {/* Left Column: Form & AI Generator */}
         <div className="lg:col-span-8 space-y-6">
-          <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-xs flex items-center justify-between">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-4 shadow-xs flex items-center justify-between">
             <div className="flex items-center gap-2.5">
-              <div className="p-2 rounded-xl bg-purple-100 text-[#5D3FD3]">
+              <div className="p-2 rounded-xl bg-purple-100 dark:bg-purple-950/60 text-[#5D3FD3] dark:text-purple-300">
                 <Calendar className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="font-bold text-slate-900 text-xs">Post Scheduling & Calendar Grid</h3>
-                <p className="text-[11px] text-slate-500">Draft your post below or switch to the interactive calendar grid.</p>
+                <h3 className="font-bold text-slate-900 dark:text-white text-xs">Post Scheduling & Calendar Grid</h3>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400">Draft your post below or switch to the interactive calendar grid.</p>
               </div>
             </div>
 
@@ -441,22 +441,22 @@ export const PostComposer: React.FC<PostComposerProps> = ({
                   if (calTab) calTab.click();
                 }
               }}
-              className="px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm"
+              className="px-3.5 py-2 bg-slate-900 dark:bg-purple-600 hover:bg-slate-800 dark:hover:bg-purple-500 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm cursor-pointer"
             >
-              <Calendar className="w-3.5 h-3.5 text-purple-400" />
+              <Calendar className="w-3.5 h-3.5 text-purple-400 dark:text-purple-200" />
               <span>Open Calendar Grid</span>
             </button>
           </div>
 
-          <form onSubmit={handleSubmitPost} className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs space-y-6">
+          <form onSubmit={handleSubmitPost} className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-xs space-y-6">
             
             {/* Account Selector */}
             <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase font-mono tracking-wider mb-2">
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase font-mono tracking-wider mb-2">
                 Select Connected Target Channels
               </label>
               {accounts.length === 0 ? (
-                <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800">
+                <div className="p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-xl text-xs text-amber-800 dark:text-amber-300">
                   No accounts connected for this tenant. Go to <strong>Social Accounts</strong> tab to connect accounts.
                 </div>
               ) : (
@@ -501,10 +501,10 @@ export const PostComposer: React.FC<PostComposerProps> = ({
                         key={acc.id}
                         type="button"
                         onClick={() => handleToggleAccount(acc.platform, acc.channelAccountId)}
-                        className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all border ${
+                        className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all border cursor-pointer ${
                           isSelected
                             ? 'bg-[#5D3FD3] text-white border-[#5D3FD3] shadow-xs'
-                            : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+                            : 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-750'
                         }`}
                       >
                         {getPlatformIcon(acc.platform)}
@@ -521,7 +521,7 @@ export const PostComposer: React.FC<PostComposerProps> = ({
             <div>
               <div className="flex items-center justify-between mb-1.5">
                 <div className="flex items-center gap-2">
-                  <label className="block text-xs font-bold text-slate-700 uppercase font-mono tracking-wider">
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase font-mono tracking-wider">
                     Post Content & Caption Text
                   </label>
                   <button
@@ -530,18 +530,18 @@ export const PostComposer: React.FC<PostComposerProps> = ({
                     className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                       isDictating
                         ? 'bg-red-500 text-white animate-pulse shadow-xs'
-                        : 'bg-purple-50 hover:bg-purple-100 text-[#5D3FD3] border border-purple-200'
+                        : 'bg-purple-50 dark:bg-purple-950/60 hover:bg-purple-100 dark:hover:bg-purple-900/60 text-[#5D3FD3] dark:text-purple-300 border border-purple-200 dark:border-purple-800'
                     }`}
                     title="Voice Dictate into Caption (Alt + V)"
                   >
                     {isDictating ? <MicOff className="w-3 h-3 animate-bounce" /> : <Mic className="w-3 h-3" />}
                     <span>{isDictating ? 'Listening (Click to Stop)' : 'Dictate'}</span>
-                    <span className="text-[9px] font-mono bg-white/60 text-purple-900 px-1 py-0.2 rounded font-bold">
+                    <span className="text-[9px] font-mono bg-white/60 dark:bg-slate-800 text-purple-900 dark:text-purple-200 px-1 py-0.2 rounded font-bold">
                       Alt+V
                     </span>
                   </button>
                 </div>
-                <div className="text-[11px] font-mono text-slate-400">
+                <div className="text-[11px] font-mono text-slate-400 dark:text-slate-500">
                   {content.length} characters
                 </div>
               </div>
@@ -552,15 +552,15 @@ export const PostComposer: React.FC<PostComposerProps> = ({
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 placeholder="Write your post content, marketing campaign, or announcements here (or click Dictate / press Alt+V to speak)..."
-                className={`w-full p-4 border rounded-2xl focus:ring-2 focus:ring-[#5D3FD3] text-sm leading-relaxed transition-all ${
-                  isDictating ? 'border-red-400 ring-2 ring-red-200 bg-red-50/20' : 'border-slate-200'
+                className={`w-full p-4 border rounded-2xl focus:ring-2 focus:ring-[#5D3FD3] text-sm leading-relaxed transition-all bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 ${
+                  isDictating ? 'border-red-400 ring-2 ring-red-200 bg-red-50/20 dark:bg-red-950/20' : 'border-slate-200 dark:border-slate-700'
                 }`}
               />
             </div>
 
             {/* Media Mode Selection */}
-            <div className="space-y-3 pt-2 border-t border-slate-100">
-              <label className="block text-xs font-bold text-slate-700 uppercase font-mono tracking-wider">
+            <div className="space-y-3 pt-2 border-t border-slate-100 dark:border-slate-800">
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase font-mono tracking-wider">
                 Media Hosting CDN Engine
               </label>
 
@@ -568,51 +568,56 @@ export const PostComposer: React.FC<PostComposerProps> = ({
                 <button
                   type="button"
                   onClick={() => setMediaMode('cloudinary')}
-                  className={`p-3 rounded-xl border text-left transition-all ${
+                  className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
                     mediaMode === 'cloudinary'
-                      ? 'bg-purple-50/80 border-[#5D3FD3] text-purple-900 shadow-xs'
-                      : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
+                      ? 'bg-purple-50/80 dark:bg-purple-950/40 border-[#5D3FD3] dark:border-purple-600 text-purple-900 dark:text-purple-200 shadow-xs'
+                      : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-750'
                   }`}
                 >
                   <div className="font-bold text-xs flex items-center gap-1.5">
-                    <Upload className="w-4 h-4 text-[#5D3FD3]" />
+                    <Upload className="w-4 h-4 text-[#5D3FD3] dark:text-purple-400" />
                     <span>Cloudinary Direct Upload</span>
                   </div>
-                  <div className="text-[10px] text-slate-500 font-mono mt-0.5">Browse & Upload Image/Video File</div>
+                  <div className="text-[10px] text-slate-500 dark:text-slate-400 font-mono mt-0.5">Browse & Upload Image/Video File</div>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setMediaMode('link')}
-                  className={`p-3 rounded-xl border text-left transition-all ${
+                  className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
                     mediaMode === 'link'
-                      ? 'bg-blue-50/80 border-blue-600 text-blue-900 shadow-xs'
-                      : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
+                      ? 'bg-blue-50/80 dark:bg-blue-950/40 border-blue-600 text-blue-900 dark:text-blue-200 shadow-xs'
+                      : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-750'
                   }`}
                 >
                   <div className="font-bold text-xs flex items-center gap-1.5">
-                    <LinkIcon className="w-4 h-4 text-blue-600" />
+                    <LinkIcon className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                     <span>Cloudinary / HTTPS Media Link</span>
                   </div>
-                  <div className="text-[10px] text-slate-500 font-mono mt-0.5">Paste Direct Media CDN URL</div>
+                  <div className="text-[10px] text-slate-500 dark:text-slate-400 font-mono mt-0.5">Paste Direct Media CDN URL</div>
                 </button>
               </div>
 
               {/* Cloudinary Direct File Upload Controls */}
               {mediaMode === 'cloudinary' && (
-                <div className="p-4 bg-purple-50/40 border border-purple-200 rounded-xl space-y-3 animate-in fade-in">
-                  <div className="flex items-center justify-between">
+                <div className="p-4 bg-purple-50/40 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-800 rounded-xl space-y-3 animate-in fade-in">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                     <div>
-                      <div className="text-xs font-bold text-slate-900">Direct Cloudinary Upload (HD Image & Video)</div>
-                      <div className="text-[11px] text-slate-500 font-mono">
-                        Active Cloud: <code className="text-purple-900 font-bold">{currentCloudinaryConfig.cloudName}</code> (Preset: {currentCloudinaryConfig.uploadPreset})
+                      <div className="text-xs font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                        <span>Direct Cloudinary Upload (HD Image & Video)</span>
+                        <span className="bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 text-[10px] font-mono px-2 py-0.5 rounded-full font-bold">
+                          {Math.max(0, 100 - Math.round(((((tenant.supabaseStorageBytes || 0) + (tenant.cloudinaryStorageBytes || 650000000)) / (1024 * 1024)) / (tenant.customStorageLimitMb || 10240)) * 100))}% Remaining ({((Math.max(0, (tenant.customStorageLimitMb || 10240) - (((tenant.supabaseStorageBytes || 0) + (tenant.cloudinaryStorageBytes || 650000000)) / (1024 * 1024)))) / 1024).toFixed(2)} GB Free)
+                        </span>
+                      </div>
+                      <div className="text-[11px] text-slate-500 dark:text-slate-400 font-mono mt-0.5">
+                        Active Cloud: <code className="text-purple-900 dark:text-purple-300 font-bold">{currentCloudinaryConfig.cloudName}</code> (Preset: {currentCloudinaryConfig.uploadPreset})
                       </div>
                     </div>
 
                     <button
                       type="button"
                       onClick={() => setShowCloudinarySettings(!showCloudinarySettings)}
-                      className="text-xs text-[#5D3FD3] hover:text-purple-900 font-bold flex items-center gap-1"
+                      className="text-xs text-[#5D3FD3] dark:text-purple-400 hover:text-purple-900 dark:hover:text-purple-300 font-bold flex items-center gap-1 cursor-pointer"
                     >
                       <Settings className="w-3.5 h-3.5" />
                       <span>{showCloudinarySettings ? 'Close Credentials' : 'Cloud Setup'}</span>
@@ -620,31 +625,31 @@ export const PostComposer: React.FC<PostComposerProps> = ({
                   </div>
 
                   {showCloudinarySettings && (
-                    <div className="p-3 bg-white border border-purple-200 rounded-xl space-y-3 text-xs">
+                    <div className="p-3 bg-white dark:bg-slate-800 border border-purple-200 dark:border-purple-800 rounded-xl space-y-3 text-xs">
                       <div>
-                        <label className="block font-semibold text-slate-700 mb-1">Cloudinary Cloud Name</label>
+                        <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Cloudinary Cloud Name</label>
                         <input
                           type="text"
                           value={customCloudName}
                           onChange={(e) => setCustomCloudName(e.target.value)}
                           placeholder="e.g. djmww1dwr"
-                          className="w-full p-2 border rounded font-mono text-xs"
+                          className="w-full p-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded font-mono text-xs"
                         />
                       </div>
                       <div>
-                        <label className="block font-semibold text-slate-700 mb-1">Unsigned Upload Preset</label>
+                        <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Unsigned Upload Preset</label>
                         <input
                           type="text"
                           value={customUploadPreset}
                           onChange={(e) => setCustomUploadPreset(e.target.value)}
                           placeholder="e.g. ml_default"
-                          className="w-full p-2 border rounded font-mono text-xs"
+                          className="w-full p-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded font-mono text-xs"
                         />
                       </div>
                       <button
                         type="button"
                         onClick={handleSaveCloudinarySettings}
-                        className="px-3 py-1.5 bg-[#5D3FD3] text-white rounded font-bold text-xs hover:bg-purple-700"
+                        className="px-3 py-1.5 bg-[#5D3FD3] hover:bg-purple-700 text-white rounded font-bold text-xs cursor-pointer"
                       >
                         Save Cloudinary Setup
                       </button>
@@ -665,8 +670,8 @@ export const PostComposer: React.FC<PostComposerProps> = ({
                     </label>
 
                     {cloudinaryUrl && (
-                      <span className="text-xs text-emerald-700 font-mono font-bold flex items-center gap-1">
-                        <CheckCircle2 className="w-4 h-4 text-emerald-600" /> Uploaded to Cloudinary CDN
+                      <span className="text-xs text-emerald-700 dark:text-emerald-300 font-mono font-bold flex items-center gap-1">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" /> Uploaded to Cloudinary CDN
                       </span>
                     )}
                   </div>
@@ -675,8 +680,8 @@ export const PostComposer: React.FC<PostComposerProps> = ({
 
               {/* Direct Media Link Input */}
               {mediaMode === 'link' && (
-                <div className="p-4 bg-blue-50/40 border border-blue-200 rounded-xl space-y-2 animate-in fade-in">
-                  <label className="block text-xs font-bold text-blue-900 font-mono">
+                <div className="p-4 bg-blue-50/40 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-xl space-y-2 animate-in fade-in">
+                  <label className="block text-xs font-bold text-blue-900 dark:text-blue-300 font-mono">
                     Cloudinary or HTTPS Direct Media URL
                   </label>
                   <input
@@ -684,14 +689,14 @@ export const PostComposer: React.FC<PostComposerProps> = ({
                     value={directMediaUrl}
                     onChange={(e) => setDirectMediaUrl(e.target.value)}
                     placeholder="https://res.cloudinary.com/djmww1dwr/image/upload/sample.jpg"
-                    className="w-full p-2.5 bg-white border border-blue-200 rounded-xl text-xs font-mono focus:ring-2 focus:ring-blue-500"
+                    className="w-full p-2.5 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 border border-blue-200 dark:border-blue-800 rounded-xl text-xs font-mono focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
               )}
             </div>
 
             {/* Publishing Controls */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-4 border-t border-slate-100">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-4 border-t border-slate-100 dark:border-slate-800">
               <div className="flex items-center gap-3">
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
@@ -700,7 +705,7 @@ export const PostComposer: React.FC<PostComposerProps> = ({
                     onChange={(e) => setIsScheduling(e.target.checked)}
                     className="w-4 h-4 text-[#5D3FD3] rounded"
                   />
-                  <span className="text-xs font-bold text-slate-700">Schedule Post</span>
+                  <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Schedule Post</span>
                 </label>
 
                 {isScheduling && (
@@ -708,7 +713,7 @@ export const PostComposer: React.FC<PostComposerProps> = ({
                     type="datetime-local"
                     value={scheduledDate}
                     onChange={(e) => setScheduledDate(e.target.value)}
-                    className="p-2 border border-slate-300 rounded-xl text-xs font-mono bg-white"
+                    className="p-2 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-mono bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
                   />
                 )}
               </div>
@@ -716,7 +721,7 @@ export const PostComposer: React.FC<PostComposerProps> = ({
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="px-6 py-3 bg-[#5D3FD3] hover:bg-purple-700 text-white rounded-xl font-bold text-xs transition-all shadow-md flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50"
+                className="px-6 py-3 bg-[#5D3FD3] hover:bg-purple-700 text-white rounded-xl font-bold text-xs transition-all shadow-md flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50 cursor-pointer"
               >
                 {isSubmitting ? (
                   <span>Dispatching to API...</span>
@@ -866,21 +871,21 @@ export const PostComposer: React.FC<PostComposerProps> = ({
       {/* AI CREDIT LOGS MODAL */}
       {showAiLogModal && (
         <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in">
-          <div className="bg-white rounded-2xl max-w-2xl w-full p-6 border border-slate-200 shadow-2xl space-y-4 max-h-[85vh] overflow-y-auto">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-2xl w-full p-6 border border-slate-200 dark:border-slate-800 shadow-2xl space-y-4 max-h-[85vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
               <div>
-                <h3 className="font-bold text-slate-900 text-base flex items-center gap-2">
-                  <History className="w-5 h-5 text-[#5D3FD3]" />
+                <h3 className="font-bold text-slate-900 dark:text-white text-base flex items-center gap-2">
+                  <History className="w-5 h-5 text-[#5D3FD3] dark:text-purple-400" />
                   <span>AI Credit Usage & Deduction Logs</span>
                 </h3>
-                <p className="text-xs text-slate-500">Track real-time credit consumption for AI text and hashtag generation</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">Track real-time credit consumption for AI text and hashtag generation</p>
               </div>
-              <button onClick={() => setShowAiLogModal(false)} className="text-slate-400 hover:text-slate-700">✕</button>
+              <button onClick={() => setShowAiLogModal(false)} className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 cursor-pointer">✕</button>
             </div>
 
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
-                <thead className="bg-slate-100 text-slate-600 uppercase font-mono text-[10px] tracking-wider">
+                <thead className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 uppercase font-mono text-[10px] tracking-wider">
                   <tr>
                     <th className="px-4 py-2.5">Timestamp</th>
                     <th className="px-4 py-2.5">Description / Topic</th>
@@ -888,28 +893,28 @@ export const PostComposer: React.FC<PostComposerProps> = ({
                     <th className="px-4 py-2.5 text-right">Remaining Balance</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium text-slate-700 dark:text-slate-300">
                   {aiLogs.length === 0 ? (
                     <tr>
-                      <td colSpan={4} className="px-4 py-4 text-center text-slate-400 italic">No AI credit logs recorded yet.</td>
+                      <td colSpan={4} className="px-4 py-4 text-center text-slate-400 dark:text-slate-500 italic">No AI credit logs recorded yet.</td>
                     </tr>
                   ) : (
                     aiLogs.map((log) => (
-                      <tr key={log.id} className="hover:bg-slate-50">
-                        <td className="px-4 py-3 font-mono text-slate-500">
+                      <tr key={log.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                        <td className="px-4 py-3 font-mono text-slate-500 dark:text-slate-400">
                           {new Date(log.timestamp).toLocaleString()}
                         </td>
-                        <td className="px-4 py-3 font-semibold text-slate-900">
+                        <td className="px-4 py-3 font-semibold text-slate-900 dark:text-slate-100">
                           {log.description}
                         </td>
                         <td className="px-4 py-3 font-mono font-bold">
                           <span className={`px-2 py-0.5 rounded text-[10px] ${
-                            log.creditsAmount < 0 ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700'
+                            log.creditsAmount < 0 ? 'bg-red-100 dark:bg-red-950/60 text-red-700 dark:text-red-300' : 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300'
                           }`}>
                             {log.creditsAmount > 0 ? `+${log.creditsAmount}` : log.creditsAmount} Credits
                           </span>
                         </td>
-                        <td className="px-4 py-3 text-right font-mono font-bold text-purple-900">
+                        <td className="px-4 py-3 text-right font-mono font-bold text-purple-900 dark:text-purple-300">
                           {log.remainingBalance}
                         </td>
                       </tr>
@@ -919,10 +924,10 @@ export const PostComposer: React.FC<PostComposerProps> = ({
               </table>
             </div>
 
-            <div className="flex justify-end pt-2 border-t border-slate-100">
+            <div className="flex justify-end pt-2 border-t border-slate-100 dark:border-slate-800">
               <button
                 onClick={() => setShowAiLogModal(false)}
-                className="px-4 py-2 bg-slate-100 text-slate-700 rounded-lg font-semibold hover:bg-slate-200"
+                className="px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg font-semibold hover:bg-slate-200 dark:hover:bg-slate-700 cursor-pointer"
               >
                 Close Logs
               </button>

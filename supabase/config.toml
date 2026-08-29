@@ -545,3 +545,10 @@ enabled = true
 verify_jwt = true
 import_map = "./functions/publish-post/deno.json"
 entrypoint = "./functions/composio-post-manage/index.ts"
+
+[functions.chatgpt-connector]
+enabled = true
+verify_jwt = false
+import_map = "./functions/publish-post/deno.json"
+entrypoint = "./functions/chatgpt-connector/index.ts"
+

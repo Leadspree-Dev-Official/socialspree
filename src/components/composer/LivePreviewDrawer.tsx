@@ -88,14 +88,14 @@ export const LivePreviewDrawer: React.FC<LivePreviewDrawerProps> = ({
   };
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-xs font-['Inter'] space-y-4">
+    <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-4 shadow-xs font-['Inter'] space-y-4">
       {/* Top Header & Platform Selector Tabs */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <h3 className="font-bold text-slate-900 text-xs uppercase font-mono tracking-wider">
+          <h3 className="font-bold text-slate-900 dark:text-white text-xs uppercase font-mono tracking-wider">
             iPhone Device Live Preview
           </h3>
-          <span className="text-[10px] font-mono font-bold text-[#5D3FD3] bg-purple-50 px-2 py-0.5 rounded border border-purple-200">
+          <span className="text-[10px] font-mono font-bold text-[#5D3FD3] dark:text-purple-300 bg-purple-50 dark:bg-purple-950/60 px-2 py-0.5 rounded border border-purple-200 dark:border-purple-800">
             Instagram Default
           </span>
         </div>
@@ -110,10 +110,10 @@ export const LivePreviewDrawer: React.FC<LivePreviewDrawerProps> = ({
                 key={tab.id}
                 type="button"
                 onClick={() => setActivePlatform(tab.id)}
-                className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all shrink-0 ${
+                className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all shrink-0 cursor-pointer ${
                   isSelected
                     ? 'bg-[#5D3FD3] text-white shadow-xs'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
                 }`}
               >
                 <TabIcon className="w-3.5 h-3.5" />
@@ -139,7 +139,7 @@ export const LivePreviewDrawer: React.FC<LivePreviewDrawerProps> = ({
         <div className="bg-gradient-to-b from-slate-800 via-slate-900 to-slate-950 rounded-[48px] p-2 shadow-2xl border-2 border-slate-700/80">
           
           {/* Inner Screen Viewport Container */}
-          <div className="bg-white rounded-[40px] overflow-hidden text-slate-900 min-h-[460px] flex flex-col justify-between border border-slate-200 relative">
+          <div className="bg-white dark:bg-slate-900 rounded-[40px] overflow-hidden text-slate-900 dark:text-white min-h-[460px] flex flex-col justify-between border border-slate-200 dark:border-slate-800 relative">
             
             {/* iPhone Top Status Bar & Dynamic Island */}
             <div className="bg-slate-950 text-white px-5 pt-2.5 pb-1 flex items-center justify-between z-20">
@@ -163,41 +163,41 @@ export const LivePreviewDrawer: React.FC<LivePreviewDrawerProps> = ({
               <div className="flex-1 flex flex-col justify-between">
                 <div>
                   {/* IG Top App Bar */}
-                  <div className="p-3 border-b border-slate-100 flex items-center justify-between bg-white">
+                  <div className="p-3 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-white dark:bg-slate-900">
                     <div className="flex items-center gap-2">
                       <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-amber-400 via-pink-500 to-purple-600 p-[2px]">
                         <img 
                           src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=150&auto=format&fit=crop&q=80" 
                           alt="avatar" 
-                          className="w-full h-full rounded-full object-cover border border-white"
+                          className="w-full h-full rounded-full object-cover border border-white dark:border-slate-900"
                         />
                       </div>
                       <div>
-                        <div className="font-bold text-xs leading-none text-slate-900">{tenantName.split(' ')[0] || 'Brand'}</div>
-                        <div className="text-[9px] text-slate-400 mt-0.5">Sponsored</div>
+                        <div className="font-bold text-xs leading-none text-slate-900 dark:text-white">{tenantName.split(' ')[0] || 'Brand'}</div>
+                        <div className="text-[9px] text-slate-400 dark:text-slate-500 mt-0.5">Sponsored</div>
                       </div>
                     </div>
-                    <MoreHorizontal className="w-4 h-4 text-slate-400" />
+                    <MoreHorizontal className="w-4 h-4 text-slate-400 dark:text-slate-500" />
                   </div>
 
                   {/* Post Media Preview */}
-                  {renderMedia("aspect-square bg-slate-100 relative flex items-center justify-center")}
+                  {renderMedia("aspect-square bg-slate-100 dark:bg-slate-800 relative flex items-center justify-center")}
 
                   {/* Actions & Caption */}
                   <div className="p-3 space-y-1.5">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2.5">
-                        <Heart className="w-4 h-4 text-slate-700 hover:text-red-500 cursor-pointer" />
-                        <MessageCircle className="w-4 h-4 text-slate-700" />
-                        <Send className="w-4 h-4 text-slate-700" />
+                        <Heart className="w-4 h-4 text-slate-700 dark:text-slate-300 hover:text-red-500 cursor-pointer" />
+                        <MessageCircle className="w-4 h-4 text-slate-700 dark:text-slate-300" />
+                        <Send className="w-4 h-4 text-slate-700 dark:text-slate-300" />
                       </div>
-                      <Bookmark className="w-4 h-4 text-slate-700" />
+                      <Bookmark className="w-4 h-4 text-slate-700 dark:text-slate-300" />
                     </div>
 
-                    <div className="text-[11px] font-bold text-slate-900">1,248 likes</div>
+                    <div className="text-[11px] font-bold text-slate-900 dark:text-white">1,248 likes</div>
 
-                    <div className="text-[11px] leading-relaxed text-slate-800 line-clamp-3">
-                      <span className="font-bold mr-1">{tenantName.split(' ')[0].toLowerCase() || 'brand'}</span>
+                    <div className="text-[11px] leading-relaxed text-slate-800 dark:text-slate-200 line-clamp-3">
+                      <span className="font-bold mr-1 text-slate-900 dark:text-white">{tenantName.split(' ')[0].toLowerCase() || 'brand'}</span>
                       {content || 'Your caption will appear here in real time as you compose...'}
                     </div>
                   </div>
@@ -207,24 +207,24 @@ export const LivePreviewDrawer: React.FC<LivePreviewDrawerProps> = ({
 
             {/* LINKEDIN PREVIEW */}
             {activePlatform === 'linkedin' && (
-              <div className="p-3 space-y-2.5 flex-1">
+              <div className="p-3 space-y-2.5 flex-1 bg-white dark:bg-slate-900">
                 <div className="flex items-center gap-2">
                   <div className="w-8 h-8 rounded-full bg-blue-600 text-white font-bold flex items-center justify-center text-xs">
                     IN
                   </div>
                   <div>
-                    <div className="font-bold text-xs text-slate-900">{tenantName}</div>
-                    <div className="text-[9px] text-slate-500">10,482 followers · 1h</div>
+                    <div className="font-bold text-xs text-slate-900 dark:text-white">{tenantName}</div>
+                    <div className="text-[9px] text-slate-500 dark:text-slate-400">10,482 followers · 1h</div>
                   </div>
                 </div>
 
-                <div className="text-[11px] text-slate-800 leading-relaxed whitespace-pre-wrap line-clamp-4">
+                <div className="text-[11px] text-slate-800 dark:text-slate-200 leading-relaxed whitespace-pre-wrap line-clamp-4">
                   {content || 'Post content will be rendered here...'}
                 </div>
 
-                {renderMedia("aspect-video bg-slate-100 rounded-lg")}
+                {renderMedia("aspect-video bg-slate-100 dark:bg-slate-800 rounded-lg")}
 
-                <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-slate-600 text-[10px] font-semibold">
+                <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-400 text-[10px] font-semibold">
                   <span className="flex items-center gap-1"><ThumbsUp className="w-3 h-3 text-blue-600" /> Like</span>
                   <span className="flex items-center gap-1"><MessageSquare className="w-3 h-3" /> Comment</span>
                   <span className="flex items-center gap-1"><Repeat className="w-3 h-3" /> Repost</span>
@@ -235,7 +235,7 @@ export const LivePreviewDrawer: React.FC<LivePreviewDrawerProps> = ({
 
             {/* YOUTUBE PREVIEW */}
             {activePlatform === 'youtube' && (
-              <div className="space-y-2 flex-1">
+              <div className="space-y-2 flex-1 bg-white dark:bg-slate-900">
                 <div className="aspect-video bg-slate-900 relative rounded-lg overflow-hidden">
                   {renderMedia("w-full h-full")}
                   <div className="absolute bottom-2 right-2 bg-black/80 text-white text-[9px] px-1.5 py-0.5 rounded font-mono font-bold z-10">
@@ -244,11 +244,11 @@ export const LivePreviewDrawer: React.FC<LivePreviewDrawerProps> = ({
                 </div>
 
                 <div className="p-3 space-y-1.5">
-                  <div className="font-bold text-xs text-slate-900 line-clamp-2">
+                  <div className="font-bold text-xs text-slate-900 dark:text-white line-clamp-2">
                     {content.split('\n')[0] || 'Shorts Title & Video Post Content'}
                   </div>
 
-                  <div className="flex items-center gap-1.5 text-[9px] text-slate-500">
+                  <div className="flex items-center gap-1.5 text-[9px] text-slate-500 dark:text-slate-400">
                     <span>{tenantName}</span>
                     <span>· 42K views</span>
                     <span>· 2h ago</span>
@@ -259,26 +259,26 @@ export const LivePreviewDrawer: React.FC<LivePreviewDrawerProps> = ({
 
             {/* FACEBOOK PREVIEW */}
             {activePlatform === 'facebook' && (
-              <div className="p-3 space-y-2.5 flex-1">
+              <div className="p-3 space-y-2.5 flex-1 bg-white dark:bg-slate-900">
                 <div className="flex items-center gap-2">
                   <div className="w-8 h-8 rounded-full bg-blue-700 text-white font-bold flex items-center justify-center text-xs">
                     FB
                   </div>
                   <div>
-                    <div className="font-bold text-xs text-slate-900">{tenantName}</div>
-                    <div className="text-[9px] text-slate-500 flex items-center gap-1">
+                    <div className="font-bold text-xs text-slate-900 dark:text-white">{tenantName}</div>
+                    <div className="text-[9px] text-slate-500 dark:text-slate-400 flex items-center gap-1">
                       <span>Just now</span> · <Globe className="w-3 h-3" />
                     </div>
                   </div>
                 </div>
 
-                <div className="text-[11px] text-slate-800 leading-relaxed line-clamp-3">
+                <div className="text-[11px] text-slate-800 dark:text-slate-200 leading-relaxed line-clamp-3">
                   {content || 'Facebook post text caption...'}
                 </div>
 
-                {renderMedia("aspect-video bg-slate-100 rounded-lg")}
+                {renderMedia("aspect-video bg-slate-100 dark:bg-slate-800 rounded-lg")}
 
-                <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-slate-600 text-[10px] font-semibold">
+                <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-400 text-[10px] font-semibold">
                   <span className="flex items-center gap-1"><ThumbsUp className="w-3 h-3 text-blue-600" /> Like</span>
                   <span className="flex items-center gap-1"><MessageSquare className="w-3 h-3" /> Comment</span>
                   <span className="flex items-center gap-1"><Share2 className="w-3 h-3" /> Share</span>
@@ -288,28 +288,28 @@ export const LivePreviewDrawer: React.FC<LivePreviewDrawerProps> = ({
 
             {/* GOOGLE BUSINESS PREVIEW */}
             {activePlatform === 'google_business' && (
-              <div className="p-3 space-y-2.5 flex-1">
+              <div className="p-3 space-y-2.5 flex-1 bg-white dark:bg-slate-900">
                 <div className="flex items-center gap-2">
                   <div className="w-8 h-8 rounded-full bg-emerald-600 text-white font-bold flex items-center justify-center text-xs">
                     G
                   </div>
                   <div>
-                    <div className="font-bold text-xs text-slate-900">{tenantName}</div>
-                    <div className="text-[9px] text-emerald-700 font-semibold">Google Business Profile</div>
+                    <div className="font-bold text-xs text-slate-900 dark:text-white">{tenantName}</div>
+                    <div className="text-[9px] text-emerald-700 dark:text-emerald-400 font-semibold">Google Business Profile</div>
                   </div>
                 </div>
 
-                <div className="text-[11px] text-slate-800 leading-relaxed line-clamp-3">
+                <div className="text-[11px] text-slate-800 dark:text-slate-200 leading-relaxed line-clamp-3">
                   {content || 'Update content will be displayed on your Google Business Listing...'}
                 </div>
 
-                {renderMedia("aspect-video bg-slate-100 rounded-lg")}
+                {renderMedia("aspect-video bg-slate-100 dark:bg-slate-800 rounded-lg")}
               </div>
             )}
 
             {/* iOS Home Indicator Bar */}
-            <div className="py-2 bg-white flex justify-center">
-              <div className="w-28 h-1 bg-slate-900/80 rounded-full" />
+            <div className="py-2 bg-white dark:bg-slate-900 flex justify-center">
+              <div className="w-28 h-1 bg-slate-900/80 dark:bg-slate-400/80 rounded-full" />
             </div>
           </div>
         </div>

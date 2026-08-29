@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { useClerk, useUser } from '@clerk/react';
 import { Tenant, CloudinaryConfig, CloudinaryAccountItem } from '../../types';
 import { auth, type Profile } from '../../lib/api';
 import { supabase } from '../../lib/supabase';
@@ -17,7 +16,7 @@ import {
   CheckCircle2, 
   RefreshCw,
   ExternalLink,
-  ShieldCheck,
+  ShieldCheck, 
   Share2,
   Plus,
   Trash2,
@@ -29,9 +28,18 @@ import {
   Bell,
   Globe,
   AlertCircle,
-  Bot
+  Bot,
+  KeyRound,
+  Eye,
+  EyeOff,
+  Loader2,
+  Palette,
+  Sun,
+  Moon,
+  Laptop
 } from 'lucide-react';
 import { ChatGPTConnectorSettings } from './ChatGPTConnectorSettings';
+import { ThemeToggle } from '../layout/ThemeToggle';
 
 interface SettingsViewProps {
   tenant: Tenant;
@@ -50,13 +58,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   onUpdateTenantProfile,
   initialTab = 'user'
 }) => {
-  const clerk = useClerk();
-  const { user: clerkUser } = useUser();
   const [activeTab, setActiveTab] = useState<'user' | 'storage' | 'api' | 'social_keys' | 'org' | 'chatgpt'>(initialTab);
-
-  const clerkEmail = clerkUser?.primaryEmailAddress?.emailAddress;
-  const clerkName = clerkUser?.fullName || (clerkUser?.firstName ? `${clerkUser.firstName}${clerkUser.lastName ? ' ' + clerkUser.lastName : ''}` : undefined) || clerkUser?.username;
-  const clerkAvatar = clerkUser?.imageUrl;
 
   // Cloudinary Local State (Multiple Accounts with 3 Fields: Cloud Name, Upload Preset, Bucket Name)
   const cldConfig = tenant.cloudinaryConfig || GLOBAL_DEFAULT_CLOUDINARY;
@@ -79,13 +81,13 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
   // User Profile Local State
   const [fullName, setFullName] = useState(() => {
-    return userProfile?.fullName || clerkName || tenant.ownerEmail.split('@')[0] || 'User';
+    return userProfile?.fullName || tenant.ownerEmail.split('@')[0] || 'User';
   });
   const [userEmail, setUserEmail] = useState(() => {
-    return userProfile?.email || clerkEmail || tenant.ownerEmail;
+    return userProfile?.email || tenant.ownerEmail;
   });
   const [avatarUrl, setAvatarUrl] = useState(() => {
-    return userProfile?.avatarUrl || clerkAvatar || '';
+    return userProfile?.avatarUrl || '';
   });
   const [jobTitle, setJobTitle] = useState(() => {
     return userProfile?.jobTitle || 'Social Media Manager';
@@ -93,6 +95,13 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   const [timezone, setTimezone] = useState(() => {
     return userProfile?.timezone || 'UTC';
   });
+
+  // Password Change State
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [passwordUpdating, setPasswordUpdating] = useState(false);
+  const [passwordStatus, setPasswordStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [notifications, setNotifications] = useState(() => {
     return userProfile?.notifications || {
       emailDigest: true,
@@ -105,7 +114,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   useEffect(() => {
     if (userProfile?.fullName) setFullName(userProfile.fullName);
     if (userProfile?.email) setUserEmail(userProfile.email);
-    if (userProfile?.avatarUrl) setAvatarUrl(userProfile.avatarUrl);
+    if (userProfile?.avatarUrl !== undefined) setAvatarUrl(userProfile.avatarUrl || '');
     if (userProfile?.jobTitle) setJobTitle(userProfile.jobTitle);
     if (userProfile?.timezone) setTimezone(userProfile.timezone);
     if (userProfile?.notifications) setNotifications(userProfile.notifications);
@@ -275,11 +284,44 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     setTimeout(() => setNotification(null), 3000);
   };
 
+  const handleUpdatePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPasswordStatus(null);
+    if (!newPassword) {
+      setPasswordStatus({ type: 'error', message: 'Please enter a new password.' });
+      return;
+    }
+    if (newPassword.length < 6) {
+      setPasswordStatus({ type: 'error', message: 'Password must be at least 6 characters long.' });
+      return;
+    }
+    if (newPassword !== confirmNewPassword) {
+      setPasswordStatus({ type: 'error', message: 'Passwords do not match.' });
+      return;
+    }
+
+    setPasswordUpdating(true);
+    try {
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      if (error) {
+        setPasswordStatus({ type: 'error', message: error.message || 'Failed to update password.' });
+      } else {
+        setPasswordStatus({ type: 'success', message: 'Password updated successfully!' });
+        setNewPassword('');
+        setConfirmNewPassword('');
+      }
+    } catch (err: any) {
+      setPasswordStatus({ type: 'error', message: err.message || 'An error occurred while updating password.' });
+    } finally {
+      setPasswordUpdating(false);
+    }
+  };
+
   const handleSaveUserProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     setProfileSaving(true);
     try {
-      const activeEmail = userProfile?.email || userEmail || clerkUser?.primaryEmailAddress?.emailAddress || '';
+      const activeEmail = userProfile?.email || userEmail || tenant.ownerEmail || '';
       const updated = await auth.updateProfile({
         fullName: fullName.trim(),
         avatarUrl: avatarUrl.trim(),
@@ -314,68 +356,72 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
     let finalAvatarUrl = '';
 
-    // Strategy 1: Upload to Supabase Storage bucket 'avatars' or 'media'
-    try {
-      const fileExt = file.name.split('.').pop() || 'png';
-      const cleanFileName = `avatar_${(userProfile?.id || tenant.id || 'user').replace(/[^a-zA-Z0-9_-]/g, '_')}_${Date.now()}.${fileExt}`;
-      
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('avatars')
-        .upload(cleanFileName, file, { upsert: true, contentType: file.type });
+    // Robust client-side compression / DataURL conversion as guaranteed durable fallback
+    const fileReaderPromise = new Promise<string>((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const dataUrl = (event.target?.result as string) || '';
+        resolve(dataUrl);
+      };
+      reader.onerror = () => resolve('');
+      reader.readAsDataURL(file);
+    });
 
-      if (!uploadError && uploadData) {
-        const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(cleanFileName);
-        if (publicUrl) {
-          finalAvatarUrl = publicUrl;
+    const localDataUrl = await fileReaderPromise;
+    if (localDataUrl) {
+      finalAvatarUrl = localDataUrl;
+    }
+
+    // Strategy 1: Upload to Cloudinary CDN directly
+    try {
+      const activeCloudName = tenant.cloudinaryConfig?.cloudName || GLOBAL_DEFAULT_CLOUDINARY.cloudName;
+      const activeUploadPreset = tenant.cloudinaryConfig?.uploadPreset || GLOBAL_DEFAULT_CLOUDINARY.uploadPreset;
+      
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('upload_preset', activeUploadPreset);
+      formData.append('folder', 'socialspree_avatars');
+
+      const res = await fetch(`https://api.cloudinary.com/v1_1/${activeCloudName}/image/upload`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data.secure_url) {
+          finalAvatarUrl = data.secure_url;
         }
       }
     } catch (err) {
-      console.warn('Supabase storage avatar upload note:', err);
+      console.warn('Cloudinary avatar upload note:', err);
     }
 
-    // Strategy 2: If Supabase Storage is not provisioned or failed, upload to Cloudinary CDN
-    if (!finalAvatarUrl) {
+    // Strategy 2: Attempt Supabase Storage bucket 'avatars'
+    if (!finalAvatarUrl || finalAvatarUrl.startsWith('data:')) {
       try {
-        const activeCloudName = tenant.cloudinaryConfig?.cloudName || GLOBAL_DEFAULT_CLOUDINARY.cloudName;
-        const activeUploadPreset = tenant.cloudinaryConfig?.uploadPreset || GLOBAL_DEFAULT_CLOUDINARY.uploadPreset;
+        const fileExt = file.name.split('.').pop() || 'png';
+        const cleanFileName = `avatar_${(userProfile?.id || tenant.id || 'user').replace(/[^a-zA-Z0-9_-]/g, '_')}_${Date.now()}.${fileExt}`;
         
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('upload_preset', activeUploadPreset);
-        formData.append('folder', 'socialspree_avatars');
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('avatars')
+          .upload(cleanFileName, file, { upsert: true, contentType: file.type });
 
-        const res = await fetch(`https://api.cloudinary.com/v1_1/${activeCloudName}/image/upload`, {
-          method: 'POST',
-          body: formData,
-        });
-
-        if (res.ok) {
-          const data = await res.json();
-          if (data.secure_url) {
-            finalAvatarUrl = data.secure_url;
+        if (!uploadError && uploadData) {
+          const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(cleanFileName);
+          if (publicUrl) {
+            finalAvatarUrl = publicUrl;
           }
         }
       } catch (err) {
-        console.warn('Cloudinary avatar upload note:', err);
+        console.warn('Supabase storage avatar upload note:', err);
       }
-    }
-
-    // Strategy 3: Fallback client data URL preview if offline
-    if (!finalAvatarUrl) {
-      await new Promise<void>((resolve) => {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          finalAvatarUrl = (event.target?.result as string) || '';
-          resolve();
-        };
-        reader.readAsDataURL(file);
-      });
     }
 
     if (finalAvatarUrl) {
       setAvatarUrl(finalAvatarUrl);
       try {
-        const activeEmail = userProfile?.email || userEmail || clerkUser?.primaryEmailAddress?.emailAddress || '';
+        const activeEmail = userProfile?.email || userEmail || tenant.ownerEmail || '';
         const updated = await auth.updateProfile({
           avatarUrl: finalAvatarUrl,
           fullName: fullName.trim()
@@ -384,10 +430,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         if (onUpdateUserProfile) {
           onUpdateUserProfile(updated);
         }
-        setNotification('Profile Photo Uploaded & Saved to Cloud Storage Successfully!');
+        setNotification('✅ Profile Photo Uploaded & Saved Successfully!');
       } catch (err) {
         console.error('Error saving avatar to profile:', err);
-        setNotification('Profile photo uploaded.');
+        setNotification('✅ Profile photo updated.');
       }
     } else {
       setNotification('Failed to upload photo.');
@@ -400,7 +446,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   const handleRemoveAvatar = async () => {
     setAvatarUrl('');
     try {
-      const activeEmail = userProfile?.email || userEmail || clerkUser?.primaryEmailAddress?.emailAddress || '';
+      const activeEmail = userProfile?.email || userEmail || tenant.ownerEmail || '';
       const updated = await auth.updateProfile({ avatarUrl: '' }, activeEmail, userProfile || undefined);
       if (onUpdateUserProfile) {
         onUpdateUserProfile(updated);
@@ -415,28 +461,28 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   return (
     <div className="max-w-7xl mx-auto space-y-6 font-['Inter'] pb-20 md:pb-0">
       {/* Header Banner */}
-      <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-            <Settings className="w-5 h-5 text-[#5D3FD3]" />
+          <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+            <Settings className="w-5 h-5 text-[#5D3FD3] dark:text-purple-400" />
             <span>Organization & Storage Settings</span>
           </h2>
-          <p className="text-xs text-slate-500 mt-1">
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
             Configure Media CDN buckets, Cloudinary accounts, API key authentication, and developer keys.
           </p>
         </div>
 
         <div className="flex items-center gap-2 font-mono text-xs">
-          <span className="text-slate-500">Plan Tier:</span>
-          <span className="bg-purple-100 text-purple-800 font-bold px-2.5 py-1 rounded-lg uppercase border border-purple-200">
+          <span className="text-slate-500 dark:text-slate-400">Plan Tier:</span>
+          <span className="bg-purple-100 dark:bg-purple-950/80 text-purple-800 dark:text-purple-300 font-bold px-2.5 py-1 rounded-lg uppercase border border-purple-200 dark:border-purple-800">
             {tenant.tierPlan} ({tenant.allocatedApiSlots || 2} Slots)
           </span>
         </div>
       </div>
 
       {notification && (
-        <div className="p-4 bg-emerald-50 border border-emerald-300 rounded-2xl text-xs text-emerald-900 flex items-center gap-2 font-semibold animate-in fade-in">
-          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+        <div className="p-4 bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-300 dark:border-emerald-700 rounded-2xl text-xs text-emerald-900 dark:text-emerald-200 flex items-center gap-2 font-semibold animate-in fade-in">
+          <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
           <span>{notification}</span>
         </div>
       )}
@@ -448,10 +494,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         <div className="lg:col-span-3 space-y-2">
           <button
             onClick={() => setActiveTab('user')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold transition-all text-left ${
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold transition-all text-left cursor-pointer ${
               activeTab === 'user'
                 ? 'bg-[#5D3FD3] text-white shadow-md'
-                : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'
+                : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800'
             }`}
           >
             <User className="w-4 h-4" />
@@ -460,10 +506,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
           <button
             onClick={() => setActiveTab('storage')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold transition-all text-left ${
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold transition-all text-left cursor-pointer ${
               activeTab === 'storage'
                 ? 'bg-[#5D3FD3] text-white shadow-md'
-                : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'
+                : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800'
             }`}
           >
             <Cloud className="w-4 h-4" />
@@ -472,10 +518,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
           <button
             onClick={() => setActiveTab('api')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold transition-all text-left ${
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold transition-all text-left cursor-pointer ${
               activeTab === 'api'
                 ? 'bg-[#5D3FD3] text-white shadow-md'
-                : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'
+                : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800'
             }`}
           >
             <Key className="w-4 h-4" />
@@ -484,10 +530,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
           <button
             onClick={() => setActiveTab('social_keys')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold transition-all text-left ${
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold transition-all text-left cursor-pointer ${
               activeTab === 'social_keys'
                 ? 'bg-[#5D3FD3] text-white shadow-md'
-                : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'
+                : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800'
             }`}
           >
             <Share2 className="w-4 h-4" />
@@ -496,10 +542,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
           <button
             onClick={() => setActiveTab('org')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold transition-all text-left ${
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold transition-all text-left cursor-pointer ${
               activeTab === 'org'
                 ? 'bg-[#5D3FD3] text-white shadow-md'
-                : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'
+                : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800'
             }`}
           >
             <Building2 className="w-4 h-4" />
@@ -508,22 +554,22 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
           <button
             onClick={() => setActiveTab('chatgpt')}
-            className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-xs font-bold transition-all text-left ${
+            className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-xs font-bold transition-all text-left cursor-pointer ${
               activeTab === 'chatgpt'
                 ? 'bg-emerald-600 text-white shadow-md'
-                : 'bg-emerald-50 text-emerald-900 hover:bg-emerald-100 border border-emerald-200'
+                : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 border border-emerald-200 dark:border-emerald-800'
             }`}
           >
             <div className="flex items-center gap-3">
-              <Bot className="w-4 h-4 text-emerald-600" />
+              <Bot className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
               <span>ChatGPT Action Connector</span>
             </div>
-            <span className="bg-emerald-200 text-emerald-950 text-[9px] font-mono font-bold px-1.5 py-0.5 rounded">NEW</span>
+            <span className="bg-emerald-200 dark:bg-emerald-900 text-emerald-950 dark:text-emerald-200 text-[9px] font-mono font-bold px-1.5 py-0.5 rounded">NEW</span>
           </button>
         </div>
 
         {/* Right Content Panel */}
-        <div className="lg:col-span-9 bg-white border border-slate-200 rounded-2xl p-6 shadow-xs space-y-6">
+        <div className="lg:col-span-9 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-xs space-y-6">
           
           {activeTab === 'chatgpt' && (
             <ChatGPTConnectorSettings tenant={tenant} />
@@ -533,24 +579,24 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           {activeTab === 'user' && (
             <div className="space-y-8">
               {/* Profile Photo Uploader Section */}
-              <div className="border-b border-slate-100 pb-6 space-y-4">
+              <div className="border-b border-slate-100 dark:border-slate-800 pb-6 space-y-4">
                 <div>
-                  <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                    <Camera className="w-5 h-5 text-[#5D3FD3]" />
+                  <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    <Camera className="w-5 h-5 text-[#5D3FD3] dark:text-purple-400" />
                     <span>Profile Photo & Avatar</span>
                   </h3>
-                  <p className="text-xs text-slate-500 mt-1">
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                     Upload a high-resolution profile photo to personalize your account across SocialSpree.
                   </p>
                 </div>
 
                 <div className="flex items-center gap-5 pt-2">
                   <div className="relative group">
-                    <div className="w-20 h-20 rounded-2xl bg-gradient-to-tr from-purple-100 to-indigo-100 border-2 border-slate-200 flex items-center justify-center text-slate-700 overflow-hidden shadow-sm">
+                    <div className="w-20 h-20 rounded-2xl bg-gradient-to-tr from-purple-100 to-indigo-100 dark:from-purple-950/60 dark:to-indigo-950/60 border-2 border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-700 dark:text-slate-300 overflow-hidden shadow-sm">
                       {avatarUrl ? (
                         <img src={avatarUrl} alt={fullName} className="w-full h-full object-cover" />
                       ) : (
-                        <User className="w-10 h-10 text-slate-400" />
+                        <User className="w-10 h-10 text-slate-400 dark:text-slate-500" />
                       )}
                     </div>
                   </div>
@@ -581,13 +627,13 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                         <button
                           type="button"
                           onClick={handleRemoveAvatar}
-                          className="px-3.5 py-2 bg-slate-100 hover:bg-red-50 text-slate-600 hover:text-red-600 rounded-xl font-semibold text-xs transition-colors border border-slate-200"
+                          className="px-3.5 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-red-50 dark:hover:bg-red-950/40 text-slate-600 dark:text-slate-300 hover:text-red-600 dark:hover:text-red-400 rounded-xl font-semibold text-xs transition-colors border border-slate-200 dark:border-slate-700 cursor-pointer"
                         >
                           Remove Photo
                         </button>
                       )}
                     </div>
-                    <p className="text-[11px] text-slate-400">
+                    <p className="text-[11px] text-slate-400 dark:text-slate-500">
                       Supports PNG, JPG, GIF or WEBP up to 5MB. Photo will be synchronized across header navigation.
                     </p>
                   </div>
@@ -595,78 +641,100 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               </div>
 
               {/* Personal Details Form */}
-              <form onSubmit={handleSaveUserProfile} className="border-b border-slate-100 pb-6 space-y-4">
+              <form onSubmit={handleSaveUserProfile} className="border-b border-slate-100 dark:border-slate-800 pb-6 space-y-4">
                 <div>
-                  <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                    <User className="w-5 h-5 text-[#5D3FD3]" />
+                  <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    <User className="w-5 h-5 text-[#5D3FD3] dark:text-purple-400" />
                     <span>Personal Details & Preferences</span>
                   </h3>
-                  <p className="text-xs text-slate-500 mt-1">
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                     Manage your display name, title, contact details, and default timezone.
                   </p>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
                   <div>
-                    <label className="block font-semibold text-slate-700 mb-1">Full Name</label>
+                    <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Full Name</label>
                     <input
                       type="text"
                       required
                       value={fullName}
                       onChange={(e) => setFullName(e.target.value)}
                       placeholder="e.g. Aniruddha Das"
-                      className="w-full p-2.5 border rounded-lg text-xs focus:ring-2 focus:ring-[#5D3FD3]"
+                      className="w-full p-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-lg text-xs focus:ring-2 focus:ring-[#5D3FD3]"
                     />
                   </div>
 
                   <div>
-                    <label className="block font-semibold text-slate-700 mb-1">Email Address</label>
+                    <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Email Address</label>
                     <input
                       type="email"
                       disabled
                       value={userEmail}
-                      className="w-full p-2.5 border rounded-lg text-xs bg-slate-50 text-slate-500 font-mono"
+                      className="w-full p-2.5 border border-slate-200 dark:border-slate-700 rounded-lg text-xs bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-mono"
                     />
-                    <p className="text-[10px] text-slate-400 mt-0.5">Primary account email used for authentication.</p>
+                    <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">Primary account email used for authentication.</p>
                   </div>
 
                   <div>
-                    <label className="block font-semibold text-slate-700 mb-1">Job Title / Role</label>
+                    <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Job Title / Role</label>
                     <input
                       type="text"
                       value={jobTitle}
                       onChange={(e) => setJobTitle(e.target.value)}
                       placeholder="e.g. Lead Social Strategist"
-                      className="w-full p-2.5 border rounded-lg text-xs focus:ring-2 focus:ring-[#5D3FD3]"
+                      className="w-full p-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-lg text-xs focus:ring-2 focus:ring-[#5D3FD3]"
                     />
                   </div>
 
                   <div className="sm:col-span-2">
-                    <label className="block font-semibold text-slate-700 mb-1">Default Timezone</label>
+                    <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Default Timezone</label>
                     <select
                       value={timezone}
                       onChange={(e) => setTimezone(e.target.value)}
-                      className="w-full p-2.5 border rounded-lg text-xs focus:ring-2 focus:ring-[#5D3FD3] bg-white"
+                      className="w-full p-2.5 border border-slate-200 dark:border-slate-700 rounded-lg text-xs focus:ring-2 focus:ring-[#5D3FD3] bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
                     >
-                      <option value="UTC">UTC (Coordinated Universal Time)</option>
-                      <option value="Asia/Kolkata">Asia/Kolkata (IST +05:30)</option>
-                      <option value="America/New_York">America/New_York (EST/EDT)</option>
-                      <option value="America/Los_Angeles">America/Los_Angeles (PST/PDT)</option>
-                      <option value="Europe/London">Europe/London (GMT/BST)</option>
-                      <option value="Europe/Paris">Europe/Paris (CET/CEST)</option>
-                      <option value="Asia/Tokyo">Asia/Tokyo (JST +09:00)</option>
+                      <option value="UTC" className="dark:bg-slate-800">UTC (Coordinated Universal Time)</option>
+                      <option value="Asia/Kolkata" className="dark:bg-slate-800">Asia/Kolkata (IST +05:30)</option>
+                      <option value="America/New_York" className="dark:bg-slate-800">America/New_York (EST/EDT)</option>
+                      <option value="America/Los_Angeles" className="dark:bg-slate-800">America/Los_Angeles (PST/PDT)</option>
+                      <option value="Europe/London" className="dark:bg-slate-800">Europe/London (GMT/BST)</option>
+                      <option value="Europe/Paris" className="dark:bg-slate-800">Europe/Paris (CET/CEST)</option>
+                      <option value="Asia/Tokyo" className="dark:bg-slate-800">Asia/Tokyo (JST +09:00)</option>
                     </select>
+                  </div>
+                </div>
+
+                {/* Appearance / Theme Selector Section */}
+                <div className="pt-3 space-y-3 border-t border-slate-100 dark:border-slate-800">
+                  <div>
+                    <label className="block font-bold text-slate-900 dark:text-white text-xs flex items-center gap-1.5">
+                      <Palette className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                      <span>Interface Theme & Appearance</span>
+                    </label>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                      Choose between Light, Dark, or automatic System theme preference across all pages and views.
+                    </p>
+                  </div>
+
+                  <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                      <div className="text-xs font-semibold text-slate-800 dark:text-slate-200">Active Theme Mode</div>
+                      <div className="text-[11px] text-slate-500 dark:text-slate-400">Settings persist automatically across browser sessions.</div>
+                    </div>
+
+                    <ThemeToggle variant="segmented" />
                   </div>
                 </div>
 
                 {/* Notifications Preferences */}
                 <div className="pt-3 space-y-3">
-                  <label className="block font-bold text-slate-900 text-xs flex items-center gap-1.5">
-                    <Bell className="w-4 h-4 text-purple-600" />
+                  <label className="block font-bold text-slate-900 dark:text-white text-xs flex items-center gap-1.5">
+                    <Bell className="w-4 h-4 text-purple-600 dark:text-purple-400" />
                     <span>Notification Preferences</span>
                   </label>
 
-                  <div className="space-y-2 bg-slate-50 p-3.5 rounded-xl border border-slate-200 text-xs">
+                  <div className="space-y-2 bg-slate-50 dark:bg-slate-800 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 text-xs">
                     <label className="flex items-center gap-3 cursor-pointer">
                       <input
                         type="checkbox"
@@ -675,12 +743,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                         className="w-4 h-4 text-[#5D3FD3] rounded"
                       />
                       <div>
-                        <span className="font-semibold text-slate-800">Weekly Performance Digest Email</span>
-                        <p className="text-[11px] text-slate-500">Receive weekly summary reports of engagement, post reach, and AI usage.</p>
+                        <span className="font-semibold text-slate-800 dark:text-slate-200">Weekly Performance Digest Email</span>
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400">Receive weekly summary reports of engagement, post reach, and AI usage.</p>
                       </div>
                     </label>
 
-                    <label className="flex items-center gap-3 cursor-pointer pt-1 border-t border-slate-200/60">
+                    <label className="flex items-center gap-3 cursor-pointer pt-1 border-t border-slate-200/60 dark:border-slate-800">
                       <input
                         type="checkbox"
                         checked={notifications.postFailureAlerts}
@@ -688,12 +756,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                         className="w-4 h-4 text-[#5D3FD3] rounded"
                       />
                       <div>
-                        <span className="font-semibold text-slate-800">Post Publishing Failure Alerts</span>
-                        <p className="text-[11px] text-slate-500">Get instant alerts if a scheduled post fails due to token expiry or network glitch.</p>
+                        <span className="font-semibold text-slate-800 dark:text-slate-200">Post Publishing Failure Alerts</span>
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400">Get instant alerts if a scheduled post fails due to token expiry or network glitch.</p>
                       </div>
                     </label>
 
-                    <label className="flex items-center gap-3 cursor-pointer pt-1 border-t border-slate-200/60">
+                    <label className="flex items-center gap-3 cursor-pointer pt-1 border-t border-slate-200/60 dark:border-slate-800">
                       <input
                         type="checkbox"
                         checked={notifications.securityAlerts}
@@ -701,8 +769,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                         className="w-4 h-4 text-[#5D3FD3] rounded"
                       />
                       <div>
-                        <span className="font-semibold text-slate-800">Security & Password Alerts</span>
-                        <p className="text-[11px] text-slate-500">Receive notifications when your account settings or password are modified.</p>
+                        <span className="font-semibold text-slate-800 dark:text-slate-200">Security & Password Alerts</span>
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400">Receive notifications when your account settings or password are modified.</p>
                       </div>
                     </label>
                   </div>
@@ -712,7 +780,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   <button
                     type="submit"
                     disabled={profileSaving}
-                    className="px-6 py-2.5 bg-[#5D3FD3] hover:bg-purple-700 text-white font-bold rounded-xl text-xs transition-colors shadow-md flex items-center gap-2 disabled:opacity-50"
+                    className="px-6 py-2.5 bg-[#5D3FD3] hover:bg-purple-700 text-white font-bold rounded-xl text-xs transition-colors shadow-md flex items-center gap-2 disabled:opacity-50 cursor-pointer"
                   >
                     <Save className="w-4 h-4" />
                     <span>{profileSaving ? 'Saving Profile...' : 'Save Profile Changes'}</span>
@@ -720,28 +788,89 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 </div>
               </form>
 
-              {/* Clerk-owned account security */}
-              <div className="space-y-4">
-                <div>
-                  <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                    <Lock className="w-5 h-5 text-amber-600" />
-                    <span>Account Security</span>
+              {/* Native Supabase Account Security / Change Password */}
+              <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-xs space-y-4">
+                <div className="border-b border-slate-100 dark:border-slate-800 pb-3">
+                  <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    <Lock className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                    <span>Change Account Password</span>
                   </h3>
-                  <p className="text-xs text-slate-500 mt-1">
-                    Passwords, passkeys, connected accounts, MFA, and active sessions are managed securely by Clerk.
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                    Update your SocialSpree account password directly via Supabase Auth.
                   </p>
                 </div>
 
-                <div className="flex justify-end pt-2">
-                  <button
-                    type="button"
-                    onClick={() => clerk.openUserProfile()}
-                    className="px-6 py-2.5 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl text-xs transition-colors shadow-md flex items-center gap-2 disabled:opacity-50"
-                  >
-                    <Lock className="w-4 h-4" />
-                    <span>Manage security in Clerk</span>
-                  </button>
-                </div>
+                {passwordStatus && (
+                  <div className={`p-3 rounded-xl text-xs font-medium flex items-center gap-2 ${
+                    passwordStatus.type === 'success'
+                      ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
+                      : 'bg-red-50 dark:bg-red-950/50 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800'
+                  }`}>
+                    {passwordStatus.type === 'success' ? (
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                    ) : (
+                      <AlertCircle className="w-4 h-4 text-red-600 dark:text-red-400 shrink-0" />
+                    )}
+                    <span>{passwordStatus.message}</span>
+                  </div>
+                )}
+
+                <form onSubmit={handleUpdatePassword} className="space-y-4 text-xs max-w-lg">
+                  <div>
+                    <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">New Password</label>
+                    <div className="relative">
+                      <input
+                        type={showNewPassword ? 'text' : 'password'}
+                        required
+                        placeholder="At least 6 characters"
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        className="w-full pl-3 pr-10 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl text-xs focus:ring-2 focus:ring-[#5D3FD3] focus:border-[#5D3FD3] outline-none font-mono"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowNewPassword(!showNewPassword)}
+                        className="absolute right-3 top-3 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+                      >
+                        {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Confirm New Password</label>
+                    <div className="relative">
+                      <input
+                        type={showNewPassword ? 'text' : 'password'}
+                        required
+                        placeholder="Confirm your new password"
+                        value={confirmNewPassword}
+                        onChange={(e) => setConfirmNewPassword(e.target.value)}
+                        className="w-full pl-3 pr-10 py-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl text-xs focus:ring-2 focus:ring-[#5D3FD3] focus:border-[#5D3FD3] outline-none font-mono"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="pt-2">
+                    <button
+                      type="submit"
+                      disabled={passwordUpdating}
+                      className="px-5 py-2.5 bg-[#5D3FD3] hover:bg-purple-700 text-white font-bold rounded-xl text-xs transition-colors shadow-md flex items-center gap-2 cursor-pointer disabled:opacity-50"
+                    >
+                      {passwordUpdating ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          <span>Updating Password...</span>
+                        </>
+                      ) : (
+                        <>
+                          <KeyRound className="w-4 h-4" />
+                          <span>Update Password</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </form>
               </div>
             </div>
           )}
@@ -750,13 +879,13 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
               {/* MULTI-CLOUDINARY ACCOUNTS MANAGER */}
               <div>
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-100 pb-3 gap-2">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3 gap-2">
                   <div>
-                    <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                      <HardDrive className="w-5 h-5 text-blue-600" />
+                    <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                      <HardDrive className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                       <span>Cloudinary Media CDN (Manage Multiple Accounts)</span>
                     </h3>
-                    <p className="text-xs text-slate-500 mt-1">
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                       Add and switch between multiple Cloudinary accounts using <strong>Cloud Name</strong>, <strong>Unsigned Upload Preset</strong>, and <strong>Storage Bucket Name</strong>.
                     </p>
                   </div>
@@ -764,7 +893,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   <button
                     type="button"
                     onClick={handleOpenAddCldModal}
-                    className="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-xs transition-colors flex items-center gap-1.5 shrink-0 shadow-sm"
+                    className="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-xs transition-colors flex items-center gap-1.5 shrink-0 shadow-sm cursor-pointer"
                   >
                     <Plus className="w-4 h-4" />
                     <span>+ Add Cloudinary Account</span>
@@ -779,8 +908,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                         key={item.id}
                         className={`p-4 rounded-xl border-2 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
                           item.isActiveDefault
-                            ? 'border-blue-600 bg-blue-50/40 shadow-xs'
-                            : 'border-slate-200 bg-slate-50/50 hover:bg-slate-50'
+                            ? 'border-blue-600 bg-blue-50/40 dark:bg-blue-950/40 shadow-xs'
+                            : 'border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/80'
                         }`}
                       >
                         <div className="flex items-center gap-3">
@@ -793,17 +922,17 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                           />
                           <div>
                             <div className="flex items-center gap-2">
-                              <span className="font-bold text-slate-900 text-xs">{item.label || 'Cloudinary Account'}</span>
+                              <span className="font-bold text-slate-900 dark:text-white text-xs">{item.label || 'Cloudinary Account'}</span>
                               {item.isActiveDefault && (
                                 <span className="bg-blue-600 text-white text-[9px] font-mono font-bold px-2 py-0.5 rounded uppercase">
                                   Active for Uploads
                                 </span>
                               )}
                             </div>
-                            <div className="text-[11px] text-slate-600 font-mono mt-0.5 space-x-3">
-                              <span>Cloud Name: <strong>{item.cloudName}</strong></span>
-                              <span>Preset: <strong>{item.uploadPreset}</strong></span>
-                              <span>Bucket: <strong>{item.bucketName || 'socialspree-media-vault'}</strong></span>
+                            <div className="text-[11px] text-slate-600 dark:text-slate-400 font-mono mt-0.5 space-x-3">
+                              <span>Cloud Name: <strong className="text-slate-900 dark:text-slate-200">{item.cloudName}</strong></span>
+                              <span>Preset: <strong className="text-slate-900 dark:text-slate-200">{item.uploadPreset}</strong></span>
+                              <span>Bucket: <strong className="text-slate-900 dark:text-slate-200">{item.bucketName || 'socialspree-media-vault'}</strong></span>
                             </div>
                           </div>
                         </div>
@@ -812,7 +941,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                           <button
                             type="button"
                             onClick={() => handleOpenEditCldModal(item)}
-                            className="px-2.5 py-1 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-lg text-[11px] font-bold flex items-center gap-1"
+                            className="px-2.5 py-1 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-lg text-[11px] font-bold flex items-center gap-1 cursor-pointer"
                           >
                             <Edit2 className="w-3.5 h-3.5" /> Edit
                           </button>
@@ -820,7 +949,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                             <button
                               type="button"
                               onClick={() => handleDeleteCldAccount(item.id)}
-                              className="p-1.5 text-slate-400 hover:text-red-600 rounded-lg transition-colors"
+                              className="p-1.5 text-slate-400 hover:text-red-600 dark:hover:text-red-400 rounded-lg transition-colors cursor-pointer"
                               title="Delete Account"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
@@ -833,10 +962,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 </div>
               </div>
 
-              <div className="flex justify-end pt-3 border-t border-slate-100">
+              <div className="flex justify-end pt-3 border-t border-slate-100 dark:border-slate-800">
                 <button
                   type="submit"
-                  className="px-6 py-2.5 bg-[#5D3FD3] text-white font-bold rounded-xl text-xs hover:bg-purple-700 transition-colors shadow-md flex items-center gap-2"
+                  className="px-6 py-2.5 bg-[#5D3FD3] hover:bg-purple-700 text-white font-bold rounded-xl text-xs transition-colors shadow-md flex items-center gap-2 cursor-pointer"
                 >
                   <Save className="w-4 h-4" />
                   <span>Save Storage Settings</span>
@@ -849,24 +978,24 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           {activeTab === 'api' && (
             <div className="space-y-6">
               <div>
-                <h3 className="text-base font-bold text-slate-900 border-b border-slate-100 pb-3 flex items-center gap-2">
-                  <Key className="w-5 h-5 text-[#5D3FD3]" />
+                <h3 className="text-base font-bold text-slate-900 dark:text-white border-b border-slate-100 dark:border-slate-800 pb-3 flex items-center gap-2">
+                  <Key className="w-5 h-5 text-[#5D3FD3] dark:text-purple-400" />
                   <span>Primary Organization API Credentials</span>
                 </h3>
-                <p className="text-xs text-slate-500 mt-1">
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                   Master API Secret allocated by Super Admin to your tenant organization.
                 </p>
               </div>
 
-              <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
-                <label className="block text-xs font-bold text-slate-700">Publishing credentials</label>
-                <div className="rounded-lg border bg-white p-3 font-mono text-xs font-bold text-slate-700">
+              <div className="p-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-800 rounded-xl space-y-2">
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">Publishing credentials</label>
+                <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-3 font-mono text-xs font-bold text-slate-700 dark:text-slate-300">
                   •••••••••••••••••••••••• &nbsp; Server-managed
                 </div>
-                <p className="text-[11px] text-slate-500">Credentials are encrypted and resolved only by Supabase Edge Functions. They cannot be viewed or copied in the browser.</p>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400">Credentials are encrypted and resolved only by Supabase Edge Functions. They cannot be viewed or copied in the browser.</p>
               </div>
 
-              <div className="p-4 bg-purple-50 border border-purple-200 rounded-xl text-xs text-purple-900 space-y-1 font-mono">
+              <div className="p-4 bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800 rounded-xl text-xs text-purple-900 dark:text-purple-300 space-y-1 font-mono">
                 <div className="font-bold">⚡ Parallel Slot Allocation Details:</div>
                 <div>Allocated API Slots: <strong>{tenant.allocatedApiSlots || 2} Slots</strong></div>
                 <div>Max Parallel Channels: <strong>{(tenant.allocatedApiSlots || 2) * 2} Social Accounts</strong></div>
@@ -878,61 +1007,61 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           {activeTab === 'social_keys' && (
             <form onSubmit={handleSaveDeveloperKeys} className="space-y-6">
               <div>
-                <h3 className="text-base font-bold text-slate-900 border-b border-slate-100 pb-3 flex items-center gap-2">
-                  <Share2 className="w-5 h-5 text-[#5D3FD3]" />
+                <h3 className="text-base font-bold text-slate-900 dark:text-white border-b border-slate-100 dark:border-slate-800 pb-3 flex items-center gap-2">
+                  <Share2 className="w-5 h-5 text-[#5D3FD3] dark:text-purple-400" />
                   <span>Social Platform Developer App Credentials</span>
                 </h3>
-                <p className="text-xs text-slate-500 mt-1">
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                   Optional custom OAuth Client IDs and App Secrets for Meta, LinkedIn, and YouTube.
                 </p>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
                 <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Meta App ID (Facebook & Instagram)</label>
+                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Meta App ID (Facebook & Instagram)</label>
                   <input
                     type="text"
                     value={metaAppId}
                     onChange={(e) => setMetaAppId(e.target.value)}
-                    className="w-full p-2.5 border rounded-lg font-mono text-xs"
+                    className="w-full p-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-mono text-xs rounded-lg focus:ring-2 focus:ring-[#5D3FD3]"
                   />
                 </div>
 
                 <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Meta App Secret</label>
+                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Meta App Secret</label>
                   <input
                     type="password"
                     value={metaAppSecret}
                     onChange={(e) => setMetaAppSecret(e.target.value)}
-                    className="w-full p-2.5 border rounded-lg font-mono text-xs"
+                    className="w-full p-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-mono text-xs rounded-lg focus:ring-2 focus:ring-[#5D3FD3]"
                   />
                 </div>
 
                 <div>
-                  <label className="block font-semibold text-slate-700 mb-1">LinkedIn Client ID</label>
+                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">LinkedIn Client ID</label>
                   <input
                     type="text"
                     value={linkedInClientId}
                     onChange={(e) => setLinkedInClientId(e.target.value)}
-                    className="w-full p-2.5 border rounded-lg font-mono text-xs"
+                    className="w-full p-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-mono text-xs rounded-lg focus:ring-2 focus:ring-[#5D3FD3]"
                   />
                 </div>
 
                 <div>
-                  <label className="block font-semibold text-slate-700 mb-1">YouTube Data API Key</label>
+                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">YouTube Data API Key</label>
                   <input
                     type="text"
                     value={youtubeApiKey}
                     onChange={(e) => setYoutubeApiKey(e.target.value)}
-                    className="w-full p-2.5 border rounded-lg font-mono text-xs"
+                    className="w-full p-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-mono text-xs rounded-lg focus:ring-2 focus:ring-[#5D3FD3]"
                   />
                 </div>
               </div>
 
-              <div className="flex justify-end pt-3 border-t border-slate-100">
+              <div className="flex justify-end pt-3 border-t border-slate-100 dark:border-slate-800">
                 <button
                   type="submit"
-                  className="px-6 py-2.5 bg-[#5D3FD3] text-white font-bold rounded-xl text-xs hover:bg-purple-700 transition-colors shadow-md flex items-center gap-2"
+                  className="px-6 py-2.5 bg-[#5D3FD3] hover:bg-purple-700 text-white font-bold rounded-xl text-xs transition-colors shadow-md flex items-center gap-2 cursor-pointer"
                 >
                   <Save className="w-4 h-4" />
                   <span>Save Developer Keys</span>
@@ -945,43 +1074,43 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           {activeTab === 'org' && (
             <form onSubmit={handleSaveProfile} className="space-y-6">
               <div>
-                <h3 className="text-base font-bold text-slate-900 border-b border-slate-100 pb-3 flex items-center gap-2">
-                  <Building2 className="w-5 h-5 text-[#5D3FD3]" />
+                <h3 className="text-base font-bold text-slate-900 dark:text-white border-b border-slate-100 dark:border-slate-800 pb-3 flex items-center gap-2">
+                  <Building2 className="w-5 h-5 text-[#5D3FD3] dark:text-purple-400" />
                   <span>Organization Profile & Settings</span>
                 </h3>
-                <p className="text-xs text-slate-500 mt-1">
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                   Manage organization title and primary owner email.
                 </p>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
                 <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Organization / Brand Title</label>
+                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Organization / Brand Title</label>
                   <input
                     type="text"
                     required
                     value={orgName}
                     onChange={(e) => setOrgName(e.target.value)}
-                    className="w-full p-2.5 border rounded-lg text-xs"
+                    className="w-full p-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg text-xs focus:ring-2 focus:ring-[#5D3FD3]"
                   />
                 </div>
 
                 <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Primary Owner Email</label>
+                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Primary Owner Email</label>
                   <input
                     type="email"
                     required
                     value={ownerEmail}
                     onChange={(e) => setOwnerEmail(e.target.value)}
-                    className="w-full p-2.5 border rounded-lg font-mono text-xs"
+                    className="w-full p-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-mono text-xs rounded-lg focus:ring-2 focus:ring-[#5D3FD3]"
                   />
                 </div>
               </div>
 
-              <div className="flex justify-end pt-3 border-t border-slate-100">
+              <div className="flex justify-end pt-3 border-t border-slate-100 dark:border-slate-800">
                 <button
                   type="submit"
-                  className="px-6 py-2.5 bg-[#5D3FD3] text-white font-bold rounded-xl text-xs hover:bg-purple-700 transition-colors shadow-md flex items-center gap-2"
+                  className="px-6 py-2.5 bg-[#5D3FD3] hover:bg-purple-700 text-white font-bold rounded-xl text-xs transition-colors shadow-md flex items-center gap-2 cursor-pointer"
                 >
                   <Save className="w-4 h-4" />
                   <span>Save Profile Settings</span>
@@ -994,77 +1123,77 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
       {/* MODAL FOR ADDING/EDITING CLOUDINARY ACCOUNT */}
       {showCldModal && (
-        <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 border border-slate-200 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h3 className="font-bold text-slate-900 text-base">
+        <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in font-['Inter']">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-md w-full p-6 border border-slate-200 dark:border-slate-800 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+              <h3 className="font-bold text-slate-900 dark:text-white text-base">
                 {editingCldId ? 'Edit Cloudinary Account' : 'Add Cloudinary Account'}
               </h3>
-              <button onClick={() => setShowCldModal(false)} className="text-slate-400 hover:text-slate-700">✕</button>
+              <button onClick={() => setShowCldModal(false)} className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 cursor-pointer">✕</button>
             </div>
 
             <form onSubmit={handleSaveCldAccountModal} className="space-y-4 text-xs">
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">Account Label / Title</label>
+                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Account Label / Title</label>
                 <input
                   type="text"
                   required
                   value={cldLabelInput}
                   onChange={(e) => setCldLabelInput(e.target.value)}
                   placeholder="e.g. Primary Master CDN"
-                  className="w-full p-2.5 border rounded-lg text-xs"
+                  className="w-full p-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg text-xs"
                 />
               </div>
 
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">Cloudinary Cloud Name</label>
+                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Cloudinary Cloud Name</label>
                 <input
                   type="text"
                   required
                   value={cldCloudNameInput}
                   onChange={(e) => setCldCloudNameInput(e.target.value)}
                   placeholder="e.g. djmww1dwr"
-                  className="w-full p-2.5 border rounded-lg font-mono text-xs focus:ring-2 focus:ring-blue-500"
+                  className="w-full p-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-mono text-xs focus:ring-2 focus:ring-blue-500"
                 />
-                <div className="text-[10px] text-slate-400 mt-0.5">Found on your main Cloudinary Dashboard overview.</div>
+                <div className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">Found on your main Cloudinary Dashboard overview.</div>
               </div>
 
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">Unsigned Upload Preset (Direct Uploads)</label>
+                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Unsigned Upload Preset (Direct Uploads)</label>
                 <input
                   type="text"
                   required
                   value={cldUploadPresetInput}
                   onChange={(e) => setCldUploadPresetInput(e.target.value)}
                   placeholder="e.g. ml_default"
-                  className="w-full p-2.5 border rounded-lg font-mono text-xs focus:ring-2 focus:ring-blue-500"
+                  className="w-full p-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-mono text-xs focus:ring-2 focus:ring-blue-500"
                 />
-                <div className="text-[10px] text-slate-400 mt-0.5">Enables direct browser-to-Cloudinary streaming.</div>
+                <div className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">Enables direct browser-to-Cloudinary streaming.</div>
               </div>
 
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">Storage Bucket Name</label>
+                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Storage Bucket Name</label>
                 <input
                   type="text"
                   required
                   value={cldBucketNameInput}
                   onChange={(e) => setCldBucketNameInput(e.target.value)}
                   placeholder="e.g. socialspree-media-vault"
-                  className="w-full p-2.5 border rounded-lg font-mono text-xs focus:ring-2 focus:ring-blue-500"
+                  className="w-full p-2.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-mono text-xs focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
-              <div className="pt-3 flex justify-end gap-2 border-t border-slate-100">
+              <div className="pt-3 flex justify-end gap-2 border-t border-slate-100 dark:border-slate-800">
                 <button
                   type="button"
                   onClick={() => setShowCldModal(false)}
-                  className="px-4 py-2 bg-slate-100 text-slate-700 rounded-lg font-semibold hover:bg-slate-200"
+                  className="px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg font-semibold hover:bg-slate-200 dark:hover:bg-slate-700 cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 shadow-md flex items-center gap-1.5"
+                  className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold shadow-md flex items-center gap-1.5 cursor-pointer"
                 >
                   <Save className="w-4 h-4" />
                   <span>Save Cloudinary Account</span>

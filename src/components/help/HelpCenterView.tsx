@@ -75,10 +75,10 @@ export const HelpCenterView: React.FC = () => {
   return (
     <div className="max-w-7xl mx-auto space-y-6 font-['Inter'] pb-20 md:pb-0">
       {/* Hero Banner */}
-      <div className="bg-gradient-to-r from-[#5D3FD3] via-purple-900 to-slate-900 text-white p-8 rounded-2xl border border-purple-800 shadow-xl space-y-4">
+      <div className="bg-gradient-to-r from-[#5D3FD3] via-purple-900 to-slate-900 text-white p-8 rounded-2xl border border-purple-800 dark:border-purple-900/60 shadow-xl space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center text-white">
+            <div className="w-10 h-10 rounded-xl bg-white/20 dark:bg-white/10 backdrop-blur-md flex items-center justify-center text-white">
               <HelpCircle className="w-6 h-6" />
             </div>
             <div>
@@ -95,13 +95,13 @@ export const HelpCenterView: React.FC = () => {
 
         {/* Knowledge Base Search */}
         <div className="relative max-w-2xl">
-          <Search className="w-5 h-5 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
+          <Search className="w-5 h-5 text-slate-400 dark:text-slate-500 absolute left-4 top-1/2 -translate-y-1/2" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search FAQs, Cloudflare setup, API keys, or post scheduling..."
-            className="w-full pl-12 pr-4 py-3 bg-white text-slate-900 rounded-xl text-xs focus:ring-2 focus:ring-amber-400 focus:outline-none shadow-lg placeholder:text-slate-400"
+            className="w-full pl-12 pr-4 py-3 bg-white dark:bg-slate-900 text-slate-900 dark:text-white rounded-xl text-xs focus:ring-2 focus:ring-amber-400 focus:outline-none shadow-lg placeholder:text-slate-400 dark:placeholder:text-slate-500 border border-slate-200/40 dark:border-slate-800"
           />
         </div>
       </div>
@@ -110,9 +110,9 @@ export const HelpCenterView: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         
         {/* Left Column: FAQs Accordion */}
-        <div className="lg:col-span-7 bg-white border border-slate-200 rounded-2xl p-6 shadow-xs space-y-4">
-          <h3 className="text-base font-bold text-slate-900 flex items-center gap-2 border-b border-slate-100 pb-3">
-            <BookOpen className="w-5 h-5 text-[#5D3FD3]" />
+        <div className="lg:col-span-7 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-xs space-y-4">
+          <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
+            <BookOpen className="w-5 h-5 text-[#5D3FD3] dark:text-purple-400" />
             <span>Frequently Asked Questions ({filteredFaqs.length})</span>
           </h3>
 
@@ -120,17 +120,17 @@ export const HelpCenterView: React.FC = () => {
             {filteredFaqs.map((faq, idx) => {
               const isOpen = openFaqQuestion === faq.q;
               return (
-                <div key={idx} className="border border-slate-200 rounded-xl overflow-hidden transition-colors">
+                <div key={idx} className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden transition-colors">
                   <button
                     onClick={() => setOpenFaqQuestion(isOpen ? null : faq.q)}
-                    className="w-full p-4 text-left font-bold text-xs text-slate-900 bg-slate-50/50 hover:bg-slate-100 flex items-center justify-between gap-3"
+                    className="w-full p-4 text-left font-bold text-xs text-slate-900 dark:text-white bg-slate-50/50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-between gap-3 cursor-pointer"
                   >
                     <span>{faq.q}</span>
-                    {isOpen ? <ChevronUp className="w-4 h-4 text-[#5D3FD3]" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
+                    {isOpen ? <ChevronUp className="w-4 h-4 text-[#5D3FD3] dark:text-purple-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
                   </button>
 
                   {isOpen && (
-                    <div className="p-4 bg-white text-xs text-slate-600 leading-relaxed border-t border-slate-100 animate-in fade-in">
+                    <div className="p-4 bg-white dark:bg-slate-900 text-xs text-slate-600 dark:text-slate-300 leading-relaxed border-t border-slate-100 dark:border-slate-800 animate-in fade-in">
                       {faq.a}
                     </div>
                   )}
@@ -144,89 +144,89 @@ export const HelpCenterView: React.FC = () => {
         <div className="lg:col-span-5 space-y-6">
           
           {/* Quick Setup Guides */}
-          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs space-y-4">
-            <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2 border-b border-slate-100 pb-3">
-              <Share2 className="w-4 h-4 text-[#5D3FD3]" />
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-xs space-y-4">
+            <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
+              <Share2 className="w-4 h-4 text-[#5D3FD3] dark:text-purple-400" />
               <span>Channel Integration Guides</span>
             </h3>
 
             <div className="space-y-2.5 text-xs">
-              <div className="flex items-center justify-between p-2.5 bg-slate-50 rounded-xl border border-slate-200">
-                <div className="flex items-center gap-2 font-bold text-slate-800">
+              <div className="flex items-center justify-between p-2.5 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-800">
+                <div className="flex items-center gap-2 font-bold text-slate-800 dark:text-slate-200">
                   <Instagram className="w-4 h-4 text-pink-600" />
                   <span>Instagram Business Sync</span>
                 </div>
-                <span className="text-[10px] font-mono text-purple-700 font-bold">Meta Graph v19</span>
+                <span className="text-[10px] font-mono text-purple-700 dark:text-purple-300 bg-purple-100 dark:bg-purple-950/60 px-2 py-0.5 rounded font-bold">Meta Graph v19</span>
               </div>
 
-              <div className="flex items-center justify-between p-2.5 bg-slate-50 rounded-xl border border-slate-200">
-                <div className="flex items-center gap-2 font-bold text-slate-800">
+              <div className="flex items-center justify-between p-2.5 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-800">
+                <div className="flex items-center gap-2 font-bold text-slate-800 dark:text-slate-200">
                   <Linkedin className="w-4 h-4 text-blue-600" />
                   <span>LinkedIn OAuth 2.0 Page</span>
                 </div>
-                <span className="text-[10px] font-mono text-purple-700 font-bold">Community API</span>
+                <span className="text-[10px] font-mono text-purple-700 dark:text-purple-300 bg-purple-100 dark:bg-purple-950/60 px-2 py-0.5 rounded font-bold">Community API</span>
               </div>
 
-              <div className="flex items-center justify-between p-2.5 bg-slate-50 rounded-xl border border-slate-200">
-                <div className="flex items-center gap-2 font-bold text-slate-800">
+              <div className="flex items-center justify-between p-2.5 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-800">
+                <div className="flex items-center gap-2 font-bold text-slate-800 dark:text-slate-200">
                   <Youtube className="w-4 h-4 text-red-600" />
                   <span>YouTube Data API v3</span>
                 </div>
-                <span className="text-[10px] font-mono text-purple-700 font-bold">Google Cloud</span>
+                <span className="text-[10px] font-mono text-purple-700 dark:text-purple-300 bg-purple-100 dark:bg-purple-950/60 px-2 py-0.5 rounded font-bold">Google Cloud</span>
               </div>
 
-              <div className="flex items-center justify-between p-2.5 bg-slate-50 rounded-xl border border-slate-200">
-                <div className="flex items-center gap-2 font-bold text-slate-800">
+              <div className="flex items-center justify-between p-2.5 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-800">
+                <div className="flex items-center gap-2 font-bold text-slate-800 dark:text-slate-200">
                   <Store className="w-4 h-4 text-emerald-600" />
                   <span>Google Business Profile</span>
                 </div>
-                <span className="text-[10px] font-mono text-purple-700 font-bold">Reviews & Posts</span>
+                <span className="text-[10px] font-mono text-purple-700 dark:text-purple-300 bg-purple-100 dark:bg-purple-950/60 px-2 py-0.5 rounded font-bold">Reviews & Posts</span>
               </div>
             </div>
           </div>
 
           {/* Contact Support Desk */}
-          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs space-y-4">
-            <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2 border-b border-slate-100 pb-3">
-              <MessageSquare className="w-4 h-4 text-[#5D3FD3]" />
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-xs space-y-4">
+            <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
+              <MessageSquare className="w-4 h-4 text-[#5D3FD3] dark:text-purple-400" />
               <span>Contact Super Admin Support Desk</span>
             </h3>
 
             {submittedTicket && (
-              <div className="p-3 bg-emerald-50 border border-emerald-300 rounded-xl text-xs text-emerald-900 flex items-center gap-2 font-semibold animate-in fade-in">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+              <div className="p-3 bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-300 dark:border-emerald-700 rounded-xl text-xs text-emerald-900 dark:text-emerald-200 flex items-center gap-2 font-semibold animate-in fade-in">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
                 <span>Ticket submitted directly to leadspree24x7@gmail.com!</span>
               </div>
             )}
 
             <form onSubmit={handleSendTicket} className="space-y-3 text-xs">
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">Issue Subject</label>
+                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Issue Subject</label>
                 <input
                   type="text"
                   required
                   value={subject}
                   onChange={(e) => setSubject(e.target.value)}
                   placeholder="e.g. Need assistance with Cloudflare R2 bucket CORS"
-                  className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-[#5D3FD3]"
+                  className="w-full p-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-lg focus:ring-2 focus:ring-[#5D3FD3]"
                 />
               </div>
 
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">Message Details</label>
+                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Message Details</label>
                 <textarea
                   rows={3}
                   required
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
                   placeholder="Describe your question or issue in detail..."
-                  className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-[#5D3FD3]"
+                  className="w-full p-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-lg focus:ring-2 focus:ring-[#5D3FD3]"
                 />
               </div>
 
               <button
                 type="submit"
-                className="w-full py-2.5 bg-[#5D3FD3] text-white font-bold rounded-xl hover:bg-purple-700 transition-colors shadow-md flex items-center justify-center gap-2"
+                className="w-full py-2.5 bg-[#5D3FD3] hover:bg-purple-700 text-white font-bold rounded-xl transition-colors shadow-md flex items-center justify-center gap-2 cursor-pointer"
               >
                 <Send className="w-4 h-4" />
                 <span>Submit Ticket to Super Admin</span>

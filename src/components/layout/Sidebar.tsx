@@ -1,5 +1,4 @@
 import React from 'react';
-import { useUser } from '@clerk/react';
 import { 
   LayoutDashboard, 
   Edit, 
@@ -28,6 +27,7 @@ import {
 } from 'lucide-react';
 import { SuperAdminSubTab } from '../admin/SuperAdminPortal';
 import { GLOBAL_SYSTEM_SETTINGS } from '../../lib/store';
+import { ThemeToggle } from './ThemeToggle';
 
 export type TabType = 
   | 'dashboard' 
@@ -82,13 +82,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
   aiCreditsEnabled = false,
   automationAiEnabled = false,
 }) => {
-  const { user } = useUser();
-  const clerkEmail = user?.primaryEmailAddress?.emailAddress;
-  const clerkName = user?.fullName || (user?.firstName ? `${user.firstName}${user.lastName ? ' ' + user.lastName : ''}` : undefined) || user?.username;
-
-  const displayName = userFullName || clerkName || (isSuperAdmin ? 'Super Admin' : 'Workspace User');
-  const displayEmail = userEmail || clerkEmail || (isSuperAdmin ? 'admin@leadspree.io' : 'user@socialspree.io');
-  const effectiveAvatar = avatarUrl || user?.imageUrl;
+  const displayName = userFullName || (isSuperAdmin ? 'Super Admin' : 'Workspace User');
+  const displayEmail = userEmail || (isSuperAdmin ? 'admin@leadspree.io' : 'user@socialspree.io');
+  const effectiveAvatar = avatarUrl;
 
   const getRoleLabel = () => {
     if (isSuperAdmin || userRole === 'super_admin') return 'Super Admin Governance';
@@ -483,15 +479,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </div>
         </div>
 
-        {onSignOut && (
-          <button
-            onClick={onSignOut}
-            className="p-2 text-slate-400 hover:text-red-400 hover:bg-slate-800/80 rounded-xl transition-all shrink-0"
-            title="Sign Out of SocialSpree"
-          >
-            <LogOut className="w-4 h-4" />
-          </button>
-        )}
+        <div className="flex items-center gap-1 shrink-0">
+          <ThemeToggle className="!p-1.5 !border-slate-800 !bg-slate-900 hover:!bg-slate-800" />
+
+          {onSignOut && (
+            <button
+              onClick={onSignOut}
+              className="p-1.5 text-slate-400 hover:text-red-400 hover:bg-slate-800/80 rounded-xl transition-all"
+              title="Sign Out of SocialSpree"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
+          )}
+        </div>
       </div>
     </aside>
   );

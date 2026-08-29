@@ -81,7 +81,11 @@ DELETE FROM public.system_settings WHERE key = 'super_admin_email';
 
 -- Keep tenant-owned invitation/user IDs aligned with Clerk subjects.
 ALTER TABLE public.tenant_invitations ALTER COLUMN invited_by TYPE TEXT USING invited_by::text;
+
+DROP POLICY IF EXISTS "Checkout orders owner read" ON public.checkout_orders;
 ALTER TABLE public.checkout_orders ALTER COLUMN user_id TYPE TEXT USING user_id::text;
+CREATE POLICY "Checkout orders owner read" ON public.checkout_orders FOR SELECT TO authenticated USING (user_id = (auth.jwt() ->> 'sub') OR user_id = auth.uid()::text OR private.is_super_admin());
+
 ALTER TABLE private.oauth_states ALTER COLUMN created_by TYPE TEXT USING created_by::text;
 
 -- Enforce complete worker state lifecycle and prevent impossible negative attempts.

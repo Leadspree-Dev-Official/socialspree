@@ -129,10 +129,10 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
   return (
     <div className="max-w-7xl mx-auto space-y-6 font-['Inter']">
       {/* Header Banner */}
-      <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-            <BarChart3 className="w-5 h-5 text-[#5D3FD3]" />
+          <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+            <BarChart3 className="w-5 h-5 text-[#5D3FD3] dark:text-purple-400" />
             <span>
               {tenant.dispatchEngine === 'coresync' 
                 ? 'CoreSync Cross-Platform Analytics Engine' 
@@ -140,11 +140,11 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
                 ? 'Dual Engine (CoreSync + Zenith) Analytics' 
                 : 'Zenith Cross-Platform Analytics Engine'}
             </span>
-            <span className="text-[10px] bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full font-mono font-bold uppercase">
+            <span className="text-[10px] bg-purple-100 dark:bg-purple-950/80 text-purple-700 dark:text-purple-300 px-2 py-0.5 rounded-full font-mono font-bold uppercase border border-purple-200 dark:border-purple-800">
               Live API
             </span>
           </h2>
-          <p className="text-xs text-slate-500 mt-1">
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
             Real-time multi-channel engagement breakdown, post reach metrics, and performance analytics powered by {tenant.dispatchEngine === 'coresync' ? 'CoreSync API' : tenant.dispatchEngine === 'dual' ? 'CoreSync & Zenith APIs' : 'Zenith API'}.
           </p>
         </div>
@@ -152,7 +152,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
         <button
           onClick={() => void loadAnalytics(true)}
           disabled={loading}
-          className="bg-[#5D3FD3] hover:bg-purple-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-2 self-start md:self-auto cursor-pointer"
+          className="bg-[#5D3FD3] hover:bg-purple-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-2 self-start md:self-auto cursor-pointer disabled:opacity-50"
         >
           <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
           <span>
@@ -169,43 +169,43 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
 
       {/* Primary KPI Metrics Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-2">
-          <div className="flex items-center justify-between text-slate-500 text-xs font-mono font-bold">
+        <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs space-y-2">
+          <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs font-mono font-bold">
             <span>TOTAL PUBLISHED</span>
-            <ArrowUpRight className="w-4 h-4 text-emerald-500" />
+            <ArrowUpRight className="w-4 h-4 text-emerald-500 dark:text-emerald-400" />
           </div>
-          <div className="text-3xl font-black text-slate-900">{totalPublished}</div>
-          <div className="text-[11px] text-emerald-600 font-semibold flex items-center gap-1">
-            <TrendingUp className="w-3 h-3" />
+          <div className="text-3xl font-black text-slate-900 dark:text-white">{totalPublished}</div>
+          <div className="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
+            <TrendingUp className="w-3 hand 3" />
             <span>+18% from last week</span>
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-2">
-          <div className="flex items-center justify-between text-slate-500 text-xs font-mono font-bold">
+        <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs space-y-2">
+          <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs font-mono font-bold">
             <span>SCHEDULED QUEUE</span>
-            <Zap className="w-4 h-4 text-purple-500" />
+            <Zap className="w-4 h-4 text-purple-500 dark:text-purple-400" />
           </div>
-          <div className="text-3xl font-black text-[#5D3FD3]">{totalScheduled}</div>
-          <div className="text-[11px] text-purple-700 font-semibold">Active Cloud Scheduler</div>
+          <div className="text-3xl font-black text-[#5D3FD3] dark:text-purple-400">{totalScheduled}</div>
+          <div className="text-[11px] text-purple-700 dark:text-purple-300 font-semibold">Active Cloud Scheduler</div>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-2">
-          <div className="flex items-center justify-between text-slate-500 text-xs font-mono font-bold">
+        <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs space-y-2">
+          <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs font-mono font-bold">
             <span>CONNECTED CHANNELS</span>
-            <Share2 className="w-4 h-4 text-blue-500" />
+            <Share2 className="w-4 h-4 text-blue-500 dark:text-blue-400" />
           </div>
-          <div className="text-3xl font-black text-blue-600">{totalChannels}</div>
-          <div className="text-[11px] text-blue-700 font-semibold">Limit: {tenant.maxSocialAccounts} Max Channels</div>
+          <div className="text-3xl font-black text-blue-600 dark:text-blue-400">{totalChannels}</div>
+          <div className="text-[11px] text-blue-700 dark:text-blue-300 font-semibold">Limit: {tenant.maxSocialAccounts} Max Channels</div>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-2">
-          <div className="flex items-center justify-between text-slate-500 text-xs font-mono font-bold">
+        <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs space-y-2">
+          <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs font-mono font-bold">
             <span>TOTAL ENGAGEMENT</span>
-            <Eye className="w-4 h-4 text-amber-500" />
+            <Eye className="w-4 h-4 text-amber-500 dark:text-amber-400" />
           </div>
-          <div className="text-3xl font-black text-slate-900">{totalEngagement.toLocaleString()}</div>
-          <div className="text-[11px] text-slate-500 font-medium">
+          <div className="text-3xl font-black text-slate-900 dark:text-white">{totalEngagement.toLocaleString()}</div>
+          <div className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
             {syncedAt ? `Last synced ${new Date(syncedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : 'No sync snapshot recorded'}
           </div>
         </div>
@@ -213,79 +213,79 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
 
       {/* Secondary Zernio Return Values Grid */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
-        <div className="bg-white p-4 rounded-xl border border-slate-200/80 shadow-2xs flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-2xs flex items-center gap-3">
+          <div className="w-9 h-9 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
             <Eye className="w-4 h-4" />
           </div>
           <div>
-            <div className="text-[10px] font-mono text-slate-400 font-bold uppercase">Views</div>
-            <div className="text-lg font-black text-slate-900">{totalViews.toLocaleString()}</div>
+            <div className="text-[10px] font-mono text-slate-400 dark:text-slate-500 font-bold uppercase">Views</div>
+            <div className="text-lg font-black text-slate-900 dark:text-white">{totalViews.toLocaleString()}</div>
           </div>
         </div>
 
-        <div className="bg-white p-4 rounded-xl border border-slate-200/80 shadow-2xs flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-2xs flex items-center gap-3">
+          <div className="w-9 h-9 rounded-lg bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0">
             <Heart className="w-4 h-4" />
           </div>
           <div>
-            <div className="text-[10px] font-mono text-slate-400 font-bold uppercase">Likes</div>
-            <div className="text-lg font-black text-slate-900">{totalLikes.toLocaleString()}</div>
+            <div className="text-[10px] font-mono text-slate-400 dark:text-slate-500 font-bold uppercase">Likes</div>
+            <div className="text-lg font-black text-slate-900 dark:text-white">{totalLikes.toLocaleString()}</div>
           </div>
         </div>
 
-        <div className="bg-white p-4 rounded-xl border border-slate-200/80 shadow-2xs flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-purple-50 text-[#5D3FD3] flex items-center justify-center shrink-0">
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-2xs flex items-center gap-3">
+          <div className="w-9 h-9 rounded-lg bg-purple-50 dark:bg-purple-950/60 text-[#5D3FD3] dark:text-purple-400 flex items-center justify-center shrink-0">
             <MessageCircle className="w-4 h-4" />
           </div>
           <div>
-            <div className="text-[10px] font-mono text-slate-400 font-bold uppercase">Comments</div>
-            <div className="text-lg font-black text-slate-900">{totalComments.toLocaleString()}</div>
+            <div className="text-[10px] font-mono text-slate-400 dark:text-slate-500 font-bold uppercase">Comments</div>
+            <div className="text-lg font-black text-slate-900 dark:text-white">{totalComments.toLocaleString()}</div>
           </div>
         </div>
 
-        <div className="bg-white p-4 rounded-xl border border-slate-200/80 shadow-2xs flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-2xs flex items-center gap-3">
+          <div className="w-9 h-9 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
             <Share2 className="w-4 h-4" />
           </div>
           <div>
-            <div className="text-[10px] font-mono text-slate-400 font-bold uppercase">Shares</div>
-            <div className="text-lg font-black text-slate-900">{totalShares.toLocaleString()}</div>
+            <div className="text-[10px] font-mono text-slate-400 dark:text-slate-500 font-bold uppercase">Shares</div>
+            <div className="text-lg font-black text-slate-900 dark:text-white">{totalShares.toLocaleString()}</div>
           </div>
         </div>
 
-        <div className="bg-white p-4 rounded-xl border border-slate-200/80 shadow-2xs flex items-center gap-3 col-span-2 sm:col-span-1">
-          <div className="w-9 h-9 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-2xs flex items-center gap-3 col-span-2 sm:col-span-1">
+          <div className="w-9 h-9 rounded-lg bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
             <Activity className="w-4 h-4" />
           </div>
           <div>
-            <div className="text-[10px] font-mono text-slate-400 font-bold uppercase">Avg Rate</div>
-            <div className="text-lg font-black text-slate-900">{avgEngagementRate}%</div>
+            <div className="text-[10px] font-mono text-slate-400 dark:text-slate-500 font-bold uppercase">Avg Rate</div>
+            <div className="text-lg font-black text-slate-900 dark:text-white">{avgEngagementRate}%</div>
           </div>
         </div>
       </div>
 
       {/* Main Bar Chart Section */}
-      <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-5">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-100 pb-4 gap-3">
+      <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs space-y-5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4 gap-3">
           <div>
-            <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
-              <Layers className="w-4 h-4 text-[#5D3FD3]" />
+            <h3 className="font-bold text-slate-900 dark:text-white text-sm flex items-center gap-2">
+              <Layers className="w-4 h-4 text-[#5D3FD3] dark:text-purple-400" />
               <span>Weekly Channel Performance & Engagement Volume</span>
             </h3>
-            <p className="text-xs text-slate-500 mt-0.5">
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
               Aggregated daily reach metrics returned by Cloud Publishing Engine across all active social channels
             </p>
           </div>
 
-          <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl text-xs font-medium self-start sm:self-auto">
+          <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl text-xs font-medium self-start sm:self-auto border border-slate-200 dark:border-slate-700">
             {(['all', 'views', 'likes', 'comments', 'shares'] as const).map((m) => (
               <button
                 key={m}
                 onClick={() => setActiveMetricTab(m)}
                 className={`px-2.5 py-1 rounded-lg capitalize text-[11px] transition-all cursor-pointer ${
                   activeMetricTab === m
-                    ? 'bg-white text-slate-900 font-bold shadow-2xs'
-                    : 'text-slate-500 hover:text-slate-900'
+                    ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white font-bold shadow-2xs'
+                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
                 {m}
@@ -304,16 +304,16 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
 
             return (
               <div key={idx} className="flex-1 flex flex-col items-center gap-2 group cursor-pointer">
-                <div className="text-[10px] font-mono text-slate-500 font-bold opacity-0 group-hover:opacity-100 transition-opacity bg-slate-900 text-white px-2 py-0.5 rounded shadow">
+                <div className="text-[10px] font-mono text-slate-500 dark:text-slate-300 font-bold opacity-0 group-hover:opacity-100 transition-opacity bg-slate-900 dark:bg-slate-800 text-white px-2 py-0.5 rounded shadow border border-slate-700">
                   {val.toLocaleString()}
                 </div>
-                <div className="w-full bg-slate-100 rounded-t-xl overflow-hidden h-48 flex items-end">
+                <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-t-xl overflow-hidden h-48 flex items-end border border-slate-200/50 dark:border-slate-700/50">
                   <div
                     style={{ height: `${heightPercent}%` }}
                     className="w-full bg-gradient-to-t from-[#5D3FD3] via-indigo-500 to-purple-400 rounded-t-xl group-hover:from-purple-700 group-hover:to-indigo-600 transition-all duration-300 shadow-md"
                   />
                 </div>
-                <div className="text-xs font-semibold text-slate-600 font-mono">{bar.day}</div>
+                <div className="text-xs font-semibold text-slate-600 dark:text-slate-400 font-mono">{bar.day}</div>
               </div>
             );
           })}
@@ -323,19 +323,19 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
       {/* Bottom Grid: Platform Breakdown & Zernio API Snapshot Feed */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Platform Share Breakdown */}
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
-          <h3 className="font-bold text-slate-900 text-sm">Channel Engagement Distribution</h3>
+        <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs space-y-4">
+          <h3 className="font-bold text-slate-900 dark:text-white text-sm">Channel Engagement Distribution</h3>
           <div className="space-y-3">
             {platforms.map((p, idx) => (
               <div key={idx} className="space-y-1.5">
-                <div className="flex justify-between text-xs font-medium text-slate-700">
+                <div className="flex justify-between text-xs font-medium text-slate-700 dark:text-slate-300">
                   <span className="flex items-center gap-2">
                     <span>{p.icon}</span>
                     <span className="font-semibold">{p.name}</span>
                   </span>
-                  <span className="font-mono font-bold text-slate-900">{p.share}</span>
+                  <span className="font-mono font-bold text-slate-900 dark:text-white">{p.share}</span>
                 </div>
-                <div className="h-2.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                <div className="h-2.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden border border-slate-200/50 dark:border-slate-700">
                   <div
                     style={{ width: p.share }}
                     className={`h-full bg-gradient-to-r ${p.color} rounded-full`}
@@ -347,36 +347,36 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
         </div>
 
         {/* Live Engine Analytics Snapshots List */}
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
+        <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="font-bold text-slate-900 text-sm">
+            <h3 className="font-bold text-slate-900 dark:text-white text-sm">
               {tenant.dispatchEngine === 'coresync' ? 'CoreSync API Post Snapshots' : tenant.dispatchEngine === 'dual' ? 'CoreSync & Zenith API Snapshots' : 'Zenith API Post Snapshots'}
             </h3>
-            <span className="text-[10px] font-mono bg-slate-100 text-slate-600 px-2 py-0.5 rounded">
+            <span className="text-[10px] font-mono bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-2 py-0.5 rounded border border-slate-200 dark:border-slate-700">
               {snapshots.length} Snapshots
             </span>
           </div>
 
           <div className="space-y-2.5 max-h-56 overflow-y-auto pr-1">
             {snapshots.length === 0 ? (
-              <div className="text-xs text-slate-400 py-8 text-center italic">
+              <div className="text-xs text-slate-400 dark:text-slate-500 py-8 text-center italic">
                 No analytics snapshots recorded yet. Click &quot;Sync Analytics&quot; to fetch live metrics.
               </div>
             ) : (
               snapshots.map((s, idx) => (
-                <div key={idx} className="p-3 bg-slate-50 rounded-xl border border-slate-200/60 flex items-center justify-between text-xs">
+                <div key={idx} className="p-3 bg-slate-50 dark:bg-slate-800/70 rounded-xl border border-slate-200/60 dark:border-slate-700 flex items-center justify-between text-xs">
                   <div>
-                    <div className="font-bold text-slate-900 font-mono text-[11px]">
+                    <div className="font-bold text-slate-900 dark:text-white font-mono text-[11px]">
                       Post #{s.zernio_post_id}
                     </div>
-                    <div className="text-[10px] text-slate-500 font-mono mt-0.5">
+                    <div className="text-[10px] text-slate-500 dark:text-slate-400 font-mono mt-0.5">
                       {new Date(s.synced_at).toLocaleString()}
                     </div>
                   </div>
                   <div className="flex items-center gap-3 font-mono text-[11px]">
-                    <span className="text-blue-600 font-bold">👁️ {s.views}</span>
-                    <span className="text-rose-600 font-bold">❤️ {s.likes}</span>
-                    <span className="text-purple-600 font-bold">💬 {s.comments}</span>
+                    <span className="text-blue-600 dark:text-blue-400 font-bold">👁️ {s.views}</span>
+                    <span className="text-rose-600 dark:text-rose-400 font-bold">❤️ {s.likes}</span>
+                    <span className="text-purple-600 dark:text-purple-400 font-bold">💬 {s.comments}</span>
                   </div>
                 </div>
               ))

@@ -128,62 +128,62 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
   };
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto pb-20 md:pb-0">
+    <div className="space-y-6 max-w-7xl mx-auto pb-20 md:pb-0 font-['Inter']">
       {/* Mobile Welcome Header */}
       <div className="md:hidden">
-        <h2 className="font-['Inter'] text-2xl font-bold text-slate-900">Dashboard</h2>
-        <p className="text-xs text-slate-500 font-['Inter']">Performance summary for {tenant.name}</p>
+        <h2 className="font-['Inter'] text-2xl font-bold text-slate-900 dark:text-white">Dashboard</h2>
+        <p className="text-xs text-slate-500 dark:text-slate-400 font-['Inter']">Performance summary for {tenant.name}</p>
       </div>
 
       {/* 4 Core Zenith Analytics KPI Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {/* 1. Total Reach / Impressions */}
-        <div className="bg-white border border-slate-200 p-6 rounded-xl shadow-xs hover:shadow-md transition-shadow group">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-xl shadow-xs hover:shadow-md transition-shadow group">
           <div className="flex justify-between items-start mb-4">
-            <div className="p-2.5 bg-blue-100/60 rounded-lg text-blue-600">
+            <div className="p-2.5 bg-blue-100/60 dark:bg-blue-950/60 rounded-lg text-blue-600 dark:text-blue-400">
               <Eye className="w-5 h-5" />
             </div>
-            <span className="font-['JetBrains_Mono'] text-xs text-emerald-600 flex items-center gap-1 font-semibold">
+            <span className="font-['JetBrains_Mono'] text-xs text-emerald-600 dark:text-emerald-400 flex items-center gap-1 font-semibold">
               +14.2% <TrendingUp className="w-3.5 h-3.5" />
             </span>
           </div>
-          <p className="font-['JetBrains_Mono'] text-xs text-slate-500 uppercase tracking-wider mb-1">Total Reach / Impressions</p>
-          <h3 className="font-['Inter'] text-3xl font-bold text-slate-900">{totalReach.toLocaleString()}</h3>
-          <div className="mt-4 h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+          <p className="font-['JetBrains_Mono'] text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Total Reach / Impressions</p>
+          <h3 className="font-['Inter'] text-3xl font-bold text-slate-900 dark:text-white">{totalReach.toLocaleString()}</h3>
+          <div className="mt-4 h-1.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
             <div className="bg-blue-600 h-full w-4/5"></div>
           </div>
         </div>
 
         {/* 2. Likes & Reactions */}
-        <div className="bg-white border border-slate-200 p-6 rounded-xl shadow-xs hover:shadow-md transition-shadow">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-xl shadow-xs hover:shadow-md transition-shadow">
           <div className="flex justify-between items-start mb-4">
-            <div className="p-2.5 bg-pink-100/60 rounded-lg text-pink-600">
-              <Heart className="w-5 h-5 fill-pink-100" />
+            <div className="p-2.5 bg-pink-100/60 dark:bg-pink-950/60 rounded-lg text-pink-600 dark:text-pink-400">
+              <Heart className="w-5 h-5 fill-pink-100 dark:fill-pink-950/60" />
             </div>
-            <span className="font-['JetBrains_Mono'] text-xs text-emerald-600 flex items-center gap-1 font-semibold">
+            <span className="font-['JetBrains_Mono'] text-xs text-emerald-600 dark:text-emerald-400 flex items-center gap-1 font-semibold">
               +8.5% <TrendingUp className="w-3.5 h-3.5" />
             </span>
           </div>
-          <p className="font-['JetBrains_Mono'] text-xs text-slate-500 uppercase tracking-wider mb-1">Total Likes & Reactions</p>
-          <h3 className="font-['Inter'] text-3xl font-bold text-slate-900">{totalLikes.toLocaleString()}</h3>
+          <p className="font-['JetBrains_Mono'] text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Total Likes & Reactions</p>
+          <h3 className="font-['Inter'] text-3xl font-bold text-slate-900 dark:text-white">{totalLikes.toLocaleString()}</h3>
         </div>
 
         {/* 3. Comments & Shares */}
-        <div className="bg-white border border-slate-200 p-6 rounded-xl shadow-xs hover:shadow-md transition-shadow">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-xl shadow-xs hover:shadow-md transition-shadow">
           <div className="flex justify-between items-start mb-4">
-            <div className="p-2.5 bg-purple-100/60 rounded-lg text-purple-600">
+            <div className="p-2.5 bg-purple-100/60 dark:bg-purple-950/60 rounded-lg text-purple-600 dark:text-purple-400">
               <MessageSquare className="w-5 h-5" />
             </div>
-            <span className="px-2 py-0.5 bg-purple-100 text-purple-700 rounded font-['JetBrains_Mono'] text-[10px] font-bold">
+            <span className="px-2 py-0.5 bg-purple-100 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 rounded font-['JetBrains_Mono'] text-[10px] font-bold">
               ZENITH SYNCED
             </span>
           </div>
-          <p className="font-['JetBrains_Mono'] text-xs text-slate-500 uppercase tracking-wider mb-1">Comments & Shares</p>
-          <h3 className="font-['Inter'] text-3xl font-bold text-purple-900">{totalComments.toLocaleString()}</h3>
+          <p className="font-['JetBrains_Mono'] text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Comments & Shares</p>
+          <h3 className="font-['Inter'] text-3xl font-bold text-purple-900 dark:text-purple-300">{totalComments.toLocaleString()}</h3>
         </div>
 
         {/* 4. Avg Engagement Rate */}
-        <div className="bg-[#5D3FD3] p-6 rounded-xl shadow-lg relative overflow-hidden flex flex-col justify-between text-white">
+        <div className="bg-[#5D3FD3] dark:bg-[#4D2FC3] p-6 rounded-xl shadow-lg relative overflow-hidden flex flex-col justify-between text-white">
           <div className="relative z-10">
             <p className="font-['JetBrains_Mono'] text-xs text-white/80 uppercase tracking-wider">Avg Engagement Rate</p>
             <h3 className="font-['Inter'] text-3xl font-bold text-white mt-1">{avgEngagementRate}%</h3>
@@ -198,10 +198,10 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
       {/* Main Grid: Recent Social Status & Quick Actions */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Recent Social Status Table */}
-        <div className="lg:col-span-8 bg-white border border-slate-200 rounded-xl shadow-xs overflow-hidden flex flex-col">
-          <div className="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-white">
-            <h4 className="font-['Inter'] text-base font-bold text-slate-900">Recent Social Status</h4>
-            <button onClick={() => onNavigate('logs')} className="text-[#5D3FD3] font-['JetBrains_Mono'] text-xs font-bold hover:underline">
+        <div className="lg:col-span-8 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xs overflow-hidden flex flex-col">
+          <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center bg-white dark:bg-slate-900">
+            <h4 className="font-['Inter'] text-base font-bold text-slate-900 dark:text-white">Recent Social Status</h4>
+            <button onClick={() => onNavigate('logs')} className="text-[#5D3FD3] dark:text-purple-400 font-['JetBrains_Mono'] text-xs font-bold hover:underline cursor-pointer">
               View All Logs
             </button>
           </div>
@@ -209,7 +209,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead>
-                <tr className="font-['JetBrains_Mono'] text-[10px] text-slate-500 bg-slate-50/80 uppercase tracking-wider border-b border-slate-200">
+                <tr className="font-['JetBrains_Mono'] text-[10px] text-slate-500 dark:text-slate-400 bg-slate-50/80 dark:bg-slate-800 uppercase tracking-wider border-b border-slate-200 dark:border-slate-800">
                   <th className="px-6 py-3 font-bold">CONTENT</th>
                   <th className="px-6 py-3 font-bold">CHANNEL</th>
                   <th className="px-6 py-3 font-bold">STATUS</th>
@@ -217,20 +217,20 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
                   <th className="px-6 py-3 font-bold text-right">ACTION</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 font-['Inter']">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-['Inter']">
                 {tenantPosts.slice(0, 5).map((post) => (
-                  <tr key={post.id} className="hover:bg-slate-50/60 transition-colors">
+                  <tr key={post.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/50 transition-colors">
                     <td className="px-6 py-4 max-w-xs">
-                      <div className="font-bold text-slate-900 truncate">
+                      <div className="font-bold text-slate-900 dark:text-slate-100 truncate">
                         {post.content || '[Image / Video Only Post]'}
                       </div>
-                      <div className="text-[10px] text-slate-400 font-mono">{post.id}</div>
+                      <div className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">{post.id}</div>
                     </td>
 
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-1.5">
                         {post.selectedAccountIds.slice(0, 3).map((a, i) => (
-                          <span key={i} className="p-1 bg-slate-100 rounded" title={a.platform}>
+                          <span key={i} className="p-1 bg-slate-100 dark:bg-slate-800 rounded" title={a.platform}>
                             {getPlatformIcon(a.platform)}
                           </span>
                         ))}
@@ -240,23 +240,23 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
                     <td className="px-6 py-4">
                       <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase font-mono border ${
                         post.status === 'published'
-                          ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                          ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800'
                           : post.status === 'scheduled'
-                          ? 'bg-purple-50 text-purple-700 border-purple-200'
-                          : 'bg-amber-50 text-amber-700 border-amber-200'
+                          ? 'bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800'
+                          : 'bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800'
                       }`}>
                         {post.status}
                       </span>
                     </td>
 
-                    <td className="px-6 py-4 font-mono text-[11px] text-slate-500">
+                    <td className="px-6 py-4 font-mono text-[11px] text-slate-500 dark:text-slate-400">
                       {new Date(post.createdAt).toLocaleDateString()}
                     </td>
 
                     <td className="px-6 py-4 text-right">
                       <button
                         onClick={() => onNavigate('logs')}
-                        className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded font-semibold text-[11px]"
+                        className="px-2.5 py-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 rounded font-semibold text-[11px] cursor-pointer"
                       >
                         Inspect Log
                       </button>
@@ -269,13 +269,13 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
         </div>
 
         {/* Quick Actions Bento Panel */}
-        <div className="lg:col-span-4 bg-white border border-slate-200 rounded-xl p-6 shadow-xs space-y-4">
-          <h3 className="font-['Hanken_Grotesk'] text-base font-bold text-slate-900">Quick Actions</h3>
+        <div className="lg:col-span-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 shadow-xs space-y-4">
+          <h3 className="font-['Hanken_Grotesk'] text-base font-bold text-slate-900 dark:text-white">Quick Actions</h3>
 
           <div className="flex flex-col gap-3">
             <button
               onClick={() => onNavigate('composer')}
-              className="w-full flex items-center justify-between px-5 py-3.5 bg-[#5D3FD3] text-white rounded-xl font-bold text-xs shadow-lg shadow-purple-600/20 active:scale-98 transition-all"
+              className="w-full flex items-center justify-between px-5 py-3.5 bg-[#5D3FD3] text-white rounded-xl font-bold text-xs shadow-lg shadow-purple-600/20 hover:bg-purple-700 active:scale-98 transition-all cursor-pointer"
             >
               <div className="flex items-center gap-2.5">
                 <PlusCircle className="w-4 h-4" />
@@ -286,10 +286,10 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
 
             <button
               onClick={() => onNavigate('analytics')}
-              className="w-full flex items-center justify-between px-5 py-3.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-800 rounded-xl font-bold text-xs active:scale-98 transition-all"
+              className="w-full flex items-center justify-between px-5 py-3.5 bg-slate-50 dark:bg-slate-800/80 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-xl font-bold text-xs active:scale-98 transition-all cursor-pointer"
             >
               <div className="flex items-center gap-2.5">
-                <BarChart2 className="w-4 h-4 text-[#5D3FD3]" />
+                <BarChart2 className="w-4 h-4 text-[#5D3FD3] dark:text-purple-400" />
                 <span>Full Analytics Engine</span>
               </div>
               <ArrowRight className="w-4 h-4 text-slate-400" />
@@ -297,10 +297,10 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
 
             <button
               onClick={() => onNavigate('reviews')}
-              className="w-full flex items-center justify-between px-5 py-3.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-800 rounded-xl font-bold text-xs active:scale-98 transition-all"
+              className="w-full flex items-center justify-between px-5 py-3.5 bg-slate-50 dark:bg-slate-800/80 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-xl font-bold text-xs active:scale-98 transition-all cursor-pointer"
             >
               <div className="flex items-center gap-2.5">
-                <Star className="w-4 h-4 text-amber-500 fill-amber-100" />
+                <Star className="w-4 h-4 text-amber-500 fill-amber-100 dark:fill-amber-950/60" />
                 <span>Reply to Google Reviews</span>
               </div>
               <ArrowRight className="w-4 h-4 text-slate-400" />
@@ -310,44 +310,44 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
       </div>
 
       {/* Top 5 Performing Posts Spotlight Grid */}
-      <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs space-y-4">
-        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-xs space-y-4">
+        <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
           <div className="flex items-center gap-2">
             <Trophy className="w-5 h-5 text-amber-500" />
-            <h3 className="font-bold text-slate-900 text-base">Top 5 Performing Posts Spotlight</h3>
+            <h3 className="font-bold text-slate-900 dark:text-white text-base">Top 5 Performing Posts Spotlight</h3>
           </div>
-          <button onClick={() => onNavigate('analytics')} className="text-xs text-[#5D3FD3] font-bold hover:underline">
+          <button onClick={() => onNavigate('analytics')} className="text-xs text-[#5D3FD3] dark:text-purple-400 font-bold hover:underline cursor-pointer">
             View Analytics Engine →
           </button>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
           {(snapshots.length > 0 ? snapshots.slice(0, 5) : tenantPosts.slice(0, 5)).map((item: any, idx: number) => (
-            <div key={item.id || idx} className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-white hover:shadow-md transition-all space-y-3">
+            <div key={item.id || idx} className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 hover:bg-white dark:hover:bg-slate-800 hover:shadow-md transition-all space-y-3">
               <div className="flex items-center justify-between">
-                <span className="w-6 h-6 rounded-full bg-amber-100 text-amber-900 font-bold text-[10px] flex items-center justify-center font-mono">
+                <span className="w-6 h-6 rounded-full bg-amber-100 dark:bg-amber-950/60 text-amber-900 dark:text-amber-300 font-bold text-[10px] flex items-center justify-center font-mono">
                   #{idx + 1}
                 </span>
-                <span className="text-[10px] font-mono font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                <span className="text-[10px] font-mono font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-200 dark:border-emerald-800">
                   {item.engagement_rate ? `${item.engagement_rate}% ER` : `${(5.2 - idx * 0.4).toFixed(1)}% ER`}
                 </span>
               </div>
 
-              <p className="text-xs font-medium text-slate-800 line-clamp-2">
+              <p className="text-xs font-medium text-slate-800 dark:text-slate-200 line-clamp-2">
                 {item.content || tenantPosts.find(p => p.id === item.post_id)?.content || (item.zernio_post_id ? `Post #${item.zernio_post_id}` : 'Top Performing Social Campaign Asset')}
               </p>
 
-              <div className="grid grid-cols-3 gap-1 pt-2 border-t border-slate-200/60 text-[10px] font-mono text-slate-600">
+              <div className="grid grid-cols-3 gap-1 pt-2 border-t border-slate-200/60 dark:border-slate-800 text-[10px] font-mono text-slate-600 dark:text-slate-400">
                 <div className="flex items-center gap-1">
-                  <Eye className="w-3 h-3 text-blue-600" />
+                  <Eye className="w-3 h-3 text-blue-600 dark:text-blue-400" />
                   <span>{item.views || (5 - idx) * 450}</span>
                 </div>
                 <div className="flex items-center gap-1">
-                  <Heart className="w-3 h-3 text-pink-600" />
+                  <Heart className="w-3 h-3 text-pink-600 dark:text-pink-400" />
                   <span>{item.likes || (5 - idx) * 38}</span>
                 </div>
                 <div className="flex items-center gap-1">
-                  <MessageSquare className="w-3 h-3 text-purple-600" />
+                  <MessageSquare className="w-3 h-3 text-purple-600 dark:text-purple-400" />
                   <span>{item.comments || (5 - idx) * 12}</span>
                 </div>
               </div>

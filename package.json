@@ -16,7 +16,7 @@
     "test:rls": "node --env-file=.env tests/live-rls.mjs"
   },
   "dependencies": {
-    "@clerk/react": "^6.13.1",
+    "@composio/core": "^0.18.0",
     "@supabase/supabase-js": "^2.48.1",
     "@zernio/node": "^0.2.481",
     "lucide-react": "^0.475.0",

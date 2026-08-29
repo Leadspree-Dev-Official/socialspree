@@ -125,20 +125,22 @@ serve(async (req) => {
     // =========================================================================
     if (req.method === "POST") {
       const body = await req.json();
-      const {
-        imageUrl,
-        caption,
-        scheduledAt,
-        targetChannels,
-        publishNow = false,
-      } = body;
+      const caption = body.caption || body.content || "";
+      const mediaUrls: string[] = Array.isArray(body.mediaUrls) && body.mediaUrls.length > 0
+        ? body.mediaUrls
+        : (body.imageUrl ? [body.imageUrl] : []);
+      const scheduledAt = body.scheduledAt || body.scheduledFor || null;
+      const targetChannels = body.targetChannels || body.platforms || [];
+      const publishNow = Boolean(body.publishNow);
 
-      if (!caption && !imageUrl) {
-        return json({ error: "Bad Request: Either caption or imageUrl must be provided." }, 400);
+      if (!caption && mediaUrls.length === 0) {
+        return json({ error: "Bad Request: Either content/caption or imageUrl/mediaUrls must be provided." }, 400);
       }
 
-      if (imageUrl && !isSecureUrl(imageUrl)) {
-        return json({ error: "Bad Request: Prohibited or insecure imageUrl. Must be a valid public HTTPS URL." }, 400);
+      for (const mUrl of mediaUrls) {
+        if (!isSecureUrl(mUrl)) {
+          return json({ error: `Bad Request: Insecure media URL: ${mUrl}. Must be a valid public HTTPS URL.` }, 400);
+        }
       }
 
       // Fetch active accounts for this tenant
@@ -163,7 +165,7 @@ serve(async (req) => {
       if (requestedTargets.length > 0) {
         selectedAccountRefs = connections.filter((c) => 
           requestedTargets.includes(c.platform.toLowerCase()) || 
-          requestedTargets.includes(c.channel_account_id) ||
+          requestedTargets.includes(c.channel_account_id.toLowerCase()) ||
           requestedTargets.some(t => (c.account_name || '').toLowerCase().includes(t))
         ).map(c => ({
           accountId: c.channel_account_id,
@@ -181,8 +183,7 @@ serve(async (req) => {
         }));
       }
 
-      const mediaUrls = imageUrl ? [imageUrl] : [];
-      const mediaType = imageUrl ? "image" : "none";
+      const mediaType = mediaUrls.length > 0 ? "image" : "none";
       const now = new Date();
       let scheduleIso = scheduledAt ? new Date(scheduledAt).toISOString() : now.toISOString();
 
@@ -243,7 +244,7 @@ serve(async (req) => {
         request_payload: {
           source: "chatgpt_plugin_connector",
           caption,
-          imageUrl,
+          mediaUrls,
           targetChannels: selectedAccountRefs,
         },
         response_payload: {
@@ -267,8 +268,8 @@ serve(async (req) => {
           accountId: r.accountId,
         })),
         preview: {
-          caption,
-          imageUrl,
+          content: caption,
+          mediaUrls,
           calendarUrl: "https://socialspree.leadspree.in/calendar",
         },
       });

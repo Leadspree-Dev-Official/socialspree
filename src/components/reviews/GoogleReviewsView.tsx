@@ -65,20 +65,20 @@ export const GoogleReviewsView: React.FC<GoogleReviewsViewProps> = ({
         className="filter blur-[6px] opacity-35 select-none pointer-events-none space-y-6 transform scale-[1.01] transition-all"
       >
         {/* Header Preview Screen */}
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+        <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-400 to-orange-500 flex items-center justify-center text-white font-black shadow-md">
               <Star className="w-6 h-6 fill-white" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+              <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
                 <span>Google Business Profile Reviews Hub</span>
-                <span className="bg-blue-100 text-blue-800 text-[10px] font-mono font-bold px-2 py-0.5 rounded-full">
+                <span className="bg-blue-100 dark:bg-blue-950/80 text-blue-800 dark:text-blue-300 text-[10px] font-mono font-bold px-2 py-0.5 rounded-full border border-blue-200 dark:border-blue-800">
                   VERIFIED LOCATION
                 </span>
               </h2>
-              <p className="text-xs text-slate-500 mt-1 flex items-center gap-2">
-                <MapPin className="w-3.5 h-3.5 text-slate-400" />
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 flex items-center gap-2">
+                <MapPin className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />
                 <span>Downtown Flagship Store • 428 Broadway, New York, NY</span>
               </p>
             </div>
@@ -86,13 +86,13 @@ export const GoogleReviewsView: React.FC<GoogleReviewsViewProps> = ({
 
           <div className="flex items-center gap-6">
             <div className="text-right">
-              <div className="text-3xl font-black text-slate-900 flex items-center justify-end gap-1">
+              <div className="text-3xl font-black text-slate-900 dark:text-white flex items-center justify-end gap-1">
                 <span>{avgRating}</span>
                 <div className="flex text-amber-400 text-base">
                   {'★'.repeat(5)}
                 </div>
               </div>
-              <div className="text-[11px] text-slate-500 font-mono">
+              <div className="text-[11px] text-slate-500 dark:text-slate-400 font-mono">
                 Based on 284 verified Google Maps ratings
               </div>
             </div>
@@ -101,25 +101,25 @@ export const GoogleReviewsView: React.FC<GoogleReviewsViewProps> = ({
 
         {/* Metrics Grid Preview */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
-            <div className="text-[11px] font-mono text-slate-500 uppercase font-bold">Total Reviews</div>
-            <div className="text-2xl font-black text-slate-900 mt-1">1,492</div>
-            <div className="text-[11px] text-emerald-600 font-medium mt-1">↑ +18.4% this month</div>
+          <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs">
+            <div className="text-[11px] font-mono text-slate-500 dark:text-slate-400 uppercase font-bold">Total Reviews</div>
+            <div className="text-2xl font-black text-slate-900 dark:text-white mt-1">1,492</div>
+            <div className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium mt-1">↑ +18.4% this month</div>
           </div>
-          <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
-            <div className="text-[11px] font-mono text-slate-500 uppercase font-bold">AI Auto-Reply Rate</div>
-            <div className="text-2xl font-black text-[#5D3FD3] mt-1">98.2%</div>
-            <div className="text-[11px] text-slate-400 font-medium mt-1">Avg response time: 4 mins</div>
+          <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs">
+            <div className="text-[11px] font-mono text-slate-500 dark:text-slate-400 uppercase font-bold">AI Auto-Reply Rate</div>
+            <div className="text-2xl font-black text-[#5D3FD3] dark:text-purple-400 mt-1">98.2%</div>
+            <div className="text-[11px] text-slate-400 dark:text-slate-500 font-medium mt-1">Avg response time: 4 mins</div>
           </div>
-          <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
-            <div className="text-[11px] font-mono text-slate-500 uppercase font-bold">Positive Sentiment</div>
-            <div className="text-2xl font-black text-emerald-600 mt-1">94.7%</div>
-            <div className="text-[11px] text-slate-400 font-medium mt-1">1,413 Five-Star ratings</div>
+          <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs">
+            <div className="text-[11px] font-mono text-slate-500 dark:text-slate-400 uppercase font-bold">Positive Sentiment</div>
+            <div className="text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-1">94.7%</div>
+            <div className="text-[11px] text-slate-400 dark:text-slate-500 font-medium mt-1">1,413 Five-Star ratings</div>
           </div>
-          <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
-            <div className="text-[11px] font-mono text-slate-500 uppercase font-bold">Reputation Shield</div>
-            <div className="text-2xl font-black text-blue-600 mt-1">Active</div>
-            <div className="text-[11px] text-slate-400 font-medium mt-1">Auto-escalate 1-star reviews</div>
+          <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs">
+            <div className="text-[11px] font-mono text-slate-500 dark:text-slate-400 uppercase font-bold">Reputation Shield</div>
+            <div className="text-2xl font-black text-blue-600 dark:text-blue-400 mt-1">Active</div>
+            <div className="text-[11px] text-slate-400 dark:text-slate-500 font-medium mt-1">Auto-escalate 1-star reviews</div>
           </div>
         </div>
 
@@ -141,30 +141,30 @@ export const GoogleReviewsView: React.FC<GoogleReviewsViewProps> = ({
               reply: 'Thank you David! We appreciate your loyalty and look forward to serving you again soon!'
             }
           ].map((item, idx) => (
-            <div key={idx} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-3">
+            <div key={idx} className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-purple-100 text-[#5D3FD3] font-bold flex items-center justify-center">
+                  <div className="w-10 h-10 rounded-full bg-purple-100 dark:bg-purple-950 text-[#5D3FD3] dark:text-purple-300 font-bold flex items-center justify-center border border-purple-200 dark:border-purple-800">
                     {item.author[0]}
                   </div>
                   <div>
-                    <div className="font-bold text-slate-900 text-sm">{item.author}</div>
-                    <div className="text-[11px] text-slate-400 font-mono">{item.time}</div>
+                    <div className="font-bold text-slate-900 dark:text-white text-sm">{item.author}</div>
+                    <div className="text-[11px] text-slate-400 dark:text-slate-500 font-mono">{item.time}</div>
                   </div>
                 </div>
                 <div className="flex text-amber-400 text-sm">
                   {'★'.repeat(item.rating)}
                 </div>
               </div>
-              <p className="text-xs text-slate-700 bg-slate-50 p-3 rounded-xl">
+              <p className="text-xs text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-800 p-3 rounded-xl">
                 "{item.comment}"
               </p>
-              <div className="bg-purple-50/70 border border-purple-200 p-3 rounded-xl text-xs space-y-1">
-                <div className="flex items-center gap-1 text-[#5D3FD3] font-bold">
+              <div className="bg-purple-50/70 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800 p-3 rounded-xl text-xs space-y-1">
+                <div className="flex items-center gap-1 text-[#5D3FD3] dark:text-purple-400 font-bold">
                   <Sparkles className="w-3.5 h-3.5" />
                   <span>Zenith AI Response Published</span>
                 </div>
-                <p className="text-slate-700 italic">{item.reply}</p>
+                <p className="text-slate-700 dark:text-slate-300 italic">{item.reply}</p>
               </div>
             </div>
           ))}

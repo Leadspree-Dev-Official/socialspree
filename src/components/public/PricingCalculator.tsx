@@ -129,27 +129,27 @@ export const PricingCalculator: React.FC<PricingCalculatorProps> = ({
   }, [plan, selectedCurrency]);
 
   return (
-    <div className="bg-white rounded-3xl border border-purple-200/90 shadow-xl overflow-hidden p-6 sm:p-10 font-['Inter']">
+    <div className="bg-white dark:bg-slate-900 rounded-3xl border border-purple-200/90 dark:border-purple-800 shadow-xl overflow-hidden p-6 sm:p-10 font-['Inter'] transition-colors duration-150">
       
       {/* Top Header Banner */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-slate-100">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-slate-100 dark:border-slate-800">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-purple-100 text-[#5D3FD3] flex items-center justify-center font-bold">
+          <div className="w-10 h-10 rounded-2xl bg-purple-100 dark:bg-purple-950/60 text-[#5D3FD3] dark:text-purple-300 flex items-center justify-center font-bold">
             <Calculator className="w-5 h-5" />
           </div>
           <div>
-            <h3 className="text-xl font-black text-slate-900 tracking-tight">Interactive Capacity & ROI Calculator</h3>
-            <p className="text-xs text-slate-500 font-medium">Find the exact tier tailored to your publishing volume</p>
+            <h3 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">Interactive Capacity & ROI Calculator</h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Find the exact tier tailored to your publishing volume</p>
           </div>
         </div>
 
         {/* Persona Selectors */}
-        <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl border border-slate-200/80">
+        <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl border border-slate-200/80 dark:border-slate-700">
           <button
             type="button"
             onClick={() => setRole('business_user')}
             className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-              role === 'business_user' ? 'bg-white text-[#5D3FD3] shadow-xs' : 'text-slate-600 hover:text-slate-900'
+              role === 'business_user' ? 'bg-white dark:bg-slate-700 text-[#5D3FD3] dark:text-purple-300 shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
             }`}
           >
             Business
@@ -158,7 +158,7 @@ export const PricingCalculator: React.FC<PricingCalculatorProps> = ({
             type="button"
             onClick={() => setRole('premium_business')}
             className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-              role === 'premium_business' ? 'bg-white text-purple-700 shadow-xs' : 'text-slate-600 hover:text-slate-900'
+              role === 'premium_business' ? 'bg-white dark:bg-slate-700 text-purple-700 dark:text-purple-300 shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
             }`}
           >
             Premium Biz
@@ -167,7 +167,7 @@ export const PricingCalculator: React.FC<PricingCalculatorProps> = ({
             type="button"
             onClick={() => setRole('influencer')}
             className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-              role === 'influencer' ? 'bg-white text-pink-600 shadow-xs' : 'text-slate-600 hover:text-slate-900'
+              role === 'influencer' ? 'bg-white dark:bg-slate-700 text-pink-600 dark:text-pink-400 shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
             }`}
           >
             Creator
@@ -176,7 +176,7 @@ export const PricingCalculator: React.FC<PricingCalculatorProps> = ({
             type="button"
             onClick={() => setRole('agency')}
             className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-              role === 'agency' ? 'bg-white text-indigo-700 shadow-xs' : 'text-slate-600 hover:text-slate-900'
+              role === 'agency' ? 'bg-white dark:bg-slate-700 text-indigo-700 dark:text-indigo-300 shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
             }`}
           >
             Agency
@@ -191,13 +191,13 @@ export const PricingCalculator: React.FC<PricingCalculatorProps> = ({
         <div className="lg:col-span-7 space-y-6">
           
           {/* Social Accounts Slider */}
-          <div className="space-y-2.5 p-4 rounded-2xl bg-slate-50 border border-slate-200/80">
+          <div className="space-y-2.5 p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-800">
             <div className="flex items-center justify-between text-xs font-bold">
-              <span className="text-slate-700 flex items-center gap-1.5">
-                <Users className="w-4 h-4 text-[#5D3FD3]" />
+              <span className="text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                <Users className="w-4 h-4 text-[#5D3FD3] dark:text-purple-400" />
                 Connected Social Channels:
               </span>
-              <span className="font-mono text-[#5D3FD3] text-sm font-black">{socialAccounts} Channels</span>
+              <span className="font-mono text-[#5D3FD3] dark:text-purple-400 text-sm font-black">{socialAccounts} Channels</span>
             </div>
             <input
               type="range"
@@ -206,9 +206,9 @@ export const PricingCalculator: React.FC<PricingCalculatorProps> = ({
               step={1}
               value={socialAccounts}
               onChange={(e) => setSocialAccounts(Number(e.target.value))}
-              className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-[#5D3FD3]"
+              className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-[#5D3FD3]"
             />
-            <div className="flex items-center justify-between text-[10px] font-mono text-slate-400">
+            <div className="flex items-center justify-between text-[10px] font-mono text-slate-400 dark:text-slate-500">
               <span>2 Channels</span>
               <span>10 Channels</span>
               <span>20 Channels</span>
@@ -216,13 +216,13 @@ export const PricingCalculator: React.FC<PricingCalculatorProps> = ({
           </div>
 
           {/* Monthly Posts Slider */}
-          <div className="space-y-2.5 p-4 rounded-2xl bg-slate-50 border border-slate-200/80">
+          <div className="space-y-2.5 p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-800">
             <div className="flex items-center justify-between text-xs font-bold">
-              <span className="text-slate-700 flex items-center gap-1.5">
-                <Zap className="w-4 h-4 text-[#0066FF]" />
+              <span className="text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                <Zap className="w-4 h-4 text-[#0066FF] dark:text-blue-400" />
                 Monthly Post Dispatches:
               </span>
-              <span className="font-mono text-[#0066FF] text-sm font-black">
+              <span className="font-mono text-[#0066FF] dark:text-blue-400 text-sm font-black">
                 {posts >= 100 ? 'Unlimited Posts' : `${posts} Posts / mo`}
               </span>
             </div>
@@ -233,9 +233,9 @@ export const PricingCalculator: React.FC<PricingCalculatorProps> = ({
               step={2}
               value={posts}
               onChange={(e) => setPosts(Number(e.target.value))}
-              className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-[#0066FF]"
+              className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-[#0066FF]"
             />
-            <div className="flex items-center justify-between text-[10px] font-mono text-slate-400">
+            <div className="flex items-center justify-between text-[10px] font-mono text-slate-400 dark:text-slate-500">
               <span>2 Posts</span>
               <span>30 Posts</span>
               <span>100+ Unlimited</span>
@@ -243,13 +243,13 @@ export const PricingCalculator: React.FC<PricingCalculatorProps> = ({
           </div>
 
           {/* Linked Add-On Toggles */}
-          <div className="p-4 rounded-2xl bg-purple-50/60 border border-purple-100 flex items-center justify-between gap-4">
+          <div className="p-4 rounded-2xl bg-purple-50/60 dark:bg-purple-950/30 border border-purple-100 dark:border-purple-800 flex items-center justify-between gap-4">
             <div className="space-y-0.5">
-              <div className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-purple-600" />
+              <div className="text-xs font-bold text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
                 <span>Include AI Comment Auto-Responder & Dedicated CDN Storage</span>
               </div>
-              <p className="text-[11px] text-slate-500 font-medium">
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
                 Enables keyword trigger reply bot and private multi-Cloudinary media vaults
               </p>
             </div>
@@ -258,7 +258,7 @@ export const PricingCalculator: React.FC<PricingCalculatorProps> = ({
               type="button"
               onClick={handleTogglePremiumAddons}
               className={`w-12 h-6 rounded-full transition-colors relative cursor-pointer shrink-0 ${
-                autoresponder || privateCloud ? 'bg-[#5D3FD3]' : 'bg-slate-300'
+                autoresponder || privateCloud ? 'bg-[#5D3FD3] dark:bg-purple-600' : 'bg-slate-300 dark:bg-slate-700'
               }`}
             >
               <span
@@ -273,7 +273,7 @@ export const PricingCalculator: React.FC<PricingCalculatorProps> = ({
 
         {/* Right Side: Recommended Plan Card (5 Cols) */}
         {plan && (
-          <div className="lg:col-span-5 bg-gradient-to-br from-slate-900 via-purple-950 to-slate-900 text-white rounded-3xl p-6 sm:p-8 border border-purple-500/30 shadow-2xl flex flex-col justify-between space-y-6 relative overflow-hidden">
+          <div className="lg:col-span-5 bg-gradient-to-br from-slate-900 via-purple-950 to-slate-900 dark:from-slate-950 dark:via-purple-950/80 dark:to-slate-950 text-white rounded-3xl p-6 sm:p-8 border border-purple-500/30 shadow-2xl flex flex-col justify-between space-y-6 relative overflow-hidden">
             
             <div className="space-y-4">
               <div className="flex items-center justify-between">
