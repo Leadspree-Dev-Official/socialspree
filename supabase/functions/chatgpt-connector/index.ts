@@ -1,4 +1,3 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { admin, cors, json } from "../_shared/server.ts";
 
 interface CloudinaryUploadResult {
@@ -165,9 +164,9 @@ async function generateAiOrTopicImage(prompt: string, apiKey?: string): Promise<
   return `https://picsum.photos/seed/${seed}/1024/1024`;
 }
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: cors() });
+    return new Response("ok", { headers: cors(req) });
   }
 
   const db = admin();

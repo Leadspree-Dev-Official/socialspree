@@ -7,17 +7,17 @@ Deno.serve(async req => {
     const { db, profile } = await actor(req);
     const body = await req.json().catch(() => ({}));
     const tenantId = body.tenantId || profile.tenant_id;
-    if (!profile.is_super_admin && tenantId !== profile.tenant_id) return json({ error: 'Forbidden' }, 403);
+    if (!profile.is_super_admin && tenantId !== profile.tenant_id) return json({ error: 'Forbidden' }, 403, req);
 
     const action = body.action || 'get';
     const { data: postRow } = await db.from('posts').select('*').eq('id', body.postId).eq('tenant_id', tenantId).maybeSingle();
-    if (!postRow) return json({ error: 'Post not found' }, 404);
+    if (!postRow) return json({ error: 'Post not found' }, 404, req);
 
     const apiKey = await getComposioKey(db, tenantId);
 
     if (action === 'get') {
       if (!postRow.zernio_post_id || !apiKey) {
-        return json({ post: postRow, remoteStatus: postRow.status });
+        return json({ post: postRow, remoteStatus: postRow.status }, 200, req);
       }
 
       let remoteData = null;
@@ -41,7 +41,7 @@ Deno.serve(async req => {
         // fallback
       }
 
-      return json({ post: postRow, remotePost: remoteData || { status: postRow.status } });
+      return json({ post: postRow, remotePost: remoteData || { status: postRow.status } }, 200, req);
     }
 
     if (action === 'delete') {
@@ -63,12 +63,12 @@ Deno.serve(async req => {
       await db.from('publishing_jobs').delete().eq('post_id', body.postId);
       await db.from('posts').delete().eq('id', body.postId);
 
-      return json({ deleted: true, postId: body.postId });
+      return json({ deleted: true, postId: body.postId }, 200, req);
     }
 
-    return json({ error: 'Invalid action specified' }, 400);
+    return json({ error: 'Invalid action specified' }, 400, req);
   } catch (e) {
     const n = normalizeComposioError(e);
-    return json({ error: n.message, code: n.code }, n.statusCode || 400);
+    return json({ error: n.message, code: n.code }, n.statusCode || 400, req);
   }
 });

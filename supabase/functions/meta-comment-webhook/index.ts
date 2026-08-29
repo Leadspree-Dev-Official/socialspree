@@ -1,4 +1,3 @@
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { admin, cors, json } from '../_shared/server.ts';
 
 const META_VERIFY_TOKEN = Deno.env.get('META_WEBHOOK_VERIFY_TOKEN') || 'socialspree_meta_autoresponder_token_2026';
@@ -40,7 +39,7 @@ async function verifyMetaHmacSignature(rawBody: string, signatureHeader: string 
   return timingSafeEqual(providedSignature.toLowerCase(), calculatedSig.toLowerCase());
 }
 
-serve(async (req: Request) => {
+Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: cors(req) });
   }

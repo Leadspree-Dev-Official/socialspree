@@ -106,38 +106,49 @@ export async function executePublishing(
   });
   if (saveError) throw saveError;
 
-  const { data: response, error: queueError } = await supabase.functions.invoke('publish-post', {
-    body: { postId: post.id },
-    headers: { 'x-idempotency-key': `${post.id}:${post.scheduledFor ?? 'now'}` },
-  });
-  if (queueError) throw queueError;
-  if (response?.error) throw new Error(response.error);
+  try {
+    const { data: response, error: queueError } = await supabase.functions.invoke('publish-post', {
+      body: { postId: post.id },
+      headers: { 'x-idempotency-key': `${post.id}:${post.scheduledFor ?? 'now'}` },
+    });
+    if (queueError) throw queueError;
+    if (response?.error) throw new Error(response.error);
 
-  const isPublished = response?.status === 'published';
-  const finalStatus: 'published' | 'scheduled' = isPublished ? 'published' : 'scheduled';
-  const updatedPost: Post = {
-    ...post,
-    status: finalStatus,
-    provider: response?.provider || 'zernio'
-  };
+    const isPublished = response?.status === 'published';
+    const finalStatus: 'published' | 'scheduled' = isPublished ? 'published' : 'scheduled';
+    const updatedPost: Post = {
+      ...post,
+      status: finalStatus,
+      provider: response?.provider || 'zernio'
+    };
 
-  const message = isScheduled
-    ? `Scheduled for exact-time dispatch at ${new Date(postInput.scheduledFor!).toLocaleString()}`
-    : `Published successfully across ${postInput.selectedAccountIds.length} channels.`;
+    const message = isScheduled
+      ? `Scheduled for exact-time dispatch at ${new Date(postInput.scheduledFor!).toLocaleString()}`
+      : `Published successfully across ${postInput.selectedAccountIds.length} channels.`;
 
-  const log: PostLog = {
-    id: crypto.randomUUID(),
-    postId: post.id,
-    tenantId: tenant.id,
-    apiPostId: response?.apiPostId || (response?.jobId ? `job_${response.jobId}` : `post_${postId}`),
-    requestPayload,
-    responsePayload: response,
-    httpStatus: 200,
-    executionType: isScheduled ? 'cloud_native' : 'instant',
-    createdAt: now
-  };
+    const log: PostLog = {
+      id: crypto.randomUUID(),
+      postId: post.id,
+      tenantId: tenant.id,
+      apiPostId: response?.apiPostId || (response?.jobId ? `job_${response.jobId}` : `post_${postId}`),
+      requestPayload,
+      responsePayload: response,
+      httpStatus: 200,
+      executionType: isScheduled ? 'cloud_native' : 'instant',
+      createdAt: now
+    };
 
-  return { post: updatedPost, log, success: true, message };
+    return { post: updatedPost, log, success: true, message };
+  } catch (err: any) {
+    const errorMsg = err?.message || 'Publishing dispatch failed';
+    try {
+      await supabase.from('posts').update({
+        status: 'failed',
+        error_message: errorMsg
+      }).eq('id', post.id);
+    } catch { /* ignore */ }
+    throw err;
+  }
 }
 
 /**

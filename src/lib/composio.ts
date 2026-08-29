@@ -157,42 +157,50 @@ export async function executeComposioPublishing(
   });
   if (saveError) throw saveError;
 
-  // 2. Invoke unified publish-post edge function
-  const { data: response, error: invokeError } = await supabase.functions.invoke('publish-post', {
-    body: { postId: post.id },
-    headers: { 'x-idempotency-key': `${post.id}:${post.scheduledFor ?? 'now'}` },
-  });
-  if (invokeError) throw invokeError;
-  if (response?.error) throw new Error(response.error);
+  // 2. Invoke unified publish-post edge function with fail-safe error handling
+  try {
+    const { data: response, error: invokeError } = await supabase.functions.invoke('publish-post', {
+      body: { postId: post.id },
+      headers: { 'x-idempotency-key': `${post.id}:${post.scheduledFor ?? 'now'}` },
+    });
+    if (invokeError) throw invokeError;
+    if (response?.error) throw new Error(response.error);
 
-  const isPublished = response?.status === 'published';
-  const finalStatus: 'published' | 'scheduled' = isPublished ? 'published' : 'scheduled';
-  const updatedPost: Post = {
-    ...post,
-    status: finalStatus,
-    provider: response?.provider || 'composio'
-  };
+    const isPublished = response?.status === 'published';
+    const finalStatus: 'published' | 'scheduled' = isPublished ? 'published' : 'scheduled';
+    const updatedPost: Post = {
+      ...post,
+      status: finalStatus,
+      provider: response?.provider || 'composio'
+    };
 
-  const log: PostLog = {
-    id: crypto.randomUUID(),
-    postId: post.id,
-    tenantId: tenant.id,
-    apiPostId: response?.apiPostId || (response?.jobId ? `comp_job_${response.jobId}` : `comp_${postId}`),
-    requestPayload,
-    responsePayload: response,
-    httpStatus: 200,
-    executionType: isScheduled ? 'cloud_native' : 'instant',
-    createdAt: now
-  };
-
-  return {
-    post: updatedPost,
-    log,
-    success: true,
-    message: isScheduled
+    const message = isScheduled
       ? `Scheduled for exact-time dispatch at ${new Date(postInput.scheduledFor!).toLocaleString()}`
-      : `Successfully published across ${postInput.selectedAccountIds.length} social channels via Composio!`
-  };
+      : `Published successfully across ${postInput.selectedAccountIds.length} channels via Composio.`;
+
+    const log: PostLog = {
+      id: crypto.randomUUID(),
+      postId: post.id,
+      tenantId: tenant.id,
+      apiPostId: response?.apiPostId || (response?.jobId ? `comp_job_${response.jobId}` : `comp_${postId}`),
+      requestPayload,
+      responsePayload: response,
+      httpStatus: 200,
+      executionType: isScheduled ? 'cloud_native' : 'instant',
+      createdAt: now
+    };
+
+    return { post: updatedPost, log, success: true, message };
+  } catch (err: any) {
+    const errorMsg = err?.message || 'Publishing dispatch failed';
+    try {
+      await supabase.from('posts').update({
+        status: 'failed',
+        error_message: errorMsg
+      }).eq('id', post.id);
+    } catch { /* ignore */ }
+    throw err;
+  }
 }
 
 /**

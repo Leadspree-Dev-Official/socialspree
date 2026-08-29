@@ -18,25 +18,22 @@ export const ALLOWED_WEB_ORIGINS = () => {
 
 export function cors(req?: Request) {
   const origin = req?.headers.get('Origin') || '';
-  const allow = ALLOWED_WEB_ORIGINS();
+  const requestHeaders = req?.headers.get('Access-Control-Request-Headers');
+
   const headers: Record<string, string> = {
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-idempotency-key, x-worker-secret, x-chatgpt-api-key, x-api-key',
-    'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
+    'Access-Control-Allow-Origin': origin || '*',
+    'Access-Control-Allow-Methods': 'POST, GET, OPTIONS, PUT, DELETE, PATCH, HEAD',
+    'Access-Control-Allow-Headers':
+      requestHeaders ||
+      'authorization, x-client-info, apikey, content-type, x-idempotency-key, x-worker-secret, x-chatgpt-api-key, x-api-key, prefer, range, x-supabase-auth-token, *',
+    'Access-Control-Max-Age': '86400',
     'Vary': 'Origin'
   };
-  if (
-    origin &&
-    (allow.includes(origin) ||
-      origin.endsWith('.vercel.app') ||
-      origin.endsWith('.pages.dev') ||
-      origin.endsWith('.leadspree.in') ||
-      origin.endsWith('.leadspree.io'))
-  ) {
-    headers['Access-Control-Allow-Origin'] = origin;
+
+  if (origin) {
     headers['Access-Control-Allow-Credentials'] = 'true';
-  } else if (!origin) {
-    headers['Access-Control-Allow-Origin'] = '*';
   }
+
   return headers;
 }
 

@@ -16,7 +16,7 @@ Deno.serve(async req => {
     if (action === 'generate_link') {
       if (!composioApiKey) {
         const demoUrl = `https://connect.composio.dev/auth?app=${encodeURIComponent(appName || 'socialspree')}&entity_id=${encodeURIComponent(entityId)}&callback_url=${encodeURIComponent(callbackUrl || '')}`;
-        return json({ redirectUrl: demoUrl, connectionId: `conn_demo_${Date.now()}` });
+        return json({ redirectUrl: demoUrl, connectionId: `conn_demo_${Date.now()}` }, 200, req);
       }
 
       const res = await fetch('https://backend.composio.dev/api/v1/connectedAccounts/link', {
@@ -34,14 +34,14 @@ Deno.serve(async req => {
 
       if (!res.ok) {
         const errText = await res.text();
-        return json({ error: `Composio Connect Link Error (${res.status}): ${errText}` }, 502);
+        return json({ error: `Composio Connect Link Error (${res.status}): ${errText}` }, 502, req);
       }
 
       const data = await res.json();
       return json({
         redirectUrl: data.redirectUrl || data.url || data.link || '',
         connectionId: data.connectionId || data.id || `conn_${Date.now()}`
-      });
+      }, 200, req);
     }
 
     if (action === 'get_session') {
@@ -50,7 +50,7 @@ Deno.serve(async req => {
           sessionId: `composio_demo_${targetTenantId}`,
           userId: entityId,
           connectedApps: ['INSTAGRAM', 'FACEBOOK', 'LINKEDIN', 'TWITTER', 'YOUTUBE']
-        });
+        }, 200, req);
       }
 
       const res = await fetch('https://backend.composio.dev/api/v1/sessions', {
@@ -62,17 +62,17 @@ Deno.serve(async req => {
         body: JSON.stringify({ user_id: entityId })
       });
 
-      if (!res.ok) return json({ error: 'Failed to create Composio session' }, 502);
+      if (!res.ok) return json({ error: 'Failed to create Composio session' }, 502, req);
       const data = await res.json();
       return json({
         sessionId: data.session_id || data.id,
         userId: entityId,
         connectedApps: data.connected_apps || ['INSTAGRAM', 'FACEBOOK', 'LINKEDIN', 'TWITTER']
-      });
+      }, 200, req);
     }
 
-    return json({ error: 'Invalid action requested' }, 400);
+    return json({ error: 'Invalid action requested' }, 400, req);
   } catch (e) {
-    return json({ error: e instanceof Error ? e.message : 'Composio request failed' }, 400);
+    return json({ error: e instanceof Error ? e.message : 'Composio request failed' }, 400, req);
   }
 });

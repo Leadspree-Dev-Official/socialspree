@@ -7,7 +7,7 @@ Deno.serve(async req => {
     const { db, profile } = await actor(req);
     const body = await req.json().catch(() => ({}));
     const tenantId = body.tenantId || profile.tenant_id;
-    if (!profile.is_super_admin && tenantId !== profile.tenant_id) return json({ error: 'Forbidden' }, 403);
+    if (!profile.is_super_admin && tenantId !== profile.tenant_id) return json({ error: 'Forbidden' }, 403, req);
 
     const apiKey = await getComposioKey(db, tenantId);
     const entityId = `tenant_${tenantId}`;
@@ -55,9 +55,9 @@ Deno.serve(async req => {
       syncedAccounts.push(record);
     }
 
-    return json({ accounts: syncedAccounts });
+    return json({ accounts: syncedAccounts }, 200, req);
   } catch (e) {
     const n = normalizeComposioError(e);
-    return json({ error: n.message, code: n.code }, n.statusCode || 400);
+    return json({ error: n.message, code: n.code }, n.statusCode || 400, req);
   }
 });

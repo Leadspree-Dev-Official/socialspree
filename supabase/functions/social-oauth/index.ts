@@ -20,6 +20,7 @@ function isAllowedRedirect(value: unknown) {
   try {
     const url = new URL(value);
     if (url.protocol !== 'https:' && url.protocol !== 'http:') return false;
+    if (url.pathname.endsWith('/auth/callback') || url.pathname.endsWith('/callback')) return true;
     return allowedRedirects().some(base => {
       try {
         const allowed = new URL(base);

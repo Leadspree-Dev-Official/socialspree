@@ -6,7 +6,7 @@ Deno.serve(async req => {
     const { db, profile } = await actor(req);
     const body = await req.json().catch(() => ({}));
     const tenantId = body.tenantId || profile.tenant_id;
-    if (!profile.is_super_admin && tenantId !== profile.tenant_id) return json({ error: 'Forbidden' }, 403);
+    if (!profile.is_super_admin && tenantId !== profile.tenant_id) return json({ error: 'Forbidden' }, 403, req);
     const { data: posts } = await db.from('posts').select('id,zernio_post_id').eq('tenant_id', tenantId).not('zernio_post_id', 'is', null);
     // Fetch the API key ONCE before iterating to avoid N redundant DB roundtrips
     const key = await slotKey(db, tenantId, body.label || 'slot-1');
@@ -19,6 +19,6 @@ Deno.serve(async req => {
       await db.from('analytics_snapshots').upsert(row, { onConflict: 'tenant_id,zernio_post_id' });
       snapshots.push(row);
     }
-    return json({ snapshots });
-  } catch (e) { const n = normalizeZernioError(e); return json({ error: n.message, code: n.code }, 400); }
+    return json({ snapshots }, 200, req);
+  } catch (e) { const n = normalizeZernioError(e); return json({ error: n.message, code: n.code }, 400, req); }
 });
