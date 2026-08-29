@@ -1172,6 +1172,22 @@ export function App() {
     }
   };
 
+  const handleRetryPost = async (post: Post) => {
+    try {
+      const targetTenant = tenants.find(t => t.id === post.tenantId) || currentTenant;
+      const { post: updatedPost, log } = await executePublishing(post, targetTenant);
+      handlePostPublished(updatedPost, log);
+    } catch (err: any) {
+      console.warn('Publish retry failed:', err);
+      const failedPost: Post = {
+        ...post,
+        status: 'failed',
+        errorMessage: err?.message || 'Publishing retry failed'
+      };
+      setPosts(prev => prev.map(p => p.id === post.id ? failedPost : p));
+    }
+  };
+
   // Top Priority: If in Password Recovery flow (hash or set_password route), immediately render SetNewPasswordView
   if (checkIsRecoveryUrl() || authMode === 'set_password') {
     return (
@@ -1334,6 +1350,7 @@ export function App() {
                   reviews={reviews}
                   onNavigate={setActiveTab}
                   isSuperAdmin={isSuperAdminMode}
+                  onRetryPost={handleRetryPost}
                 />
               )}
 

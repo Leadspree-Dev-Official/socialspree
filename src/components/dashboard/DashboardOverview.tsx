@@ -48,6 +48,7 @@ interface DashboardOverviewProps {
   reviews: GoogleReview[];
   onNavigate: (tab: TabType) => void;
   isSuperAdmin: boolean;
+  onRetryPost?: (post: Post) => Promise<void> | void;
 }
 
 export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
@@ -57,8 +58,10 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
   logs,
   reviews,
   onNavigate,
-  isSuperAdmin
+  isSuperAdmin,
+  onRetryPost
 }) => {
+  const [retryingPostId, setRetryingPostId] = useState<string | null>(null);
   const tenantPosts = posts.filter(p => p.tenantId === tenant.id);
   const tenantAccounts = accounts.filter(a => a.tenantId === tenant.id);
   const tenantLogs = logs.filter(l => l.tenantId === tenant.id);
@@ -263,12 +266,31 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
                       </td>
 
                       <td className="px-6 py-4 text-right">
-                        <button
-                          onClick={() => onNavigate('logs')}
-                          className="px-2.5 py-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 rounded font-semibold text-[11px] cursor-pointer"
-                        >
-                          Inspect Log
-                        </button>
+                        <div className="flex items-center justify-end gap-2">
+                          {(post.status === 'publishing' || post.status === 'failed') && onRetryPost && (
+                            <button
+                              onClick={async () => {
+                                setRetryingPostId(post.id);
+                                try {
+                                  await onRetryPost(post);
+                                } finally {
+                                  setRetryingPostId(null);
+                                }
+                              }}
+                              disabled={retryingPostId === post.id}
+                              className="px-2.5 py-1 bg-[#5D3FD3] hover:bg-purple-700 text-white rounded font-bold text-[11px] shadow-xs flex items-center gap-1 cursor-pointer transition-all disabled:opacity-50"
+                            >
+                              <Rocket className={`w-3 h-3 ${retryingPostId === post.id ? 'animate-spin' : ''}`} />
+                              <span>{retryingPostId === post.id ? 'Publishing...' : 'Publish Now'}</span>
+                            </button>
+                          )}
+                          <button
+                            onClick={() => onNavigate('logs')}
+                            className="px-2.5 py-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 rounded font-semibold text-[11px] cursor-pointer"
+                          >
+                            Inspect Log
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))
