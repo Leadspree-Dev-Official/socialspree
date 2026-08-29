@@ -186,6 +186,7 @@ export interface SelectedAccountRef {
 export interface Post {
   id: string;
   tenantId: string;
+  provider?: 'composio' | 'zernio' | string;
   content: string;
   mediaUrls: string[];
   mediaType: 'none' | 'image' | 'video';

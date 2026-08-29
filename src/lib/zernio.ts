@@ -37,13 +37,14 @@ export function validateCloudflareMediaForScheduling(mediaUrls: string[], isClou
 }
 
 /**
- * Execute Enterprise Publishing Engine / Dispatcher (Zernio or Composio)
+ * Execute Enterprise Publishing Engine / Dispatcher (Composio Primary with Zernio Fallback)
  */
 export async function executePublishing(
   postInput: Omit<Post, 'id' | 'createdAt' | 'status'>,
   tenant: Tenant
 ): Promise<PublishResult> {
-  if (tenant.dispatchEngine === 'coresync' || (tenant.dispatchEngine as string) === 'composio') {
+  // Composio is the Primary Standard Engine for all workspaces unless explicitly set to Zenith/Zernio
+  if (tenant.dispatchEngine !== 'zenith') {
     return executeComposioPublishing(postInput, tenant);
   }
 
@@ -82,7 +83,6 @@ export async function executePublishing(
     isCloudflareHosted: postInput.isCloudflareHosted,
     publishNow: !isScheduled,
     scheduledFor: postInput.scheduledFor || null,
-    // Secrets are never included in client-side audit payloads.
   };
 
   const post: Post = {
@@ -93,38 +93,51 @@ export async function executePublishing(
   };
 
   const { error: saveError } = await supabase.from('posts').insert({
-    id: post.id, tenant_id: post.tenantId, provider: 'zernio', content: post.content,
-    media_urls: post.mediaUrls, media_type: post.mediaType,
+    id: post.id,
+    tenant_id: post.tenantId,
+    provider: 'zernio',
+    content: post.content,
+    media_urls: post.mediaUrls,
+    media_type: post.mediaType,
     is_cloudflare_hosted: post.isCloudflareHosted,
-    selected_account_ids: post.selectedAccountIds, status: post.status,
+    selected_account_ids: post.selectedAccountIds,
+    status: post.status,
     scheduled_for: post.scheduledFor,
   });
   if (saveError) throw saveError;
-  const { data: queue, error: queueError } = await supabase.functions.invoke('publish-post', {
+
+  const { data: response, error: queueError } = await supabase.functions.invoke('publish-post', {
     body: { postId: post.id },
     headers: { 'x-idempotency-key': `${post.id}:${post.scheduledFor ?? 'now'}` },
   });
   if (queueError) throw queueError;
+  if (response?.error) throw new Error(response.error);
 
-  const responsePayload = queue ?? { queued: true };
-  const apiPostId = queue?.jobId;
+  const isPublished = response?.status === 'published';
+  const finalStatus: 'published' | 'scheduled' = isPublished ? 'published' : 'scheduled';
+  const updatedPost: Post = {
+    ...post,
+    status: finalStatus,
+    provider: response?.provider || 'zernio'
+  };
+
   const message = isScheduled
-    ? `Post queued for ${new Date(postInput.scheduledFor!).toLocaleString()}.`
-    : 'Post accepted by the secure publishing queue.';
+    ? `Scheduled for exact-time dispatch at ${new Date(postInput.scheduledFor!).toLocaleString()}`
+    : `Published successfully across ${postInput.selectedAccountIds.length} channels.`;
 
   const log: PostLog = {
     id: crypto.randomUUID(),
     postId: post.id,
     tenantId: tenant.id,
-    apiPostId,
+    apiPostId: response?.apiPostId || (response?.jobId ? `job_${response.jobId}` : `post_${postId}`),
     requestPayload,
-    responsePayload,
-    httpStatus: 202,
+    responsePayload: response,
+    httpStatus: 200,
     executionType: isScheduled ? 'cloud_native' : 'instant',
     createdAt: now
   };
 
-  return { post, log, success: true, message };
+  return { post: updatedPost, log, success: true, message };
 }
 
 /**

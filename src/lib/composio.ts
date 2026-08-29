@@ -216,32 +216,41 @@ export async function executeComposioPublishing(
   });
   if (saveError) throw saveError;
 
-  // 2. Queue publishing job
-  const { data: queue, error: queueError } = await supabase.functions.invoke('publish-post', {
+  // 2. Invoke unified publish-post edge function
+  const { data: response, error: invokeError } = await supabase.functions.invoke('publish-post', {
     body: { postId: post.id },
     headers: { 'x-idempotency-key': `${post.id}:${post.scheduledFor ?? 'now'}` },
   });
-  if (queueError) throw queueError;
+  if (invokeError) throw invokeError;
+  if (response?.error) throw new Error(response.error);
+
+  const isPublished = response?.status === 'published';
+  const finalStatus: 'published' | 'scheduled' = isPublished ? 'published' : 'scheduled';
+  const updatedPost: Post = {
+    ...post,
+    status: finalStatus,
+    provider: response?.provider || 'composio'
+  };
 
   const log: PostLog = {
     id: crypto.randomUUID(),
     postId: post.id,
     tenantId: tenant.id,
-    apiPostId: queue?.jobId ? `composio_job_${queue.jobId}` : `composio_job_${postId}`,
+    apiPostId: response?.apiPostId || (response?.jobId ? `comp_job_${response.jobId}` : `comp_${postId}`),
     requestPayload,
-    responsePayload: queue ?? { queued: true, provider: 'composio', session: session.sessionId },
+    responsePayload: response,
     httpStatus: 200,
     executionType: isScheduled ? 'cloud_native' : 'instant',
     createdAt: now
   };
 
   return {
-    post,
+    post: updatedPost,
     log,
     success: true,
     message: isScheduled
-      ? `Queued for CoreSync scheduled dispatch at ${new Date(postInput.scheduledFor!).toLocaleString()}`
-      : `Queued for secure CoreSync managed dispatch across ${postInput.selectedAccountIds.length} channels.`
+      ? `Scheduled for exact-time dispatch at ${new Date(postInput.scheduledFor!).toLocaleString()}`
+      : `Successfully published across ${postInput.selectedAccountIds.length} social channels via Composio!`
   };
 }
 

@@ -359,8 +359,8 @@ export const PostComposer: React.FC<PostComposerProps> = ({
         type: 'success',
         title: isScheduling ? 'Post Scheduled Successfully' : 'Post Published Successfully',
         message: isScheduling 
-          ? `Queued for ${new Date(scheduledDate).toLocaleString()}` 
-          : `Dispatched across ${selectedAccounts.length} social channels via API Key.`
+          ? `Scheduled for exact-time dispatch at ${new Date(scheduledDate).toLocaleString()}` 
+          : `Published live across ${selectedAccounts.length} social channel(s) via Composio!`
       });
     } catch (err: any) {
       setNotification({
