@@ -25,8 +25,30 @@ import {
   Send,
   Eye,
   Filter,
-  Check
+  Check,
+  Image as ImageIcon
 } from 'lucide-react';
+
+const ImageWithFallback: React.FC<{ src: string; alt: string; className?: string }> = ({ src, alt, className }) => {
+  const [hasError, setHasError] = useState(false);
+
+  if (hasError || !src) {
+    return (
+      <div className={`bg-purple-100 dark:bg-purple-950/60 text-[#5D3FD3] dark:text-purple-300 flex items-center justify-center font-bold ${className || ''}`}>
+        <ImageIcon className="w-5 h-5 opacity-70" />
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={src}
+      alt={alt}
+      className={className}
+      onError={() => setHasError(true)}
+    />
+  );
+};
 
 interface CalendarViewProps {
   tenant: Tenant;
@@ -547,7 +569,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
 
                                 {post.mediaUrls.length > 0 && (
                                   <div className="h-10 rounded-lg overflow-hidden border border-purple-200 dark:border-purple-800">
-                                    <img
+                                    <ImageWithFallback
                                       src={post.mediaUrls[0]}
                                       alt="Post media"
                                       className="w-full h-full object-cover"
@@ -732,7 +754,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                   >
                     <div className="flex items-center gap-4">
                       {post.mediaUrls.length > 0 ? (
-                        <img src={post.mediaUrls[0]} alt="Media" className="w-12 h-12 rounded-xl object-cover border border-slate-200 dark:border-slate-700" />
+                        <ImageWithFallback src={post.mediaUrls[0]} alt="Media" className="w-12 h-12 rounded-xl object-cover border border-slate-200 dark:border-slate-700" />
                       ) : (
                         <div className="w-12 h-12 rounded-xl bg-purple-100 dark:bg-purple-950/60 text-[#5D3FD3] dark:text-purple-300 flex items-center justify-center font-bold">
                           POST
@@ -917,7 +939,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
 
               {inspectPost.mediaUrls.length > 0 && (
                 <div className="h-44 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700">
-                  <img src={inspectPost.mediaUrls[0]} alt="Media" className="w-full h-full object-cover" />
+                  <ImageWithFallback src={inspectPost.mediaUrls[0]} alt="Media" className="w-full h-full object-cover" />
                 </div>
               )}
 
