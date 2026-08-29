@@ -231,15 +231,16 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
     }
   };
 
-  // Filter posts for a specific day and hour
+  // Filter posts for a specific day and hour in user's local timezone
   const getPostsForSlot = (dateObj: Date, hourNum: number) => {
     const dateStr = formatLocalDate(dateObj);
     return tenantPosts.filter(p => {
       if (!p.scheduledFor) return false;
-      const [pDate, pTime] = p.scheduledFor.split('T');
+      const d = new Date(p.scheduledFor);
+      if (isNaN(d.getTime())) return false;
+      const pDate = formatLocalDate(d);
       if (pDate !== dateStr) return false;
-      if (!pTime) return false;
-      const pHour = parseInt(pTime.split(':')[0], 10);
+      const pHour = d.getHours();
       
       if (selectedChannelFilter !== 'all') {
         const matchesChannel = p.selectedAccountIds.some(a => a.platform === selectedChannelFilter);
@@ -249,12 +250,14 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
     });
   };
 
-  // Filter posts for an entire date (used in Month View)
+  // Filter posts for an entire date (used in Month View) in user's local timezone
   const getPostsForDay = (dateObj: Date) => {
     const dateStr = formatLocalDate(dateObj);
     return tenantPosts.filter(p => {
       if (!p.scheduledFor) return false;
-      const [pDate] = p.scheduledFor.split('T');
+      const d = new Date(p.scheduledFor);
+      if (isNaN(d.getTime())) return false;
+      const pDate = formatLocalDate(d);
       if (pDate !== dateStr) return false;
 
       if (selectedChannelFilter !== 'all') {
@@ -919,7 +922,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
               )}
 
               <div className="p-3 bg-purple-50 dark:bg-purple-950/50 rounded-xl border border-purple-100 dark:border-purple-800 font-mono space-y-1">
-                <div>Scheduled: <strong className="text-purple-900 dark:text-purple-300">{inspectPost.scheduledFor}</strong></div>
+                <div>Scheduled: <strong className="text-purple-900 dark:text-purple-300">{inspectPost.scheduledFor ? new Date(inspectPost.scheduledFor).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) : 'N/A'}</strong></div>
                 <div>Status: <strong className="text-emerald-700 dark:text-emerald-300 uppercase">{inspectPost.status}</strong></div>
               </div>
 
