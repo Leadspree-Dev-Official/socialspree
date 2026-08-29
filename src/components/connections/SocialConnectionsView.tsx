@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { SocialAccount, Tenant, SocialPlatform, ApiAllocationSlot } from '../../types';
 import { type Profile } from '../../lib/api';
 import { generateComposioConnectLink, fetchComposioAccounts } from '../../lib/composio';
+import { capabilityFor, isConnectable, STATUS_LABEL } from '../../lib/platforms';
 import { generateZernioConnectUrl, fetchZernioAccounts } from '../../lib/zernio';
 import { 
   Share2, 
@@ -540,33 +541,64 @@ export const SocialConnectionsView: React.FC<SocialConnectionsViewProps> = ({
                               onChange={(e) => setSelectedPlatforms(prev => ({ ...prev, [`${slotNum}:${connectedCount + 1}`]: e.target.value as SocialPlatform }))}
                               className="w-full pl-3 pr-8 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-purple-300 dark:hover:border-purple-700 focus:border-[#5D3FD3] rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-200 shadow-xs focus:outline-none focus:ring-1 focus:ring-[#5D3FD3] appearance-none cursor-pointer"
                             >
-                              {platformOptions.map((p) => (
-                                <option key={p.id} value={p.id} className="dark:bg-slate-800">
-                                  {p.name} • {p.description}
-                                </option>
-                              ))}
+                              {platformOptions.map((p) => {
+                                const cap = capabilityFor(p.id);
+                                return (
+                                  <option
+                                    key={p.id}
+                                    value={p.id}
+                                    disabled={!isConnectable(p.id)}
+                                    className="dark:bg-slate-800"
+                                  >
+                                    {p.name}
+                                    {cap.status === 'supported' ? '' : ` • ${STATUS_LABEL[cap.status]}`}
+                                  </option>
+                                );
+                              })}
                             </select>
                             <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                           </div>
                         </div>
 
-                        <button
-                          onClick={() => handleConnectPosition(slotNum, connectedCount + 1)}
-                          disabled={busy === `${slotNum}:${connectedCount + 1}`}
-                          className="w-full py-2.5 bg-[#5D3FD3] hover:bg-purple-700 text-white font-bold rounded-xl text-xs shadow-xs hover:shadow transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95 disabled:opacity-50"
-                        >
-                          {busy === `${slotNum}:${connectedCount + 1}` ? (
+                        {(() => {
+                          const key = `${slotNum}:${connectedCount + 1}`;
+                          const chosen = selectedPlatforms[key] || 'instagram';
+                          const cap = capabilityFor(chosen);
+                          const connectable = isConnectable(chosen);
+
+                          return (
                             <>
-                              <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                              <span>Opening OAuth Authorization…</span>
+                              {cap.note && (
+                                <p className={`text-[11px] leading-snug ${
+                                  connectable
+                                    ? 'text-amber-700 dark:text-amber-400'
+                                    : 'text-slate-500 dark:text-slate-400'
+                                }`}>
+                                  {cap.note}
+                                </p>
+                              )}
+                              <button
+                                onClick={() => handleConnectPosition(slotNum, connectedCount + 1)}
+                                disabled={busy === key || !connectable}
+                                className="w-full py-2.5 bg-[#5D3FD3] hover:bg-purple-700 text-white font-bold rounded-xl text-xs shadow-xs hover:shadow transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5D3FD3]"
+                              >
+                                {busy === key ? (
+                                  <>
+                                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                                    <span>Opening authorization…</span>
+                                  </>
+                                ) : connectable ? (
+                                  <>
+                                    <Plus className="w-3.5 h-3.5" />
+                                    <span>Connect {getPlatformDetails(chosen).name}</span>
+                                  </>
+                                ) : (
+                                  <span>{getPlatformDetails(chosen).name} is not available yet</span>
+                                )}
+                              </button>
                             </>
-                          ) : (
-                            <>
-                              <Plus className="w-3.5 h-3.5" />
-                              <span>Connect {getPlatformDetails(selectedPlatforms[`${slotNum}:${connectedCount + 1}`] || 'instagram').name}</span>
-                            </>
-                          )}
-                        </button>
+                          );
+                        })()}
                       </div>
                     )}
                   </div>

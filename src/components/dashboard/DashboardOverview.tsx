@@ -136,6 +136,89 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
         <p className="text-xs text-slate-500 dark:text-slate-400 font-['Inter']">Performance summary for {tenant.name}</p>
       </div>
 
+      {/* First-run guidance. Disappears on its own once the workspace is live. */}
+      {(() => {
+        const steps = [
+          {
+            done: tenantAccounts.length > 0,
+            title: 'Connect a social channel',
+            detail: 'Authorise the account you want to publish to.',
+            action: 'connections' as TabType,
+            cta: 'Connect a channel'
+          },
+          {
+            done: tenantPosts.length > 0,
+            title: 'Write your first post',
+            detail: 'Compose once, publish across every connected channel.',
+            action: 'composer' as TabType,
+            cta: 'Open the composer'
+          },
+          {
+            done: scheduledCount > 0 || publishedCount > 0,
+            title: 'Schedule it',
+            detail: 'Pick a time and the queue takes it from there.',
+            action: 'calendar' as TabType,
+            cta: 'Open the calendar'
+          }
+        ];
+
+        const remaining = steps.filter(step => !step.done);
+        if (remaining.length === 0) return null;
+        const next = remaining[0];
+
+        return (
+          <section className="bg-white dark:bg-slate-900 border border-purple-200 dark:border-purple-900 rounded-xl p-6 shadow-xs">
+            <div className="flex items-start justify-between gap-4 flex-wrap">
+              <div>
+                <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                  Get {tenant.name} publishing
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                  {steps.length - remaining.length} of {steps.length} done — {next.detail}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => onNavigate(next.action)}
+                className="px-4 py-2 rounded-xl bg-[#5D3FD3] hover:bg-purple-700 text-white text-xs font-bold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5D3FD3]"
+              >
+                {next.cta}
+              </button>
+            </div>
+
+            <ol className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {steps.map((step, i) => (
+                <li
+                  key={step.title}
+                  className={`rounded-xl border p-3 ${
+                    step.done
+                      ? 'border-emerald-200 dark:border-emerald-900 bg-emerald-50/60 dark:bg-emerald-950/30'
+                      : 'border-slate-200 dark:border-slate-800'
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 ${
+                      step.done
+                        ? 'bg-emerald-600 text-white'
+                        : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300'
+                    }`}>
+                      {step.done ? '✓' : i + 1}
+                    </span>
+                    <span className={`text-xs font-bold ${
+                      step.done
+                        ? 'text-emerald-800 dark:text-emerald-300 line-through decoration-emerald-600/40'
+                        : 'text-slate-900 dark:text-white'
+                    }`}>
+                      {step.title}
+                    </span>
+                  </div>
+                </li>
+              ))}
+            </ol>
+          </section>
+        );
+      })()}
+
       {/* 4 Core Zenith Analytics KPI Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {/* 1. Total Reach / Impressions */}

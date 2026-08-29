@@ -88,7 +88,10 @@ Deno.serve(async req => {
         published_at: result.publishedAt,
         zernio_post_id: result.apiPostId,
         platform_results: result.rawResponse,
-        error_message: null
+        // A post can succeed overall while one channel did not go out.
+        error_message: result.partialFailure
+          ? `Published, but not on every channel — ${result.partialFailure}`
+          : null
       }).eq('id', job.post_id).eq('tenant_id', job.tenant_id);
 
       succeeded++;

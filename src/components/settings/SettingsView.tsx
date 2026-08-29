@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Tenant, CloudinaryConfig, CloudinaryAccountItem } from '../../types';
 import { uploadToMediaVault } from '../../lib/media';
+import { InvoicesPanel } from './InvoicesPanel';
 import { auth, type Profile } from '../../lib/api';
 import { supabase } from '../../lib/supabase';
 import { 
@@ -37,7 +38,8 @@ import {
   Palette,
   Sun,
   Moon,
-  Laptop
+  Laptop,
+  Receipt,
 } from 'lucide-react';
 import { ChatGPTConnectorSettings } from './ChatGPTConnectorSettings';
 import { ThemeToggle } from '../layout/ThemeToggle';
@@ -59,7 +61,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   onUpdateTenantProfile,
   initialTab = 'user'
 }) => {
-  const [activeTab, setActiveTab] = useState<'user' | 'storage' | 'api' | 'social_keys' | 'org' | 'chatgpt'>(initialTab);
+  const [activeTab, setActiveTab] = useState<'user' | 'storage' | 'api' | 'social_keys' | 'org' | 'invoices' | 'chatgpt'>(initialTab);
 
   // Cloudinary Local State (Multiple Accounts with 3 Fields: Cloud Name, Upload Preset, Bucket Name)
   const cldConfig = tenant.cloudinaryConfig || GLOBAL_DEFAULT_CLOUDINARY;
@@ -515,6 +517,18 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           </button>
 
           <button
+            onClick={() => setActiveTab('invoices')}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold transition-all text-left cursor-pointer ${
+              activeTab === 'invoices'
+                ? 'bg-[#5D3FD3] text-white shadow-md'
+                : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800'
+            }`}
+          >
+            <Receipt className="w-4 h-4" />
+            <span>Invoices</span>
+          </button>
+
+          <button
             onClick={() => setActiveTab('chatgpt')}
             className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-xs font-bold transition-all text-left cursor-pointer ${
               activeTab === 'chatgpt'
@@ -533,6 +547,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         {/* Right Content Panel */}
         <div className="lg:col-span-9 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-xs space-y-6">
           
+          {activeTab === 'invoices' && <InvoicesPanel />}
+
           {activeTab === 'chatgpt' && (
             <ChatGPTConnectorSettings tenant={tenant} />
           )}

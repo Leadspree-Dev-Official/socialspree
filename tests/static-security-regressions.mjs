@@ -103,3 +103,20 @@ const dispatcher = await read('supabase/functions/_shared/dispatcher.ts');
 assert.doesNotMatch(dispatcher, /TWITTER_/, 'dispatcher must not map removed X actions');
 
 console.log('Production-readiness regression checks passed.');
+
+// The dispatcher must never invent a Composio action slug for an unmapped
+// channel — that failed at the provider long after the customer was told the
+// post had been scheduled.
+const [dispatcher2, capabilities] = await Promise.all([
+  read('supabase/functions/_shared/dispatcher.ts'),
+  read('supabase/functions/_shared/platforms.ts'),
+]);
+assert.doesNotMatch(
+  dispatcher2,
+  /\$\{platformLower\.toUpperCase\(\)\}_CREATE_POST/,
+  'dispatcher must not guess action names'
+);
+assert.match(dispatcher2, /resolveAction/, 'dispatcher must resolve actions from the capability map');
+assert.match(capabilities, /unverified/, 'capability map must distinguish verified from unverified channels');
+
+console.log('Channel capability checks passed.');

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { SocialAccount, Tenant, Post, SocialPlatform, SelectedAccountRef, CloudinaryConfig, AiCreditLog, MediaAsset } from '../../types';
 import { executePublishing } from '../../lib/zernio';
 import { validateSchedulableMedia, isVaultHosted, uploadToMediaVault } from '../../lib/media';
+import { canPublish, capabilityFor } from '../../lib/platforms';
 import { GLOBAL_DEFAULT_CLOUDINARY, GLOBAL_CLOUDINARY_POOL } from '../../lib/store';
 import { supabase } from '../../lib/supabase';
 import { LivePreviewDrawer } from './LivePreviewDrawer';
@@ -287,8 +288,21 @@ export const PostComposer: React.FC<PostComposerProps> = ({
     if (selectedAccounts.length === 0) {
       setNotification({
         type: 'error',
-        title: 'No Accounts Selected',
-        message: 'Please select at least 1 connected social account to publish.'
+        title: 'No accounts selected',
+        message: 'Choose at least one connected social account to publish to.'
+      });
+      return;
+    }
+
+    // Catch channels that cannot publish here, rather than letting the post
+    // reach the dispatcher and fail after the customer has been told it sent.
+    const blocked = selectedAccounts.filter(a => !canPublish(a.platform));
+    if (blocked.length > 0) {
+      const names = [...new Set(blocked.map(a => a.platform))];
+      setNotification({
+        type: 'error',
+        title: names.length === 1 ? `${names[0]} cannot publish yet` : 'Some channels cannot publish yet',
+        message: `${names.join(', ')} — ${capabilityFor(names[0]).note ?? 'not available yet'} Deselect ${names.length === 1 ? 'it' : 'them'} to continue.`
       });
       return;
     }

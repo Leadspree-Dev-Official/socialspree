@@ -1,3 +1,4 @@
+import { resolveAction } from './platforms.ts';
 import { getComposioKey, normalizeComposioError } from './composio.ts';
 import { slotKey, zernioClient, normalizeZernioError } from './zernio.ts';
 
@@ -9,11 +10,13 @@ export interface DispatchResult {
   dispatchedChannels: Array<{
     platform: string;
     accountId: string;
-    status: 'success' | 'failed';
+    status: 'success' | 'failed' | 'unsupported';
     response?: any;
     error?: string;
   }>;
   rawResponse: any;
+  /** Set when the post went out on some channels but not all. */
+  partialFailure?: string;
 }
 
 /**
@@ -68,16 +71,24 @@ export async function dispatchPost(
         const dispatchedChannels: any[] = [];
 
         for (const conn of connections) {
-          const actionMap: Record<string, string> = {
-            instagram: 'INSTAGRAM_CREATE_POST',
-            facebook: 'FACEBOOK_CREATE_POST',
-            linkedin: 'LINKEDIN_CREATE_POST',
-            youtube: 'YOUTUBE_UPLOAD_VIDEO',
-            google_business: 'GOOGLE_BUSINESS_CREATE_POST'
-          };
-
           const platformLower = String(conn.platform).toLowerCase();
-          const actionName = actionMap[platformLower] || `${platformLower.toUpperCase()}_CREATE_POST`;
+
+          // Refuse channels we cannot publish to instead of inventing a slug
+          // the provider will reject with an opaque error.
+          let actionName: string;
+          try {
+            actionName = resolveAction(platformLower);
+          } catch (capabilityError) {
+            dispatchedChannels.push({
+              platform: conn.platform,
+              accountId: conn.channel_account_id,
+              status: 'unsupported',
+              error: capabilityError instanceof Error
+                ? capabilityError.message
+                : `${conn.platform} cannot publish yet.`
+            });
+            continue;
+          }
 
           const payload: any = {
             actionName,
@@ -132,16 +143,27 @@ export async function dispatchPost(
         if (anySuccess) {
           const primaryResp = dispatchedChannels.find(c => c.status === 'success')?.response;
           const apiPostId = primaryResp?.data?.id || primaryResp?.id || `comp_${post.id.slice(0, 8)}`;
+          const notDelivered = dispatchedChannels.filter(c => c.status !== 'success');
           return {
             success: true,
             provider: 'composio',
             publishedAt: new Date().toISOString(),
             apiPostId,
             dispatchedChannels,
-            rawResponse: dispatchedChannels
+            rawResponse: dispatchedChannels,
+            partialFailure: notDelivered.length > 0
+              ? notDelivered.map(c => `${c.platform}: ${c.error || 'not delivered'}`).join('; ')
+              : undefined
           };
         } else {
-          composioError = new Error(`Composio dispatch failed for all channels: ${JSON.stringify(dispatchedChannels)}`);
+          const reasons = dispatchedChannels
+            .map(c => `${c.platform}: ${c.error || 'dispatch failed'}`)
+            .join('; ');
+          composioError = new Error(
+            dispatchedChannels.every(c => c.status === 'unsupported')
+              ? `No selected channel can publish yet. ${reasons}`
+              : `Publishing failed on every channel. ${reasons}`
+          );
         }
       }
     } catch (err) {
