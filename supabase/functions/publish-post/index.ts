@@ -90,6 +90,18 @@ Deno.serve(async req => {
           run_after: new Date().toISOString()
         }, { onConflict: 'idempotency_key' });
 
+        // Record failure in post_logs for audit trail visibility
+        await db.from('post_logs').insert({
+          id: crypto.randomUUID(),
+          post_id: post.id,
+          tenant_id: post.tenant_id,
+          api_post_id: `err_${post.id.slice(0, 8)}`,
+          request_payload: { post_id: post.id, content: post.content, media_urls: post.media_urls },
+          response_payload: { error: errorMsg },
+          http_status: 500,
+          execution_type: 'instant'
+        });
+
         return json({
           error: errorMsg,
           status: 'failed',

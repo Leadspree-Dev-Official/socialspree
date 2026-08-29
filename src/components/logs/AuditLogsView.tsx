@@ -29,7 +29,8 @@ export const AuditLogsView: React.FC<AuditLogsViewProps> = ({
   const [selectedLog, setSelectedLog] = useState<PostLog | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
 
-  const tenantLogs = logs.filter(l => l.tenantId === tenant.id);
+  const isMasterAdmin = tenant.id === 'tenant_0' || tenant.name.toLowerCase().includes('super admin') || tenant.name.toLowerCase().includes('master') || tenant.name.toLowerCase().includes('hq');
+  const tenantLogs = isMasterAdmin ? logs : logs.filter(l => l.tenantId === tenant.id);
   const filteredLogs = tenantLogs.filter(l => 
     l.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
     l.postId.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -79,24 +80,35 @@ export const AuditLogsView: React.FC<AuditLogsViewProps> = ({
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium text-slate-700 dark:text-slate-300">
-              {filteredLogs.map((log) => (
-                <tr key={log.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800 transition-colors">
-                  <td className="px-4 py-3.5">
-                    <div className="font-bold text-slate-900 dark:text-white font-mono">{log.id}</div>
-                    <div className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">Ref: {log.postId}</div>
+              {filteredLogs.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="px-6 py-12 text-center text-slate-400 dark:text-slate-500">
+                    <Clock className="w-8 h-8 mx-auto mb-2 opacity-40 text-slate-400" />
+                    <div className="font-semibold text-sm text-slate-700 dark:text-slate-300">No Activity Logs Found</div>
+                    <div className="text-xs text-slate-400 dark:text-slate-500 mt-1">
+                      {searchTerm ? `No logs matching "${searchTerm}".` : 'Logs will automatically appear here whenever a post is published or retried.'}
+                    </div>
                   </td>
+                </tr>
+              ) : (
+                filteredLogs.map((log) => (
+                  <tr key={log.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800 transition-colors">
+                    <td className="px-4 py-3.5">
+                      <div className="font-bold text-slate-900 dark:text-white font-mono">{log.id}</div>
+                      <div className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">Ref: {log.postId}</div>
+                    </td>
 
-                  <td className="px-4 py-3.5">
-                    <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold font-mono uppercase border ${
-                      log.executionType === 'instant'
-                        ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800'
-                        : log.executionType === 'background_cron'
-                        ? 'bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-800'
-                        : 'bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800'
-                    }`}>
-                      {log.executionType.replace('_', ' ')}
-                    </span>
-                  </td>
+                    <td className="px-4 py-3.5">
+                      <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold font-mono uppercase border ${
+                        log.executionType === 'instant'
+                          ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800'
+                          : log.executionType === 'background_cron'
+                          ? 'bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-800'
+                          : 'bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800'
+                      }`}>
+                        {log.executionType.replace('_', ' ')}
+                      </span>
+                    </td>
 
                   <td className="px-4 py-3.5">
                     <span className={`font-mono font-bold px-2 py-0.5 rounded text-[11px] border ${
@@ -131,11 +143,11 @@ export const AuditLogsView: React.FC<AuditLogsViewProps> = ({
                       title="Re-execute Dispatcher"
                     >
                       <RotateCw className="w-3 h-3" />
-                      <span>Retry</span>
                     </button>
                   </td>
                 </tr>
-              ))}
+              ))
+            )}
             </tbody>
           </table>
         </div>
