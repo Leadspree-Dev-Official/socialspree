@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Tenant, SocialAccount, Post, SocialPlatform, SelectedAccountRef } from '../../types';
 import { executePublishing } from '../../lib/zernio';
 import { 
@@ -26,8 +26,51 @@ import {
   Eye,
   Filter,
   Check,
-  Image as ImageIcon
+  Image as ImageIcon,
+  SlidersHorizontal,
+  ChevronDown
 } from 'lucide-react';
+
+export type TimeFormat = '12h' | '24h';
+export type PostingHoursPreset = 'active' | 'business' | 'full' | 'custom';
+
+export const formatHour = (hour: number, format: TimeFormat): string => {
+  if (format === '24h') {
+    return `${String(hour).padStart(2, '0')}:00`;
+  }
+  if (hour === 0) return '12 AM';
+  if (hour < 12) return `${hour} AM`;
+  if (hour === 12) return '12 PM';
+  return `${hour - 12} PM`;
+};
+
+export const formatTime = (hour: number, minute: number = 0, format: TimeFormat = '12h'): string => {
+  const minStr = String(minute).padStart(2, '0');
+  if (format === '24h') {
+    return `${String(hour).padStart(2, '0')}:${minStr}`;
+  }
+  const period = hour >= 12 ? 'PM' : 'AM';
+  const h = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+  return `${h}:${minStr} ${period}`;
+};
+
+export const formatPostDateTime = (isoString?: string, format: TimeFormat = '12h'): string => {
+  if (!isoString) return 'N/A';
+  const d = new Date(isoString);
+  if (isNaN(d.getTime())) return isoString;
+  return d.toLocaleString([], {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+    hour12: format === '12h'
+  });
+};
+
+const PRESETS: Record<PostingHoursPreset, { label: string; sublabel: string; start: number; end: number }> = {
+  active: { label: 'Active Window', sublabel: '7 AM – 9 PM (Recommended)', start: 7, end: 21 },
+  business: { label: 'Business Hours', sublabel: '8 AM – 6 PM', start: 8, end: 18 },
+  full: { label: 'Full Day (24h)', sublabel: '12 AM – 11 PM', start: 0, end: 23 },
+  custom: { label: 'Custom Range', sublabel: 'Custom start & end hours', start: 7, end: 21 }
+};
 
 const ImageWithFallback: React.FC<{ src: string; alt: string; className?: string }> = ({ src, alt, className }) => {
   const [hasError, setHasError] = useState(false);
@@ -72,6 +115,90 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   const [displayMode, setDisplayMode] = useState<'grid' | 'list'>('grid');
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
   const [selectedChannelFilter, setSelectedChannelFilter] = useState<string>('all');
+
+  // Time format & Working hours preferences
+  const [timeFormat, setTimeFormat] = useState<TimeFormat>(() => {
+    try {
+      const saved = localStorage.getItem('socialspree_calendar_time_format');
+      return (saved === '24h' || saved === '12h') ? saved : '12h';
+    } catch {
+      return '12h';
+    }
+  });
+
+  const [hoursPreset, setHoursPreset] = useState<PostingHoursPreset>(() => {
+    try {
+      const saved = localStorage.getItem('socialspree_calendar_hours_preset');
+      return (saved === 'active' || saved === 'business' || saved === 'full' || saved === 'custom') ? saved : 'active';
+    } catch {
+      return 'active';
+    }
+  });
+
+  const [startHour, setStartHour] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem('socialspree_calendar_start_hour');
+      return saved ? parseInt(saved, 10) : 7;
+    } catch {
+      return 7;
+    }
+  });
+
+  const [endHour, setEndHour] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem('socialspree_calendar_end_hour');
+      return saved ? parseInt(saved, 10) : 21;
+    } catch {
+      return 21;
+    }
+  });
+
+  const [showHoursMenu, setShowHoursMenu] = useState(false);
+  const hoursMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (hoursMenuRef.current && !hoursMenuRef.current.contains(e.target as Node)) {
+        setShowHoursMenu(false);
+      }
+    };
+    if (showHoursMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showHoursMenu]);
+
+  const handleTimeFormatChange = (fmt: TimeFormat) => {
+    setTimeFormat(fmt);
+    try { localStorage.setItem('socialspree_calendar_time_format', fmt); } catch {}
+  };
+
+  const handleSelectPreset = (preset: PostingHoursPreset) => {
+    setHoursPreset(preset);
+    try { localStorage.setItem('socialspree_calendar_hours_preset', preset); } catch {}
+    if (preset !== 'custom') {
+      const p = PRESETS[preset];
+      setStartHour(p.start);
+      setEndHour(p.end);
+      try {
+        localStorage.setItem('socialspree_calendar_start_hour', String(p.start));
+        localStorage.setItem('socialspree_calendar_end_hour', String(p.end));
+      } catch {}
+    }
+  };
+
+  const handleCustomHoursChange = (newStart: number, newEnd: number) => {
+    const s = Math.max(0, Math.min(newStart, 22));
+    const e = Math.max(s + 1, Math.min(newEnd, 23));
+    setStartHour(s);
+    setEndHour(e);
+    setHoursPreset('custom');
+    try {
+      localStorage.setItem('socialspree_calendar_hours_preset', 'custom');
+      localStorage.setItem('socialspree_calendar_start_hour', String(s));
+      localStorage.setItem('socialspree_calendar_end_hour', String(e));
+    } catch {}
+  };
 
   // Quick Post Modal State
   const [showQuickModal, setShowQuickModal] = useState(false);
@@ -201,9 +328,6 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
 
   const monthGridDays = getMonthGridDays(currentDate);
 
-  // Hours for Day/Week Grid: 0:00 to 23:00
-  const hours = Array.from({ length: 24 }, (_, i) => i);
-
   const getPlatformIcon = (platform: SocialPlatform) => {
     switch (platform) {
       case 'instagram': return <Instagram className="w-3.5 h-3.5 text-pink-600" />;
@@ -300,6 +424,24 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
       return true;
     });
   };
+
+  // Dynamic Hours Array: Auto-expand window if posts exist outside user's preferred window
+  const currentViewPosts = viewMode === 'week'
+    ? weekDays.flatMap(d => getPostsForDay(d))
+    : viewMode === 'day'
+    ? getPostsForDay(currentDate)
+    : [];
+
+  const scheduledHours = currentViewPosts
+    .map(p => (p.scheduledFor ? new Date(p.scheduledFor).getHours() : -1))
+    .filter(h => h >= 0 && !isNaN(h));
+
+  const effectiveStart = scheduledHours.length > 0 ? Math.min(startHour, ...scheduledHours) : startHour;
+  const effectiveEnd = scheduledHours.length > 0 ? Math.max(endHour, ...scheduledHours) : endHour;
+  const clampedStart = Math.max(0, Math.min(effectiveStart, 23));
+  const clampedEnd = Math.max(clampedStart, Math.min(effectiveEnd, 23));
+
+  const hours = Array.from({ length: clampedEnd - clampedStart + 1 }, (_, i) => clampedStart + i);
 
   return (
     <div className="max-w-[1500px] mx-auto space-y-6 font-['Inter'] pb-20 md:pb-0">
@@ -446,8 +588,132 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
               </button>
             </div>
 
-            {/* Right View Mode & Display Toggle */}
-            <div className="flex items-center gap-3">
+            {/* Right View Mode, Time Format & Display Controls */}
+            <div className="flex flex-wrap items-center gap-2.5">
+              
+              {/* 12H / 24H Time Format Toggle */}
+              <div className="bg-slate-200/80 dark:bg-slate-800 p-1 rounded-xl flex items-center border border-slate-300/60 dark:border-slate-700">
+                <button
+                  onClick={() => handleTimeFormatChange('12h')}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-mono font-bold transition-all cursor-pointer ${
+                    timeFormat === '12h'
+                      ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                  }`}
+                  title="12-Hour AM/PM Format"
+                >
+                  12H
+                </button>
+                <button
+                  onClick={() => handleTimeFormatChange('24h')}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-mono font-bold transition-all cursor-pointer ${
+                    timeFormat === '24h'
+                      ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                  }`}
+                  title="24-Hour Military Format"
+                >
+                  24H
+                </button>
+              </div>
+
+              {/* Posting Hours Filter Popover (Grid views) */}
+              {displayMode === 'grid' && viewMode !== 'month' && (
+                <div className="relative" ref={hoursMenuRef}>
+                  <button
+                    onClick={() => setShowHoursMenu(!showHoursMenu)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-750 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 shadow-2xs transition-all cursor-pointer"
+                    title="Customize visible posting hours in calendar"
+                  >
+                    <Clock className="w-3.5 h-3.5 text-[#5D3FD3] dark:text-purple-400" />
+                    <span className="font-mono text-[11px]">{formatHour(clampedStart, timeFormat)} – {formatHour(clampedEnd, timeFormat)}</span>
+                    <ChevronDown className="w-3 h-3 text-slate-400" />
+                  </button>
+
+                  {showHoursMenu && (
+                    <div className="absolute right-0 mt-2 w-72 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-xl z-50 p-3 space-y-3 text-xs animate-in fade-in">
+                      <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-700/80 pb-2">
+                        <span className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                          <SlidersHorizontal className="w-3.5 h-3.5 text-[#5D3FD3] dark:text-purple-400" />
+                          <span>Visible Posting Hours</span>
+                        </span>
+                        <button
+                          onClick={() => setShowHoursMenu(false)}
+                          className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 cursor-pointer"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+
+                      <div className="space-y-1.5">
+                        {(Object.keys(PRESETS) as PostingHoursPreset[]).map((key) => {
+                          const preset = PRESETS[key];
+                          const isSelected = hoursPreset === key;
+                          return (
+                            <button
+                              key={key}
+                              onClick={() => handleSelectPreset(key)}
+                              className={`w-full flex items-center justify-between p-2 rounded-xl text-left transition-colors cursor-pointer ${
+                                isSelected
+                                  ? 'bg-purple-50 dark:bg-purple-950/60 border border-purple-200 dark:border-purple-800 text-purple-900 dark:text-purple-200 font-bold'
+                                  : 'hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300'
+                              }`}
+                            >
+                              <div>
+                                <div className="font-bold">{preset.label}</div>
+                                <div className="text-[10px] text-slate-500 dark:text-slate-400">
+                                  {key === 'custom'
+                                    ? `${formatHour(startHour, timeFormat)} – ${formatHour(endHour, timeFormat)}`
+                                    : preset.sublabel}
+                                </div>
+                              </div>
+                              {isSelected && <Check className="w-4 h-4 text-[#5D3FD3] dark:text-purple-400" />}
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      {/* Custom Range Sliders/Pickers */}
+                      {hoursPreset === 'custom' && (
+                        <div className="p-2.5 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200/80 dark:border-slate-700 space-y-2">
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex-1">
+                              <label className="block text-[10px] font-mono font-bold text-slate-500 uppercase mb-1">Start</label>
+                              <select
+                                value={startHour}
+                                onChange={(e) => handleCustomHoursChange(parseInt(e.target.value, 10), endHour)}
+                                className="w-full p-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-mono font-bold text-slate-900 dark:text-white"
+                              >
+                                {Array.from({ length: 24 }, (_, i) => (
+                                  <option key={i} value={i} disabled={i >= endHour}>
+                                    {formatHour(i, timeFormat)}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+
+                            <div className="flex-1">
+                              <label className="block text-[10px] font-mono font-bold text-slate-500 uppercase mb-1">End</label>
+                              <select
+                                value={endHour}
+                                onChange={(e) => handleCustomHoursChange(startHour, parseInt(e.target.value, 10))}
+                                className="w-full p-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-mono font-bold text-slate-900 dark:text-white"
+                              >
+                                {Array.from({ length: 24 }, (_, i) => (
+                                  <option key={i} value={i} disabled={i <= startHour}>
+                                    {formatHour(i, timeFormat)}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Day / Week / Month Pill Switcher */}
               <div className="bg-slate-200/80 dark:bg-slate-800 p-1 rounded-xl flex items-center border border-slate-300/60 dark:border-slate-700">
                 <button
@@ -540,8 +806,8 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                   {/* Hourly Rows Grid */}
                   {hours.map((hour) => (
                     <div key={hour} className="grid grid-cols-8 border-b border-slate-100 dark:border-slate-800/80 min-h-[70px]">
-                      <div className="p-2 text-center text-slate-400 dark:text-slate-500 font-mono text-xs font-bold border-r border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 flex items-center justify-center">
-                        {hour}:00
+                      <div className="p-2 text-center text-slate-500 dark:text-slate-400 font-mono text-[11px] font-bold border-r border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 flex items-center justify-center">
+                        {formatHour(hour, timeFormat)}
                       </div>
 
                       {weekDays.map((dayObj, dayIdx) => {
@@ -601,7 +867,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                               <button
                                 onClick={() => handleOpenSlotModal(dayObj, hour)}
                                 className="w-7 h-7 rounded-lg bg-[#5D3FD3] hover:bg-purple-700 text-white font-bold text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all shadow-md mx-auto my-auto cursor-pointer"
-                                title={`Schedule for ${formatShortDate(dayObj)} at ${hour}:00`}
+                                title={`Schedule for ${formatShortDate(dayObj)} at ${formatHour(hour, timeFormat)}`}
                               >
                                 <Plus className="w-4 h-4" />
                               </button>
@@ -628,8 +894,8 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
 
                     return (
                       <div key={hour} className="flex border-b border-slate-100 dark:border-slate-800 min-h-[80px]">
-                        <div className="w-24 p-3 text-center text-slate-500 dark:text-slate-400 font-mono text-xs font-bold border-r border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 flex items-center justify-center">
-                          {hour}:00
+                        <div className="w-28 p-3 text-center text-slate-500 dark:text-slate-400 font-mono text-xs font-bold border-r border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 flex items-center justify-center">
+                          {formatHour(hour, timeFormat)}
                         </div>
 
                         <div className={`flex-1 p-3 relative group flex flex-wrap gap-3 items-center ${
@@ -641,7 +907,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                               className="px-4 py-2 rounded-xl bg-purple-100 dark:bg-purple-900/60 hover:bg-[#5D3FD3] text-[#5D3FD3] dark:text-purple-300 hover:text-white font-bold text-xs transition-all shadow-xs flex items-center gap-1.5 opacity-0 group-hover:opacity-100 cursor-pointer"
                             >
                               <Plus className="w-4 h-4" />
-                              <span>Schedule Post at {hour}:00</span>
+                              <span>Schedule Post at {formatHour(hour, timeFormat)}</span>
                             </button>
                           )}
 
@@ -775,7 +1041,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                       <div>
                         <div className="font-bold text-slate-900 dark:text-white text-sm line-clamp-1">{post.content}</div>
                         <div className="text-slate-500 dark:text-slate-400 font-mono mt-0.5">
-                          Scheduled: {post.scheduledFor ? new Date(post.scheduledFor).toLocaleString() : 'N/A'}
+                          Scheduled: {formatPostDateTime(post.scheduledFor, timeFormat)}
                         </div>
                       </div>
                     </div>
@@ -814,7 +1080,9 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                 </div>
                 <div>
                   <h3 className="font-bold text-base text-slate-900 dark:text-white">Schedule Media Post</h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 font-mono">Slot Target: {targetSlotDate} at {targetSlotTime}</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 font-mono">
+                    Slot Target: {targetSlotDate} at {targetSlotTime ? (targetSlotTime.includes(':') ? formatTime(parseInt(targetSlotTime.split(':')[0], 10), parseInt(targetSlotTime.split(':')[1] || '0', 10), timeFormat) : targetSlotTime) : ''}
+                  </p>
                 </div>
               </div>
 
@@ -853,6 +1121,34 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                       </button>
                     );
                   })}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1.5 uppercase font-mono text-[11px]">
+                    Schedule Date
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    value={targetSlotDate}
+                    onChange={(e) => setTargetSlotDate(e.target.value)}
+                    className="w-full p-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-mono text-xs text-slate-900 dark:text-slate-100"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1.5 uppercase font-mono text-[11px]">
+                    Schedule Time ({timeFormat.toUpperCase()})
+                  </label>
+                  <input
+                    type="time"
+                    required
+                    value={targetSlotTime}
+                    onChange={(e) => setTargetSlotTime(e.target.value)}
+                    className="w-full p-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-mono text-xs text-slate-900 dark:text-slate-100"
+                  />
                 </div>
               </div>
 
@@ -948,7 +1244,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
               )}
 
               <div className="p-3 bg-purple-50 dark:bg-purple-950/50 rounded-xl border border-purple-100 dark:border-purple-800 font-mono space-y-1">
-                <div>Scheduled: <strong className="text-purple-900 dark:text-purple-300">{inspectPost.scheduledFor ? new Date(inspectPost.scheduledFor).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) : 'N/A'}</strong></div>
+                <div>Scheduled: <strong className="text-purple-900 dark:text-purple-300">{formatPostDateTime(inspectPost.scheduledFor, timeFormat)}</strong></div>
                 <div>Status: <strong className="text-emerald-700 dark:text-emerald-300 uppercase">{inspectPost.status}</strong></div>
               </div>
 
