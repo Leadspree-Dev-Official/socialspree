@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { SocialAccount, Tenant, Post, SocialPlatform, SelectedAccountRef, CloudinaryConfig, AiCreditLog } from '../../types';
+import { SocialAccount, Tenant, Post, SocialPlatform, SelectedAccountRef, CloudinaryConfig, AiCreditLog, MediaAsset } from '../../types';
 import { executePublishing, validateCloudflareMediaForScheduling } from '../../lib/zernio';
 import { GLOBAL_DEFAULT_CLOUDINARY, GLOBAL_CLOUDINARY_POOL } from '../../lib/store';
 import { supabase } from '../../lib/supabase';
@@ -44,6 +44,7 @@ interface PostComposerProps {
   onPostPublished: (post: Post, log: any) => void;
   onUpdateTenantCloudinary?: (tenantId: string, config: CloudinaryConfig) => void;
   onNavigateToCalendar?: () => void;
+  onAddMediaAsset?: (asset: Omit<MediaAsset, 'id' | 'createdAt'>) => void;
   initialContent?: string;
 }
 
@@ -55,7 +56,9 @@ export const PostComposer: React.FC<PostComposerProps> = ({
   onDeductAiCredits,
   onPostPublished,
   onUpdateTenantCloudinary,
-  onNavigateToCalendar
+  onNavigateToCalendar,
+  onAddMediaAsset,
+  initialContent
 }) => {
   const [content, setContent] = useState('');
   const [mediaMode, setMediaMode] = useState<'cloudinary' | 'link'>('cloudinary');
@@ -228,15 +231,24 @@ export const PostComposer: React.FC<PostComposerProps> = ({
       if (res.ok) {
         const data = await res.json();
         setCloudinaryUrl(data.secure_url);
-        if (file.type.startsWith('video/')) {
-          setMediaType('video');
-        } else {
-          setMediaType('image');
+        const isVideo = file.type.startsWith('video/');
+        setMediaType(isVideo ? 'video' : 'image');
+
+        if (onAddMediaAsset) {
+          onAddMediaAsset({
+            tenantId: tenant.id,
+            title: file.name.replace(/\.[^/.]+$/, "") || 'Composer Media',
+            url: data.secure_url,
+            type: isVideo ? 'video' : 'image',
+            cloudName: activeConfig.cloudName,
+            fileSize: `${(file.size / (1024 * 1024)).toFixed(1)} MB`
+          });
         }
+
         setNotification({
           type: 'success',
           title: 'Direct Cloudinary Upload Successful',
-          message: `Hosted on ${activeConfig.cloudName} CDN (Zero local storage).`
+          message: `Hosted on ${activeConfig.cloudName} CDN & saved to Media Vault.`
         });
       } else {
         const errData = await res.json().catch(() => ({}));

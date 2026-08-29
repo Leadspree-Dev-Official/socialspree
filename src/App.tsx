@@ -1394,6 +1394,7 @@ export function App() {
                   onPostPublished={handlePostPublished}
                   onUpdateTenantCloudinary={handleUpdateTenantCloudinary}
                   onNavigateToCalendar={() => setActiveTab('calendar')}
+                  onAddMediaAsset={handleAddMediaAsset}
                 />
               )}
 
@@ -1426,7 +1427,11 @@ export function App() {
                 <MediaVaultView
                   key={currentTenant.id}
                   tenant={currentTenant}
-                  mediaAssets={mediaAssets.filter(asset => asset.tenantId === currentTenant.id)}
+                  mediaAssets={
+                    (currentTenant.id === 'tenant_0' || currentTenant.name.toLowerCase().includes('super admin') || currentTenant.name.toLowerCase().includes('master') || currentTenant.name.toLowerCase().includes('hq'))
+                      ? mediaAssets
+                      : mediaAssets.filter(asset => asset.tenantId === currentTenant.id)
+                  }
                   onAddMediaAsset={handleAddMediaAsset}
                   onDeleteMediaAsset={handleDeleteMediaAsset}
                   onUseInComposer={(_urls) => {

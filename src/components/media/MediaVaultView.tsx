@@ -68,7 +68,8 @@ export const MediaVaultView: React.FC<MediaVaultViewProps> = ({
 
   const activeCloudinaryConfig = tenant.cloudinaryConfig || GLOBAL_DEFAULT_CLOUDINARY;
 
-  const tenantAssets = mediaAssets.filter(m => m.tenantId === tenant.id);
+  const isMasterAdmin = tenant.id === 'tenant_0' || tenant.name.toLowerCase().includes('super admin') || tenant.name.toLowerCase().includes('master') || tenant.name.toLowerCase().includes('hq');
+  const tenantAssets = isMasterAdmin ? mediaAssets : mediaAssets.filter(m => m.tenantId === tenant.id);
 
   const filteredAssets = tenantAssets.filter(asset => {
     if (filterType !== 'all' && asset.type !== filterType) return false;
