@@ -241,37 +241,19 @@ export const PostComposer: React.FC<PostComposerProps> = ({
           message: `Hosted on ${activeConfig.cloudName} CDN (Zero local storage).`
         });
       } else {
-        const demoUrl = file.type.startsWith('video/')
-          ? 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4'
-          : 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=80';
-        
-        setCloudinaryUrl(demoUrl);
-        if (file.type.startsWith('video/')) {
-          setMediaType('video');
-        } else {
-          setMediaType('image');
-        }
+        const errData = await res.json().catch(() => ({}));
+        const errMsg = errData?.error?.message || 'Failed to upload media to Cloudinary.';
         setNotification({
-          type: 'info',
-          title: 'Cloudinary CDN Ready',
-          message: `File uploaded to ${activeConfig.cloudName} Cloudinary bucket.`
+          type: 'error',
+          title: 'Cloudinary Upload Failed',
+          message: errMsg
         });
       }
-    } catch {
-      const demoUrl = file.type.startsWith('video/')
-        ? 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4'
-        : 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=80';
-      
-      setCloudinaryUrl(demoUrl);
-      if (file.type.startsWith('video/')) {
-        setMediaType('video');
-      } else {
-        setMediaType('image');
-      }
+    } catch (err: any) {
       setNotification({
-        type: 'info',
-        title: 'Cloudinary CDN Ingestion Complete',
-        message: 'Media URL generated and attached to post payload.'
+        type: 'error',
+        title: 'Upload Error',
+        message: err?.message || 'Network error occurred while uploading file.'
       });
     } finally {
       setIsUploadingCloudinary(false);

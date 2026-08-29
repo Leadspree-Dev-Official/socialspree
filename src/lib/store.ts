@@ -409,36 +409,12 @@ export const INITIAL_TENANTS: Tenant[] = [
   }
 ];
 
-export const INITIAL_AI_LOGS: AiCreditLog[] = [
-  {
-    id: 'ai-log-1',
-    tenantId: '00000000-0000-0000-0000-000000000001',
-    tenantName: 'LeadSpree HQ (Master Super Admin)',
-    action: 'plan_grant',
-    creditsAmount: 1000,
-    remainingBalance: 1000,
-    description: 'Initial 1,000 Default AI Credits Granted',
-    timestamp: new Date().toISOString()
-  }
-];
-
+export const INITIAL_AI_LOGS: AiCreditLog[] = [];
 export const INITIAL_ACCOUNTS: SocialAccount[] = [];
 export const INITIAL_POSTS: Post[] = [];
 export const INITIAL_POST_LOGS: PostLog[] = [];
 export const INITIAL_REVIEWS: GoogleReview[] = [];
-
-export const INITIAL_MEDIA_ASSETS: MediaAsset[] = [
-  {
-    id: 'media-1',
-    tenantId: '00000000-0000-0000-0000-000000000001',
-    title: 'Brand Launch Campaign Cover',
-    url: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=80',
-    type: 'image',
-    cloudName: 'djmww1dwr',
-    fileSize: '1.2 MB',
-    createdAt: new Date().toISOString()
-  }
-];
+export const INITIAL_MEDIA_ASSETS: MediaAsset[] = [];
 
 // Storage Persistence Keys
 const STORAGE_KEYS = {
@@ -569,35 +545,7 @@ export const saveStoredMediaAssets = (media: MediaAsset[]) => {
   }
 };
 
-export const INITIAL_BRANDS: AgencyBrand[] = [
-  {
-    id: 'brand-starbucks',
-    agencyTenantId: '00000000-0000-0000-0000-000000000001',
-    brandName: 'Starbucks Coffee Co.',
-    logoUrl: 'https://images.unsplash.com/photo-1541167760496-1628856ab772?w=150&auto=format&fit=crop&q=80',
-    industry: 'Food & Beverage',
-    connectedAccountIds: [],
-    createdAt: new Date().toISOString()
-  },
-  {
-    id: 'brand-nike',
-    agencyTenantId: '00000000-0000-0000-0000-000000000001',
-    brandName: 'Nike Athletics Global',
-    logoUrl: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=150&auto=format&fit=crop&q=80',
-    industry: 'Apparel & Sports',
-    connectedAccountIds: [],
-    createdAt: new Date().toISOString()
-  },
-  {
-    id: 'brand-techCorp',
-    agencyTenantId: '00000000-0000-0000-0000-000000000001',
-    brandName: 'Apex Cloud Systems',
-    logoUrl: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=150&auto=format&fit=crop&q=80',
-    industry: 'Technology & SaaS',
-    connectedAccountIds: [],
-    createdAt: new Date().toISOString()
-  }
-];
+export const INITIAL_BRANDS: AgencyBrand[] = [];
 
 export const getStoredBrands = (): AgencyBrand[] => {
   try {

@@ -446,36 +446,6 @@ export function App() {
     }
   };
 
-  const [isDemoSession, setIsDemoSession] = useState<boolean>(false);
-
-  const handleInstantDemoLogin = (role: 'business_user' | 'super_admin' | 'agency' | 'influencer' = 'business_user') => {
-    setIsDemoSession(true);
-    const demoEmail = role === 'super_admin' ? SUPER_ADMIN_EMAIL : `${role}.demo@socialspree.com`;
-    const demoProfile: Profile = {
-      id: `demo-${role}-${Date.now()}`,
-      email: demoEmail,
-      fullName: role === 'super_admin' ? 'Master Super Admin (Demo)' : role === 'agency' ? 'Apex Agency Director (Demo)' : role === 'influencer' ? 'Creator Studio (Demo)' : 'Demo Growth Leader',
-      avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-      jobTitle: role === 'super_admin' ? 'Platform Executive' : 'Brand Director',
-      phoneNumber: '+1 (555) 019-2834',
-      timezone: 'America/New_York',
-      notifications: { emailDigest: true, postFailureAlerts: true, securityAlerts: true },
-      tenantId: tenants[0]?.id || INITIAL_TENANTS[0].id,
-      isSuperAdmin: role === 'super_admin',
-      role: role,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-
-    setProfile(demoProfile);
-    setIsSuperAdminMode(role === 'super_admin');
-    setCurrentTenant(tenants[0] || INITIAL_TENANTS[0]);
-    setActiveTab('dashboard'); // Both normal users and super admin land on workspace dashboard (/admin)
-    setCloudReady(true);
-    setViewMode('app');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
   // Sync route changes to viewMode and activeTab
   useEffect(() => {
     const route = getInitialTabFromPath();
@@ -503,7 +473,7 @@ export function App() {
         return;
       }
 
-      if (session?.user && !isDemoSession) {
+      if (session?.user) {
         void loadAuthenticatedWorkspace(session.user);
       } else {
         setCloudLoading(false);
@@ -527,7 +497,6 @@ export function App() {
       } else if (event === 'SIGNED_OUT') {
         try { sessionStorage.removeItem('spree_recovery_active'); } catch { /* ignore */ }
         setProfile(null);
-        setIsDemoSession(false);
         setCloudReady(false);
       }
     });
@@ -617,7 +586,6 @@ export function App() {
   const handleSignOut = async () => {
     await supabase.auth.signOut().catch(() => {});
     clearAuthenticatedCache();
-    setIsDemoSession(false);
     setProfile(null);
     setCloudReady(false);
     setIsSuperAdminMode(false);
@@ -1227,7 +1195,6 @@ export function App() {
             <AuthView
               initialMode={authMode === 'signup' ? 'signup' : authMode === 'forgot' ? 'forgot' : 'signin'}
               onCancel={() => { setCloudError(''); setViewMode('public'); navigate('/'); }}
-              onInstantDemoLogin={handleInstantDemoLogin}
               onAuthSuccess={() => {
                 setCloudError('');
                 void loadAuthenticatedWorkspace();
@@ -1241,7 +1208,6 @@ export function App() {
           <PublicNavbar
             onLaunchApp={handleLaunchApp}
             onOpenCheckout={(planId) => handleOpenCheckout(planId)}
-            onInstantDemoLogin={handleInstantDemoLogin}
           />
 
           <main className="flex-1">
@@ -1251,7 +1217,6 @@ export function App() {
                   onNavigate={(view) => navigate(`/${view === 'landing' ? '' : view}`)}
                   onLaunchApp={handleLaunchApp}
                   onOpenCheckout={(planId, cycle, curr, sym) => handleOpenCheckout(planId, cycle, curr, sym)}
-                  onInstantDemoLogin={handleInstantDemoLogin}
                   plans={getStoredPlans()}
                 />
               } />

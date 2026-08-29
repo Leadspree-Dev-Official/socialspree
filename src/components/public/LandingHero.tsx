@@ -23,7 +23,6 @@ interface LandingHeroProps {
   onNavigate?: (view: string) => void;
   onLaunchApp: () => void;
   onOpenCheckout: (planId?: string, billingCycle?: 'monthly' | 'yearly', selectedCurrency?: CurrencyCode, currencySymbol?: string) => void;
-  onInstantDemoLogin?: (role?: 'business_user' | 'super_admin' | 'agency' | 'influencer') => void;
   plans?: SubscriptionPlan[];
 }
 
@@ -31,7 +30,6 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
   onNavigate,
   onLaunchApp,
   onOpenCheckout,
-  onInstantDemoLogin,
   plans,
 }) => {
   const scrollToSection = (id: string) => {
@@ -95,23 +93,21 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
                 <ArrowRight className="w-4 h-4" />
               </button>
 
-              {onInstantDemoLogin && (
-                <button
-                  type="button"
-                  onClick={() => onInstantDemoLogin('business_user')}
-                  className="w-full sm:w-auto px-6 py-3.5 rounded-2xl bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 hover:border-purple-300 dark:hover:border-purple-700 text-slate-800 dark:text-slate-100 font-bold text-sm shadow-xs transition-all flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  <Zap className="w-4 h-4 text-[#5D3FD3] dark:text-purple-400 fill-[#5D3FD3] dark:fill-purple-400" />
-                  <span>1-Click Instant Demo</span>
-                </button>
-              )}
+              <button
+                type="button"
+                onClick={onLaunchApp}
+                className="w-full sm:w-auto px-6 py-3.5 rounded-2xl bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 hover:border-purple-300 dark:hover:border-purple-700 text-slate-800 dark:text-slate-100 font-bold text-sm shadow-xs transition-all flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <span>Sign In to Workspace</span>
+                <ArrowRight className="w-4 h-4 text-slate-400" />
+              </button>
             </div>
 
             {/* Guarantees Badges */}
             <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 pt-2 text-xs font-semibold text-slate-500 dark:text-slate-400">
               <span className="flex items-center gap-1.5">
                 <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                <span>No Credit Card Required for Demo</span>
+                <span>Enterprise Supabase Cloud</span>
               </span>
               <span className="flex items-center gap-1.5">
                 <ShieldCheck className="w-4 h-4 text-purple-600 dark:text-purple-400" />

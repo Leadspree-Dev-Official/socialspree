@@ -431,13 +431,21 @@ How can I assist you today? 😊`;
 
     // Simulate Agent Thinking & Scheduling Execution
     setTimeout(async () => {
-      const activeChannels: SocialPlatform[] = tenantAccounts.length > 0
-        ? tenantAccounts.map(a => a.platform)
-        : ['instagram', 'linkedin', 'facebook'];
+      const activeChannels: SocialPlatform[] = tenantAccounts.map(a => a.platform);
+      const targetAccountRefs: SelectedAccountRef[] = tenantAccounts.map(a => ({ platform: a.platform, accountId: a.channelAccountId }));
 
-      const targetAccountRefs: SelectedAccountRef[] = tenantAccounts.length > 0
-        ? tenantAccounts.map(a => ({ platform: a.platform, accountId: a.channelAccountId }))
-        : [{ platform: 'instagram', accountId: 'chn_inst_demo' }, { platform: 'linkedin', accountId: 'chn_li_demo' }];
+      if (targetAccountRefs.length === 0) {
+        const noChannelReply: ChatMessage = {
+          id: crypto.randomUUID(),
+          sender: 'agent',
+          agentName: 'SocialSpree AI Assistant',
+          text: '⚠️ You do not have any connected social channels in this workspace. Please connect Facebook, Instagram, or LinkedIn in the **Social Connections** tab first before scheduling posts.',
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        };
+        setIsThinking(false);
+        setMessages(prev => [...prev, noChannelReply]);
+        return;
+      }
 
       // Check if user is asking to RESCHEDULE a previous post
       const lastMsgWithPost = [...messages].reverse().find(m => m.scheduledPosts && m.scheduledPosts.length > 0);

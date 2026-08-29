@@ -143,34 +143,10 @@ export const MediaVaultView: React.FC<MediaVaultViewProps> = ({
           });
           successCount++;
         } else {
-          const fallbackUrl = isVideo
-            ? 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4'
-            : 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=80';
-
-          onAddMediaAsset({
-            tenantId: tenant.id,
-            title: fileTitle,
-            url: fallbackUrl,
-            type: isVideo ? 'video' : 'image',
-            cloudName: activeCloudinaryConfig.cloudName,
-            fileSize: `${(file.size / (1024 * 1024)).toFixed(1)} MB`
-          });
-          successCount++;
+          console.error(`Upload failed for ${file.name}: HTTP ${res.status}`);
         }
-      } catch {
-        const fallbackUrl = isVideo
-          ? 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4'
-          : 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=80';
-
-        onAddMediaAsset({
-          tenantId: tenant.id,
-          title: fileTitle,
-          url: fallbackUrl,
-          type: isVideo ? 'video' : 'image',
-          cloudName: activeCloudinaryConfig.cloudName,
-          fileSize: `${(file.size / (1024 * 1024)).toFixed(1)} MB`
-        });
-        successCount++;
+      } catch (err) {
+        console.error(`Upload error for ${file.name}:`, err);
       }
     }
 

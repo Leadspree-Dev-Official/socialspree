@@ -22,14 +22,12 @@ import {
 
 interface AuthViewProps {
   onCancel: () => void;
-  onInstantDemoLogin?: (role?: 'business_user' | 'super_admin' | 'agency' | 'influencer') => void;
   onAuthSuccess?: () => void;
   initialMode?: 'signin' | 'signup' | 'forgot';
 }
 
-export function AuthView({ onCancel, onInstantDemoLogin, onAuthSuccess, initialMode = 'signin' }: AuthViewProps) {
+export function AuthView({ onCancel, onAuthSuccess, initialMode = 'signin' }: AuthViewProps) {
   const [mode, setMode] = useState<'signin' | 'signup' | 'forgot'>(initialMode);
-  const [selectedDemoRole, setSelectedDemoRole] = useState<'business_user' | 'super_admin' | 'agency' | 'influencer'>('business_user');
 
   // Form Fields
   const [fullName, setFullName] = useState('');
@@ -463,72 +461,6 @@ export function AuthView({ onCancel, onInstantDemoLogin, onAuthSuccess, initialM
                 Back to Sign In
               </button>
             </form>
-          )}
-
-          {/* INSTANT DEMO SANDBOX */}
-          {onInstantDemoLogin && (
-            <div className="mt-6 pt-5 border-t border-slate-100 dark:border-slate-800 space-y-3">
-              <div className="p-4 bg-gradient-to-br from-purple-50 via-indigo-50/50 to-blue-50 dark:from-slate-800/80 dark:via-purple-950/40 dark:to-slate-800/80 border-2 border-purple-200/90 dark:border-purple-800/70 rounded-2xl shadow-xs space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-black uppercase tracking-wider text-[#5D3FD3] dark:text-purple-300 flex items-center gap-1.5">
-                    <Zap className="w-3.5 h-3.5 fill-[#5D3FD3] dark:fill-purple-300" />
-                    Instant Demo Sandbox
-                  </span>
-                  <span className="text-[10px] font-bold bg-purple-100 dark:bg-purple-950/80 text-purple-800 dark:text-purple-300 px-2 py-0.5 rounded-full border border-purple-200 dark:border-purple-800">
-                    No Sign-up
-                  </span>
-                </div>
-
-                {/* Role Selector Pills */}
-                <div className="grid grid-cols-3 gap-1.5 p-1 bg-white/80 dark:bg-slate-900/80 rounded-xl border border-purple-200/60 dark:border-slate-700">
-                  <button
-                    type="button"
-                    onClick={() => setSelectedDemoRole('business_user')}
-                    className={`px-2 py-1.5 rounded-lg text-[11px] font-bold flex items-center justify-center gap-1 transition-all cursor-pointer ${
-                      selectedDemoRole === 'business_user'
-                        ? 'bg-[#5D3FD3] text-white shadow-xs'
-                        : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-purple-50 dark:hover:bg-slate-800'
-                    }`}
-                  >
-                    <User className="w-3 h-3" />
-                    Business
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedDemoRole('agency')}
-                    className={`px-2 py-1.5 rounded-lg text-[11px] font-bold flex items-center justify-center gap-1 transition-all cursor-pointer ${
-                      selectedDemoRole === 'agency'
-                        ? 'bg-[#5D3FD3] text-white shadow-xs'
-                        : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-purple-50 dark:hover:bg-slate-800'
-                    }`}
-                  >
-                    <Building2 className="w-3 h-3" />
-                    Agency
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedDemoRole('super_admin')}
-                    className={`px-2 py-1.5 rounded-lg text-[11px] font-bold flex items-center justify-center gap-1 transition-all cursor-pointer ${
-                      selectedDemoRole === 'super_admin'
-                        ? 'bg-[#5D3FD3] text-white shadow-xs'
-                        : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-purple-50 dark:hover:bg-slate-800'
-                    }`}
-                  >
-                    <Shield className="w-3 h-3" />
-                    Admin
-                  </button>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => onInstantDemoLogin(selectedDemoRole)}
-                  className="flex h-11 w-full items-center justify-center gap-2 bg-gradient-to-r from-[#5D3FD3] via-purple-600 to-[#0066FF] px-4 text-xs font-black text-white transition-all hover:scale-[1.02] active:scale-[0.98] rounded-xl shadow-md shadow-purple-500/20 cursor-pointer"
-                >
-                  <Sparkles className="h-4 w-4 text-amber-300 animate-pulse" />
-                  <span>Launch Demo ({selectedDemoRole === 'super_admin' ? 'Master Admin' : selectedDemoRole === 'agency' ? 'Agency Mode' : 'Business User'})</span>
-                </button>
-              </div>
-            </div>
           )}
 
         </div>

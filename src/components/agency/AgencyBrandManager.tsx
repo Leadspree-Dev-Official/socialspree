@@ -156,10 +156,27 @@ export const AgencyBrandManager: React.FC<AgencyBrandManagerProps> = ({
         </div>
 
         {/* Brands Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredBrands.map((brand) => {
-            const isCurrentActive = activeBrand?.id === brand.id;
-            return (
+        {filteredBrands.length === 0 ? (
+          <div className="text-center py-12 px-4 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 space-y-3">
+            <Building2 className="w-12 h-12 text-slate-400 mx-auto stroke-1" />
+            <h4 className="font-bold text-slate-800 dark:text-slate-200 text-sm">No Client Brands Provisioned Yet</h4>
+            <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
+              Create client brand profiles to organize multi-channel social connections, media assets, and scheduled campaigns into isolated workspaces.
+            </p>
+            <button
+              type="button"
+              onClick={() => setShowAddModal(true)}
+              className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#5D3FD3] hover:bg-purple-700 text-white font-bold text-xs rounded-xl shadow-md cursor-pointer transition-all"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>Provision First Brand</span>
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredBrands.map((brand) => {
+              const isCurrentActive = activeBrand?.id === brand.id;
+              return (
               <div
                 key={brand.id}
                 className={`rounded-2xl border transition-all p-5 space-y-4 flex flex-col justify-between ${
@@ -233,6 +250,7 @@ export const AgencyBrandManager: React.FC<AgencyBrandManagerProps> = ({
             );
           })}
         </div>
+        )}
       </div>
 
       {/* PROVISION BRAND MODAL */}

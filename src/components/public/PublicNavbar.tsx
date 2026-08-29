@@ -17,7 +17,6 @@ import { ThemeToggle } from '../layout/ThemeToggle';
 interface PublicNavbarProps {
   onLaunchApp: () => void;
   onOpenCheckout: (planId?: string) => void;
-  onInstantDemoLogin?: (role?: 'business_user' | 'super_admin' | 'agency' | 'influencer') => void;
 }
 
 // Exactly 3 Nav items: Overview, Pricing, About & More
@@ -30,10 +29,8 @@ const navItems: { label: string; href: string }[] = [
 export const PublicNavbar: React.FC<PublicNavbarProps> = ({
   onLaunchApp,
   onOpenCheckout,
-  onInstantDemoLogin,
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [demoDropdownOpen, setDemoDropdownOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
@@ -122,62 +119,6 @@ export const PublicNavbar: React.FC<PublicNavbarProps> = ({
             {/* Theme Toggle Button */}
             <ThemeToggle />
 
-            {/* Slim Instant Demo Button */}
-            {onInstantDemoLogin && (
-              <div className="relative">
-                <button
-                  type="button"
-                  onClick={() => setDemoDropdownOpen(!demoDropdownOpen)}
-                  className="px-2.5 py-1 rounded-lg bg-purple-50 dark:bg-purple-950/50 hover:bg-purple-100 dark:hover:bg-purple-900/60 text-[#5D3FD3] dark:text-purple-300 border border-purple-200/80 dark:border-purple-800/80 text-[11px] font-bold transition-all flex items-center gap-1 cursor-pointer"
-                >
-                  <Zap className="w-3 h-3 fill-[#5D3FD3] text-[#5D3FD3] dark:fill-purple-400 dark:text-purple-400" />
-                  <span>Instant Demo</span>
-                  <ChevronDown className="w-3 h-3 opacity-70" />
-                </button>
-
-                {demoDropdownOpen && (
-                  <div className="absolute right-0 mt-1.5 w-52 bg-white dark:bg-slate-900 border border-purple-100 dark:border-slate-800 rounded-xl shadow-xl p-1.5 z-50 space-y-0.5 animate-in fade-in zoom-in-95 duration-100">
-                    <div className="px-2.5 py-1 text-[9px] font-mono font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-                      Demo Personas:
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setDemoDropdownOpen(false);
-                        onInstantDemoLogin('business_user');
-                      }}
-                      className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-purple-50 dark:hover:bg-slate-800 hover:text-[#5D3FD3] dark:hover:text-purple-300 transition-colors text-left cursor-pointer"
-                    >
-                      <User className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400 shrink-0" />
-                      <span>Business User</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setDemoDropdownOpen(false);
-                        onInstantDemoLogin('agency');
-                      }}
-                      className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-purple-50 dark:hover:bg-slate-800 hover:text-[#5D3FD3] dark:hover:text-purple-300 transition-colors text-left cursor-pointer"
-                    >
-                      <Building2 className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 shrink-0" />
-                      <span>Agency Director</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setDemoDropdownOpen(false);
-                        onInstantDemoLogin('super_admin');
-                      }}
-                      className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-purple-50 dark:hover:bg-slate-800 hover:text-[#5D3FD3] dark:hover:text-purple-300 transition-colors text-left cursor-pointer"
-                    >
-                      <Shield className="w-3.5 h-3.5 text-amber-500 dark:text-amber-400 shrink-0" />
-                      <span>Super Admin</span>
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
-
             {/* Auth Controls */}
             <div className="flex items-center gap-2">
               <button
@@ -242,41 +183,6 @@ export const PublicNavbar: React.FC<PublicNavbarProps> = ({
               </button>
             ))}
           </div>
-
-          {onInstantDemoLogin && (
-            <div className="pt-2 border-t border-slate-100 dark:border-slate-800 grid grid-cols-3 gap-1.5">
-              <button
-                type="button"
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  onInstantDemoLogin('business_user');
-                }}
-                className="py-1.5 px-1 rounded-lg bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 text-[10px] font-bold text-center"
-              >
-                🏢 Business
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  onInstantDemoLogin('agency');
-                }}
-                className="py-1.5 px-1 rounded-lg bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 text-[10px] font-bold text-center"
-              >
-                💼 Agency
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  onInstantDemoLogin('super_admin');
-                }}
-                className="py-1.5 px-1 rounded-lg bg-amber-50 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 text-[10px] font-bold text-center"
-              >
-                🛡️ Admin
-              </button>
-            </div>
-          )}
         </div>
       )}
     </header>
