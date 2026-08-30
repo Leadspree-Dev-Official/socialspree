@@ -302,3 +302,23 @@ export async function deleteComposioScheduledPost(
   return data?.deleted ?? true;
 }
 
+
+/**
+ * Disconnects a channel at Composio and removes the local row.
+ *
+ * Deleting the row alone is not enough: the next provider sync re-creates it,
+ * so the channel comes back after a reload.
+ */
+export async function disconnectComposioAccount(
+  tenantId: string,
+  channelAccountId: string
+): Promise<{ disconnected: boolean; warning?: string }> {
+  const { data, error } = await supabase.functions.invoke('composio-accounts', {
+    body: { action: 'disconnect', tenantId, channelAccountId },
+  });
+
+  if (error || data?.error) {
+    throw new Error(data?.error || error?.message || 'Could not disconnect this channel.');
+  }
+  return { disconnected: true, warning: data?.warning };
+}

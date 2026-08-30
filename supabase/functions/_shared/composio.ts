@@ -140,3 +140,28 @@ export function extractIdentity(platform: string, payload: any): string | null {
       return null;
   }
 }
+
+/**
+ * Disconnects an account at Composio.
+ *
+ * Deleting only the local row is not a disconnect: composio-accounts re-syncs
+ * from Composio on the next page load and the account reappears, which reads to
+ * the customer as "disconnect does not work".
+ */
+export async function deleteConnectedAccount(
+  apiKey: string,
+  connectedAccountId: string
+): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const res = await fetch(`${COMPOSIO_V3}/connected_accounts/${connectedAccountId}`, {
+      method: 'DELETE',
+      headers: { 'x-api-key': apiKey },
+    });
+    // Already gone is a success from the caller's point of view.
+    if (res.ok || res.status === 404) return { ok: true };
+    const body = await res.text().catch(() => '');
+    return { ok: false, error: body.slice(0, 200) || `HTTP ${res.status}` };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : 'request failed' };
+  }
+}

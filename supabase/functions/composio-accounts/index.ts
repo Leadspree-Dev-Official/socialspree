@@ -1,5 +1,5 @@
 import { actor, cors, json } from '../_shared/server.ts';
-import { getComposioKey, normalizeComposioError, listConnectedAccounts, executeTool, extractIdentity } from '../_shared/composio.ts';
+import { getComposioKey, normalizeComposioError, listConnectedAccounts, executeTool, extractIdentity, deleteConnectedAccount } from '../_shared/composio.ts';
 import { capabilityFor } from '../_shared/platforms.ts';
 
 Deno.serve(async req => {
@@ -15,6 +15,29 @@ Deno.serve(async req => {
     const label = body.label || 'slot-1';
 
     if (!apiKey) return json({ error: 'Composio is not configured for this workspace' }, 503, req);
+
+    // Disconnecting must revoke the account at Composio too, or the next sync
+    // simply re-creates the row the customer just removed.
+    if (body.action === 'disconnect') {
+      const channelAccountId = String(body.channelAccountId || '');
+      if (!channelAccountId) return json({ error: 'channelAccountId is required' }, 400, req);
+
+      const removal = await deleteConnectedAccount(apiKey, channelAccountId);
+
+      // Remove the local row regardless: leaving it while the provider link is
+      // gone would show a channel that cannot publish.
+      await db.from('social_connections')
+        .delete()
+        .eq('tenant_id', tenantId)
+        .eq('channel_account_id', channelAccountId);
+
+      return json({
+        disconnected: true,
+        revokedAtProvider: removal.ok,
+        ...(removal.ok ? {} : { warning: `Removed locally, but Composio reported: ${removal.error}` }),
+      }, 200, req);
+    }
+
 
     // v1 returns 410 Gone; v3 is the live listing endpoint.
     const accounts: any[] = await listConnectedAccounts(apiKey, entityId);

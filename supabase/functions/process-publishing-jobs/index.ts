@@ -94,6 +94,24 @@ Deno.serve(async req => {
           : null
       }).eq('id', job.post_id).eq('tenant_id', job.tenant_id);
 
+      // Scheduled posts previously left no audit trail at all — only instant
+      // publishes were logged, so the audit view silently omitted every post
+      // that went out on a schedule.
+      await db.from('post_logs').insert({
+        post_id: job.post_id,
+        tenant_id: job.tenant_id,
+        api_post_id: result.apiPostId,
+        request_payload: {
+          post_id: job.post_id,
+          content: job.posts?.content ?? null,
+          media_urls: job.posts?.media_urls ?? null,
+          attempt: nextAttempt
+        },
+        response_payload: result.rawResponse,
+        http_status: result.partialFailure ? 207 : 200,
+        execution_type: 'background_cron'
+      });
+
       succeeded++;
     } catch (e: any) {
       const errorMsg = e instanceof Error ? e.message : String(e);
@@ -113,6 +131,16 @@ Deno.serve(async req => {
         status: terminal ? 'failed' : 'publishing',
         error_message: terminal ? errorMsg : null
       }).eq('id', job.post_id).eq('tenant_id', job.tenant_id);
+
+      await db.from('post_logs').insert({
+        post_id: job.post_id,
+        tenant_id: job.tenant_id,
+        api_post_id: null,
+        request_payload: { post_id: job.post_id, attempt: nextAttempt, terminal },
+        response_payload: { error: errorMsg },
+        http_status: 500,
+        execution_type: 'background_cron'
+      });
     }
   }
 
