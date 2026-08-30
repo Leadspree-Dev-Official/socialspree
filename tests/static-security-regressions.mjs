@@ -203,8 +203,8 @@ assert.match(dispatcherFinal, /platformResults/, 'dispatcher must read Zernio\'s
 const connectionsView = await read('src/components/connections/SocialConnectionsView.tsx');
 assert.match(
   connectionsView,
-  /platformId !== 'threads' && platformId !== 'google_business'/,
-  'Threads and Google Business must always use the Zernio connect flow'
+  /zernioOnly[\s\S]{0,120}'threads'[\s\S]{0,120}'google_business'/,
+  'Zernio-only channels must always use the Zernio connect flow'
 );
 
 console.log('Zernio Threads/Google Business routing checks passed.');
