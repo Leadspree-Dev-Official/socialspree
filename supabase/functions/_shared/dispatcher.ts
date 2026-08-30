@@ -188,9 +188,33 @@ export async function dispatchPost(
     }
   }
 
-  // Only retry through Zernio the ones Composio actually failed on — a
-  // channel Composio already delivered must not get double-posted.
-  const zernioCandidates = [...zernioFromStart, ...composioFailed];
+  // Only retry through Zernio when a channel is ALSO connected there.
+  //
+  // A composio-connected row's channel_account_id is Composio's own account
+  // id (e.g. "ca_xkmrFchvyoRD") — Zernio has no idea what that string means
+  // and rejects it with "Invalid accountId format". There is no ID mapping
+  // between the two providers for the same logical account, so a Composio
+  // failure can only fail over to Zernio if a SEPARATE zernio-provider
+  // connection exists for that platform; otherwise the Composio failure is
+  // simply the final result.
+  const zernioProviderByPlatform = new Map<string, any>();
+  for (const conn of connections) {
+    if (String(conn.provider ?? '').toLowerCase() === 'zernio') {
+      zernioProviderByPlatform.set(String(conn.platform).toLowerCase(), conn);
+    }
+  }
+
+  const zernioFallback: any[] = [];
+  for (const failed of composioFailed) {
+    const zernioTwin = zernioProviderByPlatform.get(String(failed.platform).toLowerCase());
+    if (zernioTwin) {
+      zernioFallback.push(zernioTwin);
+    }
+    // No Zernio-side account for this platform: the Composio failure already
+    // recorded in `results` stands as the final outcome for this channel.
+  }
+
+  const zernioCandidates = [...zernioFromStart, ...zernioFallback];
 
   // ===========================================================================
   // 2. ZERNIO — Threads, Google Business, anything forced, and Composio's failures.
