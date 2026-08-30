@@ -52,6 +52,7 @@ export async function executeTool(
   apiKey: string,
   toolSlug: string,
   connectedAccountId: string,
+  entityId: string,
   args: Record<string, unknown>,
   idempotencyKey?: string
 ): Promise<ComposioExecution> {
@@ -64,7 +65,13 @@ export async function executeTool(
   const res = await fetch(`${COMPOSIO_V3}/tools/execute/${toolSlug}`, {
     method: 'POST',
     headers,
-    body: JSON.stringify({ connected_account_id: connectedAccountId, arguments: args }),
+    // user_id is required even with connected_account_id; without it v3
+    // returns 400 'User ID is required with connected account'.
+    body: JSON.stringify({
+      connected_account_id: connectedAccountId,
+      user_id: entityId,
+      arguments: args,
+    }),
   });
 
   const raw = await res.text();
@@ -108,10 +115,13 @@ export function extractIdentity(platform: string, payload: any): string | null {
   const firstOf = (...candidates: unknown[]) =>
     candidates.find(v => typeof v === 'string' && v.length > 0) as string | undefined;
 
-  const container = payload?.data ?? payload;
+  // Facebook wraps its result in response_data; Instagram returns it flat.
+  const outer = payload?.data ?? payload;
+  const container = outer?.response_data ?? outer;
 
   switch (String(platform).toLowerCase()) {
     case 'facebook': {
+      // FACEBOOK_GET_USER_PAGES -> { response_data: { data: [ { id, name } ] } }
       const pages = container?.data ?? container?.pages ?? container;
       const page = Array.isArray(pages) ? pages[0] : pages;
       return firstOf(page?.id, page?.page_id) ?? null;

@@ -122,6 +122,7 @@ export async function dispatchPost(
                 composioApiKey,
                 'INSTAGRAM_CREATE_MEDIA_CONTAINER',
                 conn.channel_account_id,
+                entityId,
                 {
                   ig_user_id: identity,
                   image_url: mediaUrls[0],
@@ -142,6 +143,7 @@ export async function dispatchPost(
                 composioApiKey,
                 'INSTAGRAM_CREATE_POST',
                 conn.channel_account_id,
+                entityId,
                 { ig_user_id: identity, creation_id: creationId },
                 `${idempotencyKey}_${conn.channel_account_id}`
               );
@@ -150,6 +152,7 @@ export async function dispatchPost(
                 composioApiKey,
                 actionName,
                 conn.channel_account_id,
+                entityId,
                 buildParams(platformLower, identity, {
                   content: post.content || '',
                   mediaUrls

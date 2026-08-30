@@ -552,3 +552,25 @@ verify_jwt = false
 import_map = "./functions/publish-post/deno.json"
 entrypoint = "./functions/chatgpt-connector/index.ts"
 
+
+# Meta calls this endpoint directly and has no Supabase JWT to present, so
+# platform JWT verification must be off. The function is not unauthenticated:
+# it verifies Meta's x-hub-signature-256 HMAC against META_APP_SECRET and
+# rejects anything that fails, which is the stronger check for this caller.
+[functions.meta-comment-webhook]
+enabled = true
+verify_jwt = false
+entrypoint = "./functions/meta-comment-webhook/index.ts"
+
+# Mints short-lived, tenant-scoped Cloudinary upload signatures for signed-in
+# users, so the platform JWT gate stays on.
+[functions.cloudinary-sign]
+enabled = true
+verify_jwt = true
+entrypoint = "./functions/cloudinary-sign/index.ts"
+
+# Creates manual payment orders and, for super admins, approves them.
+[functions.manual-checkout]
+enabled = true
+verify_jwt = true
+entrypoint = "./functions/manual-checkout/index.ts"

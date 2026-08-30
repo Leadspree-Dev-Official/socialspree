@@ -40,7 +40,7 @@ Deno.serve(async req => {
       if (capability.identityAction && acc.status === 'ACTIVE') {
         try {
           const identityResult = await executeTool(
-            apiKey, capability.identityAction, channelAccountId, {}
+            apiKey, capability.identityAction, channelAccountId, entityId, {}
           );
           if (identityResult.ok) {
             publishingIdentity = extractIdentity(platform, identityResult.data);
