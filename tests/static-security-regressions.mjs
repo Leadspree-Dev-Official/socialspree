@@ -120,3 +120,26 @@ assert.match(dispatcher2, /resolveAction/, 'dispatcher must resolve actions from
 assert.match(capabilities, /unverified/, 'capability map must distinguish verified from unverified channels');
 
 console.log('Channel capability checks passed.');
+
+// Credentials must never be reported as saved before the vault confirms it.
+// This shipped once: the Super Admin portal showed a success toast and then
+// fired the vault write with .catch(() => {}), so rejected keys vanished
+// silently and the workspace could not publish with no visible reason.
+const adminPortal = await read('src/components/admin/SuperAdminPortal.tsx');
+assert.doesNotMatch(
+  adminPortal,
+  /void supabase\.functions\.invoke\('manage-credentials'/,
+  'credential saves must be awaited, not fire-and-forget'
+);
+assert.match(
+  adminPortal,
+  /await supabase\.functions\.invoke\('manage-credentials'/,
+  'credential saves must await the vault result'
+);
+assert.doesNotMatch(
+  adminPortal,
+  /successfully saved!`\);/,
+  'success must not be claimed before the vault responds'
+);
+
+console.log('Credential persistence checks passed.');

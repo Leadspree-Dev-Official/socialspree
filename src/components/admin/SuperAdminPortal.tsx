@@ -569,29 +569,47 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
     }
 
     // 2. Clear modal inputs and close modal
+    const submittedKeys = [...apiKeysInput];
+    const submittedProviders = [...apiProvidersInput];
     setApiKeysInput(Array(apiCount).fill(''));
     setApiProvidersInput(Array(apiCount).fill('zernio'));
     setShowAddApiModal(false);
 
-    // 3. Show high-visibility success toast
-    setSettingsNotification(`✅ Saved ${newlyAddedSlots.length} API Slot(s) for ${targetTenant.name}! Total: ${mergedSlots.length} Slots.`);
-    setTimeout(() => setSettingsNotification(null), 4000);
+    // 3. Store each key in the encrypted vault and WAIT for the result.
+    //    This used to be fire-and-forget behind a success toast, so a rejected
+    //    key looked saved while the vault stayed empty — which is exactly how
+    //    a workspace ends up unable to publish with no visible reason.
+    setSettingsNotification('Saving API keys to the secure vault…');
 
-    // 4. Background save to secure database vault (non-blocking)
-    for (let index = 0; index < apiKeysInput.length; index++) {
-      const secret = apiKeysInput[index].trim();
-      const prov = apiProvidersInput[index] || 'zernio';
+    const failures: string[] = [];
+    let savedCount = 0;
+
+    for (let index = 0; index < submittedKeys.length; index++) {
+      const secret = submittedKeys[index].trim();
+      const prov = submittedProviders[index] || 'zernio';
       const slotNum = startIdx + index + 1;
       if (!secret) continue;
-      void supabase.functions.invoke('manage-credentials', { 
-        body: { 
-          tenantId: targetTenantId, 
-          provider: prov, 
-          label: `slot-${slotNum}`, 
-          secret 
-        } 
-      }).catch(() => {});
+
+      try {
+        const { data, error } = await supabase.functions.invoke('manage-credentials', {
+          body: { tenantId: targetTenantId, provider: prov, label: `slot-${slotNum}`, secret }
+        });
+        if (error || data?.error) {
+          failures.push(`Slot ${slotNum} (${prov}): ${data?.error || error?.message || 'rejected'}`);
+        } else {
+          savedCount += 1;
+        }
+      } catch (err: any) {
+        failures.push(`Slot ${slotNum} (${prov}): ${err?.message || 'request failed'}`);
+      }
     }
+
+    setSettingsNotification(
+      failures.length === 0
+        ? `Saved ${savedCount} API key${savedCount === 1 ? '' : 's'} to the vault for ${targetTenant.name}.`
+        : `Saved ${savedCount}. NOT saved — ${failures.join(' | ')}. These slots cannot publish until a valid key is stored.`
+    );
+    setTimeout(() => setSettingsNotification(null), failures.length ? 15000 : 4000);
   };
 
   const handleTopupSubmit = (e: React.FormEvent) => {
@@ -623,22 +641,43 @@ export const SuperAdminPortal: React.FC<SuperAdminPortalProps> = ({
       onUpdateTenantApiSlotDetails(tenantId, updatedSlots);
     }
 
-    // 2. Attempt secure background vault save
-    if (keyTrimmed) {
-      void supabase.functions.invoke('manage-credentials', { 
-        body: { 
-          tenantId, 
-          provider: targetSlot.provider || 'zernio', 
-          label: `slot-${targetSlot.slotNumber}`, 
-          secret: keyTrimmed 
-        } 
-      }).catch(() => {});
-    }
-
+    // 2. Store in the encrypted vault, and report what actually happened.
+    const slotLabel = targetSlot.slotName || `Slot ${targetSlot.slotNumber}`;
     setEditingKeySlotId(null);
     setCustomZernioKey('');
-    setSettingsNotification(`✅ API Key for ${targetSlot.slotName || `Slot ${targetSlot.slotNumber}`} successfully saved!`);
-    setTimeout(() => setSettingsNotification(null), 3500);
+
+    if (!keyTrimmed) {
+      setSettingsNotification(`${slotLabel} updated.`);
+      setTimeout(() => setSettingsNotification(null), 3500);
+      return;
+    }
+
+    setSettingsNotification(`Saving the key for ${slotLabel}…`);
+    try {
+      const { data, error } = await supabase.functions.invoke('manage-credentials', {
+        body: {
+          tenantId,
+          provider: targetSlot.provider || 'zernio',
+          label: `slot-${targetSlot.slotNumber}`,
+          secret: keyTrimmed
+        }
+      });
+
+      if (error || data?.error) {
+        setSettingsNotification(
+          `${slotLabel} was NOT saved — ${data?.error || error?.message || 'the provider rejected the key'}. ` +
+          `Check the key and that the provider matches.`
+        );
+        setTimeout(() => setSettingsNotification(null), 15000);
+        return;
+      }
+
+      setSettingsNotification(`${slotLabel} saved to the vault${data?.masked ? ` (${data.masked})` : ''}.`);
+      setTimeout(() => setSettingsNotification(null), 4000);
+    } catch (err: any) {
+      setSettingsNotification(`${slotLabel} was NOT saved — ${err?.message || 'request failed'}.`);
+      setTimeout(() => setSettingsNotification(null), 15000);
+    }
   };
 
   const handleRemoveSingleSlot = (tenantId: string, slotId: string) => {
