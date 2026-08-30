@@ -16,8 +16,21 @@ import { actor, cors, json } from '../_shared/server.ts';
 import { getComposioKey, normalizeComposioError, executeTool } from '../_shared/composio.ts';
 
 /** Verified against the live Composio v3 catalogue. */
-const INSIGHT_TOOLS: Record<string, { tool: string; idField: string }> = {
-  instagram: { tool: 'INSTAGRAM_GET_POST_INSIGHTS', idField: 'ig_post_id' },
+const INSIGHT_TOOLS: Record<string, { tool: string; idField: string; extraArgs?: Record<string, unknown> }> = {
+  // Verified live against a real published post. Omitting `metric` makes the
+  // tool default to a set that includes 'impressions', which the Insights API
+  // now rejects for single-image posts: "The Media Insights API does not
+  // support the impressions metric for this media product type." It also
+  // must be a JSON array — a comma-separated string fails a separate way
+  // ("Input should be a valid list").
+  instagram: {
+    tool: 'INSTAGRAM_GET_POST_INSIGHTS',
+    idField: 'ig_post_id',
+    extraArgs: { metric: ['reach', 'saved', 'likes', 'comments', 'shares'] },
+  },
+  // Facebook's `metrics` parameter has a working default on Composio's side
+  // (a comma-separated string of impression/engagement metrics); left
+  // unset deliberately rather than guessing a replacement for an untested path.
   facebook: { tool: 'FACEBOOK_GET_POST_INSIGHTS', idField: 'post_id' },
 };
 
@@ -99,7 +112,7 @@ Deno.serve(async req => {
             config.tool,
             channel.accountId,
             entityId,
-            { [config.idField]: platformPostId }
+            { [config.idField]: platformPostId, ...(config.extraArgs ?? {}) }
           );
 
           if (!result.ok) {

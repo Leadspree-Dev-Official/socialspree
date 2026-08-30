@@ -61,15 +61,20 @@ Deno.serve(async req => {
         );
       }
 
-      const res = await fetch(`${COMPOSIO_V3}/connected_accounts`, {
+      // POST /connected_accounts (nested auth_config/connection body) is what
+      // this function used to call. Verified live against the real API: it
+      // returns 400 for every Composio-managed auth config —
+      // "Creating connections on this endpoint ... is no longer supported.
+      // Use POST /api/v3/connected_accounts/link instead." That made every
+      // connect attempt in this workspace fail before a customer ever saw the
+      // OAuth screen. /link takes a flat body and was confirmed working live.
+      const res = await fetch(`${COMPOSIO_V3}/connected_accounts/link`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-api-key': composioApiKey },
         body: JSON.stringify({
-          auth_config: { id: authConfigId },
-          connection: {
-            user_id: entityId,
-            ...(callbackUrl ? { callback_url: callbackUrl } : {}),
-          },
+          auth_config_id: authConfigId,
+          user_id: entityId,
+          ...(callbackUrl ? { redirect_url: callbackUrl } : {}),
         }),
       });
 
@@ -89,17 +94,14 @@ Deno.serve(async req => {
         );
       }
 
-      const redirectUrl =
-        data?.connection_data?.val?.redirectUrl ??
-        data?.redirect_url ??
-        data?.redirectUrl ??
-        data?.connection_data?.redirect_url;
-
+      // /link responds with redirect_url + connected_account_id, not the
+      // nested connection_data shape the old (unreachable) endpoint used.
+      const redirectUrl = data?.redirect_url;
       if (!redirectUrl) {
         return json({ error: 'Composio did not return an authorisation URL.' }, 502, req);
       }
 
-      return json({ redirectUrl, connectionId: data?.id ?? null }, 200, req);
+      return json({ redirectUrl, connectionId: data?.connected_account_id ?? null }, 200, req);
     }
 
     if (action === 'get_session') {
