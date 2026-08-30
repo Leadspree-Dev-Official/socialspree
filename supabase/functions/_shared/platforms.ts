@@ -22,6 +22,8 @@ export type ChannelStatus = 'supported' | 'needs_setup' | 'unavailable';
 
 export interface ChannelCapability {
   status: ChannelStatus;
+  /** Which backend actually serves this channel. Composio unless stated. */
+  engine?: 'composio' | 'zernio';
   /** Verified Composio tool slug for publishing. */
   action?: string;
   /** Tool that resolves the account identifier publishing needs. */
@@ -103,16 +105,23 @@ export const CHANNEL_CAPABILITIES: Record<string, ChannelCapability> = {
     note: 'The Snapchat toolkit covers advertising only, not organic posts.',
   },
   threads: {
-    status: 'unavailable',
-    note: 'No Threads toolkit exists.',
+    // No Composio toolkit exists, but Zernio's unified createPost endpoint has
+    // typed ThreadsPlatformData support — verified against @zernio/node's own
+    // type definitions, not guessed.
+    status: 'supported',
+    engine: 'zernio',
+    note: 'Publishes via Zernio.',
   },
   bluesky: {
     status: 'unavailable',
     note: 'No Bluesky toolkit exists.',
   },
   google_business: {
-    status: 'unavailable',
-    note: 'No Google Business Profile toolkit exists.',
+    // Same story as Threads: no Composio toolkit, but Zernio's createPost has
+    // typed GoogleBusinessPlatformData (topicType, event, offer, callToAction).
+    status: 'supported',
+    engine: 'zernio',
+    note: 'Publishes via Zernio.',
   },
 };
 
@@ -125,11 +134,25 @@ export function capabilityFor(platform: string): ChannelCapability {
   );
 }
 
-/** Returns the verified tool slug, or throws with a message worth showing. */
+/** Returns the verified Composio tool slug, or throws with a message worth showing. */
 export function resolveAction(platform: string): string {
   const capability = capabilityFor(platform);
+  if (capability.engine === 'zernio') {
+    throw new Error(`${platform} publishes via Zernio, not Composio.`);
+  }
   if (capability.status === 'supported' && capability.action) return capability.action;
   throw new Error(capability.note ?? `${platform} cannot publish yet.`);
+}
+
+/** True when this channel must be dispatched through Zernio, not Composio. */
+export function requiresZernio(platform: string): boolean {
+  return capabilityFor(platform).engine === 'zernio';
+}
+
+/** Zernio's own platform identifier — 'google_business' -> 'googlebusiness'. */
+export function toZernioPlatform(platform: string): string {
+  const p = String(platform).toLowerCase();
+  return p === 'google_business' ? 'googlebusiness' : p;
 }
 
 /**

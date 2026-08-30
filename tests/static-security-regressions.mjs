@@ -169,3 +169,42 @@ assert.doesNotMatch(caps, /'LINKEDIN_CREATE_POST'/, 'LinkedIn slug must be the v
 assert.match(caps, /LINKEDIN_CREATE_LINKED_IN_POST/, 'LinkedIn must use its verified tool slug');
 
 console.log('Composio v3 integration checks passed.');
+
+// Threads and Google Business have no Composio toolkit, so they must always
+// route to Zernio — verified against @zernio/node's own type definitions
+// (ThreadsPlatformData, GoogleBusinessPlatformData), not guessed.
+const platformsShared = await read('supabase/functions/_shared/platforms.ts');
+assert.match(
+  platformsShared,
+  /threads:\s*\{[^}]*engine:\s*'zernio'/s,
+  'Threads must be routed to Zernio in the shared capability map'
+);
+assert.match(
+  platformsShared,
+  /google_business:\s*\{[^}]*engine:\s*'zernio'/s,
+  'Google Business must be routed to Zernio in the shared capability map'
+);
+assert.match(platformsShared, /toZernioPlatform/, 'must translate google_business to googlebusiness for Zernio');
+
+const dispatcherFinal = await read('supabase/functions/_shared/dispatcher.ts');
+assert.match(dispatcherFinal, /requiresZernio/, 'dispatcher must route Zernio-only channels before touching Composio');
+// The old code marked every Zernio channel 'success' without reading the
+// API's own per-platform result, so a real per-channel failure would have
+// been reported as delivered.
+assert.doesNotMatch(
+  dispatcherFinal,
+  /dispatchedChannels:\s*connections\.map\(c\s*=>\s*\(\{[\s\S]{0,80}status:\s*'success'/,
+  'Zernio results must be read per-platform, not assumed successful'
+);
+assert.match(dispatcherFinal, /platformResults/, 'dispatcher must read Zernio\'s per-platform post.platforms result');
+
+// The connect flow must never send Threads/Google Business through Composio —
+// there is no OAuth path there for either.
+const connectionsView = await read('src/components/connections/SocialConnectionsView.tsx');
+assert.match(
+  connectionsView,
+  /platformId !== 'threads' && platformId !== 'google_business'/,
+  'Threads and Google Business must always use the Zernio connect flow'
+);
+
+console.log('Zernio Threads/Google Business routing checks passed.');
