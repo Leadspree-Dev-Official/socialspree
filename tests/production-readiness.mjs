@@ -27,7 +27,7 @@ const check = (name, fn) => {
 const [
   api, app, settings, dispatcher, platformsShared, worker, publishPost,
   analytics, postManage, helpCenter, connectionsView, composioShared,
-  grantMigration, aiGrantMigration,
+  grantMigration, aiGrantMigration, composioConnect,
 ] = await Promise.all([
   read('src/lib/api.ts'),
   read('src/App.tsx'),
@@ -43,6 +43,7 @@ const [
   read('supabase/functions/_shared/composio.ts'),
   read('supabase/migrations/20260830210000_fix_profile_write_grant.sql'),
   read('supabase/migrations/20260830220000_fix_ai_credit_log_grant.sql'),
+  read('supabase/functions/composio-connect/index.ts'),
 ]);
 
 // --- Profile sync across browsers -------------------------------------------
@@ -274,6 +275,27 @@ check('a Composio failure never retries with Composio\'s own account id on Zerni
     /const zernioCandidates = \[\.\.\.zernioFromStart, \.\.\.composioFailed\]/,
     'must not reuse composioFailed connections directly as Zernio dispatch targets'
   );
+});
+
+// --- Live-verified this pass: connect endpoint and insight metrics ----------
+console.log('\nLive-verified fixes');
+
+check('connect uses the working /link endpoint, not the deprecated one', () => {
+  // POST /connected_accounts returns 400 for every Composio-managed auth
+  // config: "no longer supported ... Use /connected_accounts/link instead."
+  // Confirmed live before and after this fix.
+  assert.match(composioConnect, /connected_accounts\/link/);
+  assert.doesNotMatch(
+    composioConnect.replace(/^\s*\*.*$/gm, ''),
+    /fetch\(`\$\{COMPOSIO_V3\}\/connected_accounts`/
+  );
+});
+
+check('Instagram insights request a valid, array-typed metric list', () => {
+  // Omitting metric defaults to a set including 'impressions', which the
+  // Insights API rejects for single-image posts. Also must be a JSON array —
+  // a comma-separated string fails a separate validation error.
+  assert.match(analytics, /metric:\s*\[/);
 });
 
 console.log(results.join('\n'));
