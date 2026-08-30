@@ -260,6 +260,22 @@ check('no provider API keys hardcoded in the browser bundle', async () => {
   }
 });
 
+// --- Cross-provider dispatch safety ------------------------------------------
+console.log('\nCross-provider dispatch');
+
+check('a Composio failure never retries with Composio\'s own account id on Zernio', () => {
+  // Composio's channel_account_id (e.g. "ca_xkmrFchvyoRD") means nothing to
+  // Zernio, which rejects it with "Invalid accountId format". Falling back
+  // must use a genuinely separate Zernio-provider connection for the same
+  // platform, never the failed connection's own id.
+  assert.match(dispatcher, /zernioProviderByPlatform/, 'must look up a same-platform Zernio connection before falling back');
+  assert.doesNotMatch(
+    dispatcher,
+    /const zernioCandidates = \[\.\.\.zernioFromStart, \.\.\.composioFailed\]/,
+    'must not reuse composioFailed connections directly as Zernio dispatch targets'
+  );
+});
+
 console.log(results.join('\n'));
 const failed = results.filter(r => r.startsWith('  FAIL')).length;
 console.log(
