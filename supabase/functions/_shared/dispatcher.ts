@@ -1,5 +1,5 @@
-import { resolveAction } from './platforms.ts';
-import { getComposioKey, normalizeComposioError } from './composio.ts';
+import { resolveAction, buildParams } from './platforms.ts';
+import { getComposioKey, normalizeComposioError, executeTool } from './composio.ts';
 import { slotKey, zernioClient, normalizeZernioError } from './zernio.ts';
 
 export interface DispatchResult {
@@ -90,51 +90,95 @@ export async function dispatchPost(
             continue;
           }
 
-          const payload: any = {
-            actionName,
-            entityId,
-            params: {
-              content: post.content || '',
-              mediaUrls: Array.isArray(post.media_urls) ? post.media_urls : (post.media_urls ? [post.media_urls] : []),
-              connectedAccountId: conn.channel_account_id,
-            }
-          };
-
-          if (options.scheduledFor) {
-            payload.params.scheduledFor = options.scheduledFor;
-          }
-
-          const res = await fetch('https://backend.composio.dev/api/v1/actions/execute', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'x-api-key': composioApiKey,
-              'x-idempotency-key': `${idempotencyKey}_${conn.channel_account_id}`
-            },
-            body: JSON.stringify(payload)
-          });
-
-          const responseText = await res.text();
-          let parsedResponse: any = null;
-          try {
-            parsedResponse = responseText ? JSON.parse(responseText) : null;
-          } catch {
-            parsedResponse = { raw: responseText };
-          }
-
-          if (res.ok) {
-            dispatchedChannels.push({
-              platform: conn.platform,
-              accountId: conn.channel_account_id,
-              status: 'success',
-              response: parsedResponse
-            });
-          } else {
+          // The account identifier publishing needs — a Facebook page id, an
+          // Instagram user id, a LinkedIn author URN — is resolved when the
+          // connection is synced and stored on the row.
+          const identity = conn.provider_profile_id;
+          if (!identity) {
             dispatchedChannels.push({
               platform: conn.platform,
               accountId: conn.channel_account_id,
               status: 'failed',
-              error: responseText
+              error: `${conn.platform} is connected but its account id has not been resolved yet. Use Refresh on the Connections page.`
+            });
+            continue;
+          }
+
+          const mediaUrls = Array.isArray(post.media_urls)
+            ? post.media_urls
+            : (post.media_urls ? [post.media_urls] : []);
+
+          try {
+            let execution;
+
+            if (platformLower === 'instagram') {
+              // Instagram publishes in two steps: stage a media container,
+              // then publish it. A caption alone cannot be posted.
+              if (mediaUrls.length === 0) {
+                throw new Error('Instagram posts require an image or video.');
+              }
+
+              const container = await executeTool(
+                composioApiKey,
+                'INSTAGRAM_CREATE_MEDIA_CONTAINER',
+                conn.channel_account_id,
+                {
+                  ig_user_id: identity,
+                  image_url: mediaUrls[0],
+                  caption: post.content || ''
+                },
+                `${idempotencyKey}_${conn.channel_account_id}_container`
+              );
+
+              if (!container.ok) throw new Error(container.error || 'Could not stage the Instagram media.');
+
+              const creationId =
+                container.data?.id ??
+                container.data?.creation_id ??
+                container.data?.data?.id;
+              if (!creationId) throw new Error('Instagram did not return a media container id.');
+
+              execution = await executeTool(
+                composioApiKey,
+                'INSTAGRAM_CREATE_POST',
+                conn.channel_account_id,
+                { ig_user_id: identity, creation_id: creationId },
+                `${idempotencyKey}_${conn.channel_account_id}`
+              );
+            } else {
+              execution = await executeTool(
+                composioApiKey,
+                actionName,
+                conn.channel_account_id,
+                buildParams(platformLower, identity, {
+                  content: post.content || '',
+                  mediaUrls
+                }),
+                `${idempotencyKey}_${conn.channel_account_id}`
+              );
+            }
+
+            if (execution.ok) {
+              dispatchedChannels.push({
+                platform: conn.platform,
+                accountId: conn.channel_account_id,
+                status: 'success',
+                response: execution.data
+              });
+            } else {
+              dispatchedChannels.push({
+                platform: conn.platform,
+                accountId: conn.channel_account_id,
+                status: 'failed',
+                error: execution.error || 'Dispatch failed'
+              });
+            }
+          } catch (dispatchErr) {
+            dispatchedChannels.push({
+              platform: conn.platform,
+              accountId: conn.channel_account_id,
+              status: 'failed',
+              error: dispatchErr instanceof Error ? dispatchErr.message : 'Dispatch failed'
             });
           }
         }

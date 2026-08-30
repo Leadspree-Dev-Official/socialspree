@@ -117,7 +117,7 @@ assert.doesNotMatch(
   'dispatcher must not guess action names'
 );
 assert.match(dispatcher2, /resolveAction/, 'dispatcher must resolve actions from the capability map');
-assert.match(capabilities, /unverified/, 'capability map must distinguish verified from unverified channels');
+assert.match(capabilities, /needs_setup/, 'capability map must distinguish publishable from setup-required channels');
 
 console.log('Channel capability checks passed.');
 
@@ -143,3 +143,29 @@ assert.doesNotMatch(
 );
 
 console.log('Credential persistence checks passed.');
+
+// Composio v1 returns 410 Gone. Any call to it fails at the transport layer,
+// which is how every dispatch silently died before the v3 migration.
+const composioFiles = await Promise.all([
+  read('supabase/functions/_shared/composio.ts'),
+  read('supabase/functions/_shared/dispatcher.ts'),
+  read('supabase/functions/composio-connect/index.ts'),
+  read('supabase/functions/composio-accounts/index.ts'),
+  read('supabase/functions/composio-analytics/index.ts'),
+  read('supabase/functions/composio-post-manage/index.ts'),
+]);
+for (const [i, source] of composioFiles.entries()) {
+  assert.doesNotMatch(
+    source.replace(/^\s*\*.*$/gm, ''),
+    /backend\.composio\.dev\/api\/v1/,
+    `Composio file #${i} still calls the dead v1 API`
+  );
+}
+
+// LinkedIn's real tool slug is LINKEDIN_CREATE_LINKED_IN_POST. The short form
+// does not exist, so it could never have published.
+const caps = await read('supabase/functions/_shared/platforms.ts');
+assert.doesNotMatch(caps, /'LINKEDIN_CREATE_POST'/, 'LinkedIn slug must be the verified one');
+assert.match(caps, /LINKEDIN_CREATE_LINKED_IN_POST/, 'LinkedIn must use its verified tool slug');
+
+console.log('Composio v3 integration checks passed.');

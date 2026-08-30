@@ -22,7 +22,7 @@ Deno.serve(async req => {
 
       let remoteData = null;
       try {
-        const res = await fetch(`https://backend.composio.dev/api/v1/actions/execute`, {
+        const res = await fetch(`https://backend.composio.dev/api/v3/tools/execute`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -46,7 +46,7 @@ Deno.serve(async req => {
 
     if (action === 'delete') {
       if (postRow.zernio_post_id && apiKey) {
-        await fetch(`https://backend.composio.dev/api/v1/actions/execute`, {
+        await fetch(`https://backend.composio.dev/api/v3/tools/execute`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

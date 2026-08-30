@@ -10,7 +10,7 @@
  */
 import { SocialPlatform } from '../types';
 
-export type ChannelStatus = 'supported' | 'unverified' | 'unavailable' | 'unchecked';
+export type ChannelStatus = 'supported' | 'needs_setup' | 'unavailable';
 
 export interface ChannelCapability {
   status: ChannelStatus;
@@ -18,23 +18,33 @@ export interface ChannelCapability {
 }
 
 export const CHANNEL_CAPABILITIES: Record<string, ChannelCapability> = {
+  // Verified against the live Composio v3 catalogue, and an auth config exists
+  // in this workspace, so a customer can actually complete the OAuth flow.
   instagram: { status: 'supported' },
   facebook:  { status: 'supported' },
   linkedin:  { status: 'supported' },
-  youtube:   { status: 'supported' },
 
-  tiktok:    { status: 'unverified', note: 'Publishing is being finalised — connect now, scheduling opens shortly.' },
-  pinterest: { status: 'unverified', note: 'Publishing is being finalised — connect now, scheduling opens shortly.' },
-  reddit:    { status: 'unverified', note: 'Publishing is being finalised — connect now, scheduling opens shortly.' },
-  telegram:  { status: 'unverified', note: 'Connects with a bot token rather than a sign-in popup.' },
-  whatsapp:  { status: 'unverified', note: 'Publishing is being finalised — connect now, scheduling opens shortly.' },
+  // Tool and auth config exist, but publishing needs data the composer does
+  // not collect yet.
+  youtube: {
+    status: 'needs_setup',
+    note: 'YouTube needs a video file, title, category and privacy setting — the composer does not collect these yet.'
+  },
 
-  threads:         { status: 'unavailable', note: 'On the roadmap. Not connectable yet.' },
-  google_business: { status: 'unavailable', note: 'On the roadmap. Not connectable yet.' },
+  // Toolkit exists, but no auth config is set up in this Composio account, so
+  // there is no OAuth flow to send anyone through.
+  tiktok:    { status: 'needs_setup', note: 'Add a TikTok auth config in Composio to enable connecting.' },
+  pinterest: { status: 'needs_setup', note: 'Add a Pinterest auth config in Composio, and pins need a destination board.' },
+  reddit:    { status: 'needs_setup', note: 'Add a Reddit auth config in Composio; posts also need a subreddit and flair.' },
+  telegram:  { status: 'needs_setup', note: 'Add a Telegram auth config in Composio; messages need a destination chat id.' },
+  whatsapp:  { status: 'needs_setup', note: 'Add a WhatsApp auth config in Composio; it sends to recipients, not a feed.' },
 
-  bluesky:  { status: 'unchecked', note: 'Availability is being confirmed.' },
-  discord:  { status: 'unchecked', note: 'Availability is being confirmed.' },
-  snapchat: { status: 'unchecked', note: 'Availability is being confirmed.' },
+  // No publishing tool exists in the catalogue at all.
+  discord:         { status: 'unavailable', note: 'The Discord toolkit exposes no publishing tool.' },
+  snapchat:        { status: 'unavailable', note: 'The Snapchat toolkit covers advertising only, not organic posts.' },
+  threads:         { status: 'unavailable', note: 'No Threads toolkit exists.' },
+  bluesky:         { status: 'unavailable', note: 'No Bluesky toolkit exists.' },
+  google_business: { status: 'unavailable', note: 'No Google Business Profile toolkit exists.' },
 };
 
 export function capabilityFor(platform: SocialPlatform | string): ChannelCapability {
@@ -49,7 +59,7 @@ export function capabilityFor(platform: SocialPlatform | string): ChannelCapabil
 /** Whether a customer should be offered a Connect button at all. */
 export function isConnectable(platform: SocialPlatform | string): boolean {
   const { status } = capabilityFor(platform);
-  return status === 'supported' || status === 'unverified';
+  return status === 'supported';
 }
 
 /** Whether a connected channel can actually be scheduled to. */
@@ -59,7 +69,6 @@ export function canPublish(platform: SocialPlatform | string): boolean {
 
 export const STATUS_LABEL: Record<ChannelStatus, string> = {
   supported: 'Live',
-  unverified: 'Beta',
-  unavailable: 'Coming soon',
-  unchecked: 'Coming soon',
+  needs_setup: 'Setup required',
+  unavailable: 'Not available',
 };

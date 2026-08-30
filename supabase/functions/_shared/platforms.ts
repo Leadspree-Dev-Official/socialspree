@@ -1,55 +1,119 @@
 /**
- * Which channels can actually publish, and how.
+ * Which channels can publish, and exactly how.
  *
- * This is the single source of truth the dispatcher trusts. It exists because
- * the previous action map covered a handful of platforms and silently guessed
- * `${PLATFORM}_CREATE_POST` for everything else — a slug Composio does not
- * recognise, so the post failed at the provider with an opaque error long after
- * the customer was told it had been scheduled.
+ * Every slug and parameter name here was read from the live Composio v3
+ * catalogue, not inferred. That matters: the previous map guessed
+ * `${PLATFORM}_CREATE_POST` for unmapped channels, and even its "known" entries
+ * were wrong — LinkedIn's real tool is LINKEDIN_CREATE_LINKED_IN_POST, not
+ * LINKEDIN_CREATE_POST, so LinkedIn could never have published.
  *
- * Guessing is now impossible: a channel either has a verified action name or it
- * is refused up front with a reason the customer can act on.
+ * The payload shapes matter just as much. The old dispatcher sent
+ * {content, mediaUrls, connectedAccountId} to every tool; no Composio tool
+ * accepts that shape, so every dispatch would have failed validation.
  *
  * Status meanings:
- *   supported   Toolkit confirmed in the workspace AND action slug verified.
- *   unverified  Toolkit confirmed, but the action slug has not been checked
- *               against the live catalogue yet. Refused rather than guessed.
- *   unavailable No Composio toolkit exists. Roadmap, not a bug.
- *   unchecked   Not yet searched in the workspace catalogue.
+ *   supported   Verified tool, and we can build its payload from what we hold.
+ *   needs_setup Tool exists, but requires a per-channel value the product does
+ *               not collect yet (a Pinterest board, a subreddit, a chat id).
+ *   unavailable No publishing tool exists in the catalogue.
  */
 
-export type ChannelStatus = 'supported' | 'unverified' | 'unavailable' | 'unchecked';
+export type ChannelStatus = 'supported' | 'needs_setup' | 'unavailable';
 
 export interface ChannelCapability {
   status: ChannelStatus;
-  /** Composio action name. Present only when status is 'supported'. */
+  /** Verified Composio tool slug for publishing. */
   action?: string;
-  /** Shown to the customer when the channel cannot publish. */
+  /** Tool that resolves the account identifier publishing needs. */
+  identityAction?: string;
+  /** Field on the identity response that carries that identifier. */
+  identityField?: string;
+  /** Extra per-channel values a customer would have to supply. */
+  requires?: string[];
   note?: string;
 }
 
 export const CHANNEL_CAPABILITIES: Record<string, ChannelCapability> = {
-  instagram: { status: 'supported', action: 'INSTAGRAM_CREATE_POST' },
-  facebook:  { status: 'supported', action: 'FACEBOOK_CREATE_POST' },
-  linkedin:  { status: 'supported', action: 'LINKEDIN_CREATE_POST' },
-  youtube:   { status: 'supported', action: 'YOUTUBE_UPLOAD_VIDEO' },
+  // --- Publishable today -----------------------------------------------
+  facebook: {
+    status: 'supported',
+    action: 'FACEBOOK_CREATE_POST',
+    identityAction: 'FACEBOOK_GET_USER_PAGES',
+    identityField: 'page_id',
+  },
+  instagram: {
+    // Two-step: build a media container, then publish it.
+    status: 'supported',
+    action: 'INSTAGRAM_CREATE_POST',
+    identityAction: 'INSTAGRAM_GET_USER_INFO',
+    identityField: 'ig_user_id',
+  },
+  linkedin: {
+    status: 'supported',
+    action: 'LINKEDIN_CREATE_LINKED_IN_POST',
+    identityAction: 'LINKEDIN_GET_MY_INFO',
+    identityField: 'author',
+  },
 
-  // Toolkits confirmed present in the workspace; slugs still to be read from
-  // the live catalogue before we let a customer schedule against them.
-  tiktok:    { status: 'unverified', note: 'TikTok publishing is being finalised.' },
-  pinterest: { status: 'unverified', note: 'Pinterest publishing is being finalised.' },
-  reddit:    { status: 'unverified', note: 'Reddit publishing is being finalised.' },
-  telegram:  { status: 'unverified', note: 'Telegram publishing is being finalised.' },
-  whatsapp:  { status: 'unverified', note: 'WhatsApp publishing is being finalised.' },
+  // --- Tool exists, but needs data we do not collect --------------------
+  youtube: {
+    status: 'needs_setup',
+    action: 'YOUTUBE_UPLOAD_VIDEO',
+    requires: ['title', 'description', 'categoryId', 'privacyStatus', 'videoFilePath'],
+    note: 'YouTube uploads need a video file plus title, category and privacy settings.',
+  },
+  tiktok: {
+    status: 'needs_setup',
+    action: 'TIKTOK_PUBLISH_VIDEO',
+    requires: ['publish_id'],
+    note: 'TikTok needs a video uploaded to TikTok first; the composer does not do that yet.',
+  },
+  pinterest: {
+    status: 'needs_setup',
+    action: 'PINTEREST_CREATE_PIN',
+    requires: ['board_id'],
+    note: 'Pinterest needs a destination board chosen per pin.',
+  },
+  reddit: {
+    status: 'needs_setup',
+    action: 'REDDIT_CREATE_REDDIT_POST',
+    requires: ['subreddit', 'title', 'flair_id'],
+    note: 'Reddit needs a subreddit, a title and a flair for each post.',
+  },
+  telegram: {
+    status: 'needs_setup',
+    action: 'TELEGRAM_SEND_MESSAGE',
+    requires: ['chat_id'],
+    note: 'Telegram needs the destination chat or channel id.',
+  },
+  whatsapp: {
+    status: 'needs_setup',
+    action: 'WHATSAPP_SEND_MESSAGE',
+    requires: ['recipient'],
+    note: 'WhatsApp sends to a recipient rather than broadcasting to a feed.',
+  },
 
-  // No Composio toolkit surfaced for these.
-  threads:         { status: 'unavailable', note: 'Threads is on the roadmap and cannot publish yet.' },
-  google_business: { status: 'unavailable', note: 'Google Business Profile is on the roadmap and cannot publish yet.' },
-
-  // Not yet searched in the workspace catalogue.
-  bluesky:  { status: 'unchecked', note: 'Bluesky availability has not been confirmed yet.' },
-  discord:  { status: 'unchecked', note: 'Discord availability has not been confirmed yet.' },
-  snapchat: { status: 'unchecked', note: 'Snapchat availability has not been confirmed yet.' },
+  // --- No publishing tool in the catalogue ------------------------------
+  discord: {
+    status: 'unavailable',
+    note: 'The Discord toolkit exposes no publishing tool.',
+  },
+  snapchat: {
+    status: 'unavailable',
+    note: 'The Snapchat toolkit covers advertising only, not organic posts.',
+  },
+  threads: {
+    status: 'unavailable',
+    note: 'No Threads toolkit exists.',
+  },
+  bluesky: {
+    status: 'unavailable',
+    note: 'No Bluesky toolkit exists.',
+  },
+  google_business: {
+    status: 'unavailable',
+    note: 'No Google Business Profile toolkit exists.',
+  },
 };
 
 export function capabilityFor(platform: string): ChannelCapability {
@@ -61,16 +125,50 @@ export function capabilityFor(platform: string): ChannelCapability {
   );
 }
 
-/**
- * Returns the verified action name, or throws with a message worth showing.
- * Never invents a slug.
- */
+/** Returns the verified tool slug, or throws with a message worth showing. */
 export function resolveAction(platform: string): string {
   const capability = capabilityFor(platform);
-  if (capability.status === 'supported' && capability.action) {
-    return capability.action;
+  if (capability.status === 'supported' && capability.action) return capability.action;
+  throw new Error(capability.note ?? `${platform} cannot publish yet.`);
+}
+
+/**
+ * Builds the parameters a tool actually expects.
+ *
+ * `identity` is the resolved account identifier — a Facebook page id, an
+ * Instagram user id, a LinkedIn author URN — stored on the connection when it
+ * was synced.
+ */
+export function buildParams(
+  platform: string,
+  identity: string,
+  post: { content?: string; mediaUrls?: string[] }
+): Record<string, unknown> {
+  const text = post.content?.trim() || '';
+  const media = Array.isArray(post.mediaUrls) ? post.mediaUrls : [];
+
+  switch (String(platform).toLowerCase()) {
+    case 'facebook':
+      return {
+        page_id: identity,
+        message: text,
+        ...(media[0] ? { link: media[0] } : {}),
+      };
+
+    case 'linkedin':
+      return {
+        author: identity,
+        commentary: text,
+        visibility: 'PUBLIC',
+        lifecycleState: 'PUBLISHED',
+      };
+
+    // Instagram is handled by the two-step flow in the dispatcher; this shape
+    // is only the final publish call.
+    case 'instagram':
+      return { ig_user_id: identity };
+
+    default:
+      throw new Error(`No payload builder for ${platform}.`);
   }
-  throw new Error(
-    capability.note ?? `${platform} cannot publish yet.`
-  );
 }
