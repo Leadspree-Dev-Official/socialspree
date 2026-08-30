@@ -225,7 +225,12 @@ export const SocialConnectionsView: React.FC<SocialConnectionsViewProps> = ({
 
     try {
       const slotItem = slotsList.find(s => s.slotNumber === slotNum);
-      const isComposioSlot = slotItem?.provider === 'composio' || tenant.dispatchEngine === 'coresync';
+      // Threads and Google Business have no Composio toolkit at all, so they
+      // always connect through Zernio regardless of which slot is selected —
+      // routing them into Composio would fail immediately with no OAuth path.
+      const isComposioSlot =
+        (slotItem?.provider === 'composio' || tenant.dispatchEngine === 'coresync') &&
+        platformId !== 'threads' && platformId !== 'google_business';
       const callbackUrl = `${window.location.origin}${window.location.pathname}?connected=true&slot=${slotNum}&pos=${position}&platform=${platformId}`;
       
       let redirectUrl: string | undefined;
