@@ -23,6 +23,7 @@ import {
   saveStoredBrands
 } from './lib/store';
 
+import { disconnectComposioAccount } from './lib/composio';
 import { Sidebar, TabType } from './components/layout/Sidebar';
 import { MobileNav } from './components/layout/MobileNav';
 import { Header } from './components/layout/Header';
@@ -1113,6 +1114,7 @@ export function App() {
   };
 
   const handleDeleteAccount = (accountId: string) => {
+    const target = accounts.find(a => a.id === accountId);
     const updatedAccs = accounts.filter(a => a.id !== accountId);
     setAccounts(updatedAccs);
     saveStoredAccounts(updatedAccs);
@@ -1120,8 +1122,17 @@ export function App() {
       window.dispatchEvent(new CustomEvent('socialspree_accounts_updated', { detail: updatedAccs }));
     } catch { /* ignore */ }
 
-    // Authoritative Supabase Cloud Sync
-    void socialConnections.remove(accountId).catch(err => console.warn('Supabase social connection delete info:', err));
+    // Revoke at the provider too. Deleting only the local row is not a
+    // disconnect: the next provider sync re-creates it and the channel comes
+    // back after a reload, which reads as "disconnect doesn't work".
+    if (target?.channelAccountId?.startsWith('ca_')) {
+      void disconnectComposioAccount(currentTenant.id, target.channelAccountId).catch(err => {
+        console.warn('Composio disconnect info:', err);
+        void socialConnections.remove(accountId).catch(() => {});
+      });
+    } else {
+      void socialConnections.remove(accountId).catch(err => console.warn('Supabase social connection delete info:', err));
+    }
   };
 
   const handleReplyReview = (reviewId: string, replyText: string) => {

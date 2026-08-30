@@ -13,7 +13,9 @@
     "test:security:static": "node tests/static-security-regressions.mjs",
     "test:adversarial": "node tests/adversarial-integration-suite.mjs",
     "test:audit:all": "node --env-file=.env tests/full-audit-runner.mjs",
-    "test:rls": "node --env-file=.env tests/live-rls.mjs"
+    "test:rls": "node --env-file=.env tests/live-rls.mjs",
+    "test:production": "node tests/production-readiness.mjs",
+    "test:all": "npm run test:auth && npm run test:security:static && npm run test:production"
   },
   "dependencies": {
     "@composio/core": "^0.18.0",

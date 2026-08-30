@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { capabilityFor, STATUS_LABEL } from '../../lib/platforms';
 import { 
   HelpCircle, 
   Search, 
@@ -20,6 +21,16 @@ import {
   Store,
   ExternalLink
 } from 'lucide-react';
+
+/** Channels documented in the help centre, in the order customers meet them. */
+const CHANNEL_GUIDE: Array<{ id: string; name: string; detail: string }> = [
+  { id: 'instagram', name: 'Instagram Business', detail: 'Business or Creator accounts, via Meta Graph.' },
+  { id: 'facebook', name: 'Facebook Pages', detail: 'Page posts, via Meta Graph.' },
+  { id: 'linkedin', name: 'LinkedIn', detail: 'Profile and company page posts.' },
+  { id: 'youtube', name: 'YouTube', detail: 'Video uploads via the YouTube Data API.' },
+  { id: 'threads', name: 'Threads', detail: 'Text and image threads.' },
+  { id: 'google_business', name: 'Google Business Profile', detail: 'Local profile posts and updates.' },
+];
 
 export const HelpCenterView: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -150,38 +161,35 @@ export const HelpCenterView: React.FC = () => {
               <span>Channel Integration Guides</span>
             </h3>
 
+            {/* Driven by the shared capability map so this cannot drift out of
+                step with what the product can actually publish to. */}
             <div className="space-y-2.5 text-xs">
-              <div className="flex items-center justify-between p-2.5 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-800">
-                <div className="flex items-center gap-2 font-bold text-slate-800 dark:text-slate-200">
-                  <Instagram className="w-4 h-4 text-pink-600" />
-                  <span>Instagram Business Sync</span>
-                </div>
-                <span className="text-[10px] font-mono text-purple-700 dark:text-purple-300 bg-purple-100 dark:bg-purple-950/60 px-2 py-0.5 rounded font-bold">Meta Graph v19</span>
-              </div>
+              {CHANNEL_GUIDE.map(({ id, name, detail }) => {
+                const capability = capabilityFor(id);
+                const tone =
+                  capability.status === 'supported'
+                    ? 'text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950/60'
+                    : capability.status === 'needs_setup'
+                    ? 'text-amber-700 dark:text-amber-300 bg-amber-100 dark:bg-amber-950/60'
+                    : 'text-slate-600 dark:text-slate-400 bg-slate-200 dark:bg-slate-800';
 
-              <div className="flex items-center justify-between p-2.5 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-800">
-                <div className="flex items-center gap-2 font-bold text-slate-800 dark:text-slate-200">
-                  <Linkedin className="w-4 h-4 text-blue-600" />
-                  <span>LinkedIn OAuth 2.0 Page</span>
-                </div>
-                <span className="text-[10px] font-mono text-purple-700 dark:text-purple-300 bg-purple-100 dark:bg-purple-950/60 px-2 py-0.5 rounded font-bold">Community API</span>
-              </div>
-
-              <div className="flex items-center justify-between p-2.5 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-800">
-                <div className="flex items-center gap-2 font-bold text-slate-800 dark:text-slate-200">
-                  <Youtube className="w-4 h-4 text-red-600" />
-                  <span>YouTube Data API v3</span>
-                </div>
-                <span className="text-[10px] font-mono text-purple-700 dark:text-purple-300 bg-purple-100 dark:bg-purple-950/60 px-2 py-0.5 rounded font-bold">Google Cloud</span>
-              </div>
-
-              <div className="flex items-center justify-between p-2.5 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-800">
-                <div className="flex items-center gap-2 font-bold text-slate-800 dark:text-slate-200">
-                  <Store className="w-4 h-4 text-emerald-600" />
-                  <span>Google Business Profile</span>
-                </div>
-                <span className="text-[10px] font-mono text-purple-700 dark:text-purple-300 bg-purple-100 dark:bg-purple-950/60 px-2 py-0.5 rounded font-bold">Reviews & Posts</span>
-              </div>
+                return (
+                  <div
+                    key={id}
+                    className="flex items-center justify-between gap-3 p-2.5 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-800"
+                  >
+                    <div className="min-w-0">
+                      <div className="font-bold text-slate-800 dark:text-slate-200">{name}</div>
+                      <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
+                        {capability.note || detail}
+                      </div>
+                    </div>
+                    <span className={`text-[10px] font-mono px-2 py-0.5 rounded font-bold shrink-0 ${tone}`}>
+                      {STATUS_LABEL[capability.status]}
+                    </span>
+                  </div>
+                );
+              })}
             </div>
           </div>
 
