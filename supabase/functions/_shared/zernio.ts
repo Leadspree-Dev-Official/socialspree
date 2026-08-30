@@ -7,12 +7,28 @@ export function zernioClient(apiKey: string) {
   return new Zernio({ apiKey, baseURL: 'https://zernio.com/api', timeout: 60000 });
 }
 
+/**
+ * Resolves the Zernio key for a slot.
+ *
+ * Per-tenant vault entry first, then a global ZERNIO_API_KEY secret — the same
+ * precedence getComposioKey() uses. Without the fallback a workspace could only
+ * publish once a super admin had stored a key by hand, which meant Zernio-only
+ * channels (Threads, Google Business) were unreachable even with a valid key
+ * available to the platform.
+ */
 export async function slotKey(db: any, tenantId: string, label: string) {
-  const { data, error } = await db.schema('private').from('provider_credentials')
-    .select('ciphertext').eq('tenant_id', tenantId).eq('provider', 'zernio').eq('label', label).maybeSingle();
-  if (error) throw error;
-  if (!data) throw new Error(`Zernio API key is not configured for ${label}`);
-  return decrypt(data.ciphertext);
+  try {
+    const { data } = await db.schema('private').from('provider_credentials')
+      .select('ciphertext').eq('tenant_id', tenantId).eq('provider', 'zernio').eq('label', label).maybeSingle();
+    if (data?.ciphertext) return await decrypt(data.ciphertext);
+  } catch {
+    // Fall through to the platform-wide key.
+  }
+
+  const fallback = Deno.env.get('ZERNIO_API_KEY');
+  if (fallback) return fallback;
+
+  throw new Error(`Zernio API key is not configured for ${label}`);
 }
 
 export function normalizeZernioError(error: unknown) {

@@ -96,32 +96,42 @@ export const CHANNEL_CAPABILITIES: Record<string, ChannelCapability> = {
   },
 
   // --- No publishing tool in the catalogue ------------------------------
-  discord: {
-    status: 'unavailable',
-    note: 'The Discord toolkit exposes no publishing tool.',
-  },
-  snapchat: {
-    status: 'unavailable',
-    note: 'The Snapchat toolkit covers advertising only, not organic posts.',
-  },
+  // --- Served by Zernio, not Composio -----------------------------------
+  // Composio has no toolkit for any of these. Zernio does: verified against
+  // its live API, which returns a real OAuth URL or a billing error rather
+  // than "unsupported platform".
   threads: {
-    // No Composio toolkit exists, but Zernio's unified createPost endpoint has
-    // typed ThreadsPlatformData support — verified against @zernio/node's own
-    // type definitions, not guessed.
+    status: 'supported',
+    engine: 'zernio',
+    note: 'Publishes via Zernio.',
+  },
+  google_business: {
     status: 'supported',
     engine: 'zernio',
     note: 'Publishes via Zernio.',
   },
   bluesky: {
-    status: 'unavailable',
-    note: 'No Bluesky toolkit exists.',
-  },
-  google_business: {
-    // Same story as Threads: no Composio toolkit, but Zernio's createPost has
-    // typed GoogleBusinessPlatformData (topicType, event, offer, callToAction).
+    // Previously marked unavailable on the basis of Composio alone. Zernio
+    // offers it — the connect call reaches its billing check, which only
+    // happens for a platform it actually supports.
     status: 'supported',
     engine: 'zernio',
     note: 'Publishes via Zernio.',
+  },
+  discord: {
+    // Composio's Discord toolkit has no publishing tool, but Zernio mints a
+    // real discord.com OAuth URL for it.
+    status: 'supported',
+    engine: 'zernio',
+    note: 'Publishes via Zernio.',
+  },
+
+  // --- Genuinely unavailable --------------------------------------------
+  snapchat: {
+    // Composio's toolkit is advertising-only, and Zernio returns
+    // PLATFORM_BETA_RESTRICTED: not publicly released yet.
+    status: 'unavailable',
+    note: 'Snapchat is advertising-only on Composio and still in closed beta on Zernio.',
   },
 };
 

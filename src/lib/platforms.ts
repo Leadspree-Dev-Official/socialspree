@@ -39,16 +39,15 @@ export const CHANNEL_CAPABILITIES: Record<string, ChannelCapability> = {
   telegram:  { status: 'needs_setup', note: 'Add a Telegram auth config in Composio; messages need a destination chat id.' },
   whatsapp:  { status: 'needs_setup', note: 'Add a WhatsApp auth config in Composio; it sends to recipients, not a feed.' },
 
-  // No Composio toolkit exists for either of these, but Zernio's own SDK types
-  // confirm real publishing support (ThreadsPlatformData, GoogleBusinessPlatformData),
-  // so they connect and publish through Zernio instead.
+  // Composio has no toolkit for these four; Zernio serves them instead.
+  // Verified against Zernio's live API, not just its type definitions.
   threads:         { status: 'supported', note: 'Connects and publishes via Zernio.' },
   google_business: { status: 'supported', note: 'Connects and publishes via Zernio.' },
+  bluesky:         { status: 'supported', note: 'Connects and publishes via Zernio.' },
+  discord:         { status: 'supported', note: 'Connects and publishes via Zernio.' },
 
-  // No publishing tool exists in either engine's catalogue.
-  discord:  { status: 'unavailable', note: 'Neither Composio nor Zernio expose a Discord publishing tool.' },
-  snapchat: { status: 'unavailable', note: 'The Snapchat toolkit covers advertising only, not organic posts.' },
-  bluesky:  { status: 'unavailable', note: 'No Bluesky toolkit exists.' },
+  // Advertising-only on Composio, and still in closed beta on Zernio.
+  snapchat: { status: 'unavailable', note: 'Snapchat is not publicly available on either engine yet.' },
 };
 
 export function capabilityFor(platform: SocialPlatform | string): ChannelCapability {
