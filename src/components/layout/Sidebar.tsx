@@ -176,6 +176,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   <span>Tenant Accounts</span>
                 </button>
                 <button
+                  onClick={() => handleAdminSubTabClick('payments')}
+                  className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-all ${
+                    activeAdminSubTab === 'payments'
+                      ? 'bg-purple-600 text-white font-bold'
+                      : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
+                  }`}
+                >
+                  <CreditCard className="w-3.5 h-3.5" />
+                  <span>Pending Payments</span>
+                </button>
+                <button
                   onClick={() => handleAdminSubTabClick('plans')}
                   className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-all ${
                     activeAdminSubTab === 'plans'
@@ -198,9 +209,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   <span>API Allocation & Limits</span>
                 </button>
                 <button
-                  onClick={() => handleAdminSubTabClick('cloudflare')}
+                  onClick={() => handleAdminSubTabClick('media')}
                   className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-all ${
-                    activeAdminSubTab === 'cloudflare'
+                    activeAdminSubTab === 'media'
                       ? 'bg-purple-600 text-white font-bold'
                       : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
                   }`}

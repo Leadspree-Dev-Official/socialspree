@@ -7,7 +7,6 @@ import {
   LayoutDashboard, 
   Instagram, 
   Linkedin, 
-  Twitter, 
   Youtube, 
   Video, 
   Facebook,
@@ -72,7 +71,7 @@ export const PublicFooter: React.FC<PublicFooterProps> = ({
             </Link>
 
             <p className="text-xs text-slate-400 leading-relaxed max-w-sm">
-              Empowering marketing agencies and high-velocity brands with isolated 2-channel API slots, Cloudflare edge CDN distribution, and AI-powered viral social automation.
+              Empowering marketing agencies and high-velocity brands with isolated 2-channel API slots, Cloudinary CDN media hosting, and AI-powered social automation.
             </p>
 
             {/* Live Operational Engine Badge */}
@@ -92,9 +91,6 @@ export const PublicFooter: React.FC<PublicFooterProps> = ({
               </span>
               <span className="text-[10px] bg-slate-900 border border-slate-800 text-slate-300 px-2 py-0.5 rounded flex items-center gap-1">
                 <Linkedin className="w-3 h-3 text-blue-400" /> LinkedIn
-              </span>
-              <span className="text-[10px] bg-slate-900 border border-slate-800 text-slate-300 px-2 py-0.5 rounded flex items-center gap-1">
-                <Twitter className="w-3 h-3 text-slate-300" /> X
               </span>
               <span className="text-[10px] bg-slate-900 border border-slate-800 text-slate-300 px-2 py-0.5 rounded flex items-center gap-1">
                 <Youtube className="w-3 h-3 text-red-400" /> YouTube

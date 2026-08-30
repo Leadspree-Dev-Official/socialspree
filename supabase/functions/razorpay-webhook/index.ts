@@ -58,41 +58,23 @@ Deno.serve(async req => {
         }
       }
 
-      const plan = order.plans;
-      const tier = plan?.tier_code ?? 'pro';
-      if (!['free', 'pro', 'agency'].includes(tier)) return json({ error: 'Invalid plan entitlement' }, 422, req);
+      // Record the provider payment id before granting, so the audit trail
+      // survives even if entitlement fails and the event is retried.
+      await db.from('checkout_orders')
+        .update({ provider_payment_id: paymentEntity?.id || null })
+        .eq('id', order.id);
 
-      // Only the created -> paid transition grants the entitlement. Repeated
-      // webhook deliveries cannot grant credits twice.
-      const { data: transitioned, error: transitionError } = await db
-        .from('checkout_orders')
-        .update({ 
-          status: 'paid', 
-          paid_at: new Date().toISOString(),
-          provider_payment_id: paymentEntity?.id || null 
-        })
-        .eq('id', order.id)
-        .eq('status', 'created')
-        .select('id')
-        .maybeSingle();
-      if (transitionError) throw transitionError;
+      // One shared entitlement path for every payment source. It claims the
+      // order atomically, so a redelivered webhook cannot upgrade twice.
+      const { data: grant, error: grantError } = await db.rpc('grant_plan_entitlement', {
+        target_order_id: order.id,
+        payment_reference: paymentEntity?.id || null,
+        approver: null
+      });
+      if (grantError) throw grantError;
 
-      if (transitioned && order.tenant_id) {
-        const renewalDays = order.billing_cycle === 'yearly' ? 365 : 30;
-        const nextRenewal = new Date(Date.now() + renewalDays * 24 * 60 * 60 * 1000).toISOString();
-
-        const { error: tenantError } = await db.from('tenants').update({
-          plan_id: order.plan_id,
-          payment_status: 'paid',
-          tier_plan: tier,
-          allocated_api_slots: plan?.allocated_api_slots ?? 2,
-          max_social_accounts: plan?.max_social_accounts ?? 10,
-          ai_credits: plan?.ai_credits ?? 1000,
-          billing_cycle: order.billing_cycle ?? 'monthly',
-          next_renewal_date: nextRenewal,
-          updated_at: new Date().toISOString()
-        }).eq('id', order.tenant_id);
-        if (tenantError) throw tenantError;
+      if (!grant?.granted && grant?.reason !== 'order_not_claimable') {
+        return json({ error: 'Entitlement could not be granted' }, 500, req);
       }
     }
 

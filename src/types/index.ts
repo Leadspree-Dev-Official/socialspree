@@ -3,7 +3,6 @@ export type SocialPlatform =
   | 'facebook' 
   | 'linkedin' 
   | 'youtube' 
-  | 'x' 
   | 'google_business' 
   | 'tiktok' 
   | 'threads' 
@@ -190,7 +189,7 @@ export interface Post {
   content: string;
   mediaUrls: string[];
   mediaType: 'none' | 'image' | 'video';
-  isCloudflareHosted: boolean;
+  isCdnHosted: boolean;
   selectedAccountIds: SelectedAccountRef[];
   status: 'draft' | 'scheduled' | 'publishing' | 'published' | 'failed';
   scheduledFor?: string;

@@ -27,7 +27,7 @@ Deno.serve(async req => {
 
       if (apiKey && post.zernio_post_id) {
         try {
-          const res = await fetch(`https://backend.composio.dev/api/v1/actions/execute`, {
+          const res = await fetch(`https://backend.composio.dev/api/v3/tools/execute`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',

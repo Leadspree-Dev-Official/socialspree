@@ -25,11 +25,19 @@ Deno.serve(async req => {
   const leaseExpired = new Date(now.getTime() - LEASE_MS).toISOString();
 
   // Recover jobs abandoned by a crashed worker before selecting new work.
-  await db.from('publishing_jobs')
-    .update({ status: 'queued', locked_at: null, run_after: now.toISOString(), updated_at: now.toISOString() })
+  const { data: stalled } = await db.from('publishing_jobs')
+    .select('id, attempts, max_attempts')
     .eq('status', 'processing')
-    .lt('locked_at', leaseExpired)
-    .lt('attempts', 5);
+    .lt('locked_at', leaseExpired);
+
+  for (const job of stalled ?? []) {
+    const exhausted = (job.attempts || 0) >= (job.max_attempts ?? 5);
+    await db.from('publishing_jobs')
+      .update(exhausted
+        ? { status: 'dead_letter', locked_at: null, last_error: 'Worker lease expired after final attempt', updated_at: now.toISOString() }
+        : { status: 'queued', locked_at: null, run_after: now.toISOString(), updated_at: now.toISOString() })
+      .eq('id', job.id);
+  }
 
   let query = db.from('publishing_jobs')
     .select('*,posts(*)')
@@ -80,13 +88,16 @@ Deno.serve(async req => {
         published_at: result.publishedAt,
         zernio_post_id: result.apiPostId,
         platform_results: result.rawResponse,
-        error_message: null
+        // A post can succeed overall while one channel did not go out.
+        error_message: result.partialFailure
+          ? `Published, but not on every channel — ${result.partialFailure}`
+          : null
       }).eq('id', job.post_id).eq('tenant_id', job.tenant_id);
 
       succeeded++;
     } catch (e: any) {
       const errorMsg = e instanceof Error ? e.message : String(e);
-      const terminal = nextAttempt >= (job.max_attempts || 3);
+      const terminal = nextAttempt >= (job.max_attempts ?? 5);
       const delay = Math.min(3600000, 2 ** nextAttempt * 1000);
 
       await db.from('publishing_jobs').update({

@@ -7,7 +7,6 @@ import {
   ShieldCheck, 
   Instagram, 
   Linkedin, 
-  Twitter, 
   Youtube, 
   Video, 
   Facebook 
@@ -73,12 +72,12 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
 
             {/* Headline */}
             <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black text-slate-950 dark:text-white tracking-tight leading-[1.08]">
-              Publish to <span className="bg-gradient-to-r from-[#5D3FD3] via-[#7B42F6] to-[#0066FF] dark:from-purple-400 dark:via-indigo-400 dark:to-blue-400 bg-clip-text text-transparent">15+ Social Channels</span> in Parallel from One Workspace
+              Publish to <span className="bg-gradient-to-r from-[#5D3FD3] via-[#7B42F6] to-[#0066FF] dark:from-purple-400 dark:via-indigo-400 dark:to-blue-400 bg-clip-text text-transparent">12+ Social Channels</span> in Parallel from One Workspace
             </h1>
 
             {/* Subtitle */}
             <p className="text-base sm:text-xl text-slate-600 dark:text-slate-300 max-w-3xl mx-auto font-medium leading-relaxed">
-              Multi-tenant B2B social automation built for marketing agencies and brands. Isolated 2-channel API keys, Cloudflare CDN media storage, and visual multi-channel scheduling.
+              Multi-tenant B2B social automation built for marketing agencies and brands. Isolated 2-channel API keys, Cloudinary CDN media storage, and visual multi-channel scheduling.
             </p>
 
             {/* CTA Buttons */}
@@ -132,9 +131,6 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
                 <Linkedin className="w-3.5 h-3.5 text-blue-500" /> LinkedIn
               </span>
               <span className="px-2.5 py-1 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 flex items-center gap-1.5 shadow-xs">
-                <Twitter className="w-3.5 h-3.5 text-slate-800 dark:text-slate-200" /> X
-              </span>
-              <span className="px-2.5 py-1 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 flex items-center gap-1.5 shadow-xs">
                 <Youtube className="w-3.5 h-3.5 text-red-500" /> YouTube
               </span>
               <span className="px-2.5 py-1 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 flex items-center gap-1.5 shadow-xs">
@@ -161,12 +157,12 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
 
               <div className="p-6 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-sm hover:border-purple-200 dark:hover:border-purple-800/80 transition-all">
                 <div className="text-3xl sm:text-4xl font-black text-emerald-600 dark:text-emerald-400 font-mono">99.99%</div>
-                <div className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200 mt-1">Cloudflare CDN Uptime</div>
+                <div className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200 mt-1">CDN Media Uptime</div>
                 <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Global edge media routing</p>
               </div>
 
               <div className="p-6 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-sm hover:border-purple-200 dark:hover:border-purple-800/80 transition-all">
-                <div className="text-3xl sm:text-4xl font-black text-purple-700 dark:text-purple-300 font-mono">15+</div>
+                <div className="text-3xl sm:text-4xl font-black text-purple-700 dark:text-purple-300 font-mono">12+</div>
                 <div className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200 mt-1">Native Social Platforms</div>
                 <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Dual Zenith & CoreSync engine</p>
               </div>

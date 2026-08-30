@@ -142,12 +142,6 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
       color: 'from-blue-700 to-indigo-800', 
       share: tenantAccounts.length > 0 ? `${Math.round(((platformCounts['facebook'] || 0) / totalAccs) * 100)}%` : '0%', 
       icon: '👥' 
-    },
-    { 
-      name: 'X (Twitter)', 
-      color: 'from-slate-800 to-slate-950', 
-      share: tenantAccounts.length > 0 ? `${Math.round(((platformCounts['x'] || 0) / totalAccs) * 100)}%` : '0%', 
-      icon: '🐦' 
     }
   ];
 

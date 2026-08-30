@@ -156,7 +156,7 @@ export const INITIAL_PLANS: SubscriptionPlan[] = [
       '6 Social Accounts',
       '30 Post Dispatches / month',
       'Priority Dispatch Queue',
-      'Cloudflare CDN Media Vault'
+      'Cloudinary CDN Media Vault'
     ]
   },
   {

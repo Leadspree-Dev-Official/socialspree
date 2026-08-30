@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Tenant, MediaAsset, CloudinaryConfig } from '../../types';
 import { GLOBAL_DEFAULT_CLOUDINARY } from '../../lib/store';
+import { uploadToMediaVault } from '../../lib/media';
 import { 
   Film, 
   Upload, 
@@ -112,6 +113,7 @@ export const MediaVaultView: React.FC<MediaVaultViewProps> = ({
     setIsUploading(true);
     setNotification(null);
     let successCount = 0;
+    const failures: string[] = [];
 
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
@@ -123,31 +125,25 @@ export const MediaVaultView: React.FC<MediaVaultViewProps> = ({
         : file.name.replace(/\.[^/.]+$/, "");
 
       try {
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('upload_preset', activeCloudinaryConfig.uploadPreset);
-
-        const res = await fetch(`https://api.cloudinary.com/v1_1/${activeCloudinaryConfig.cloudName}/auto/upload`, {
-          method: 'POST',
-          body: formData,
+        const asset = await uploadToMediaVault(file, {
+          subfolder: 'vault',
+          fallback: {
+            cloudName: activeCloudinaryConfig.cloudName,
+            uploadPreset: activeCloudinaryConfig.uploadPreset
+          }
         });
 
-        if (res.ok) {
-          const data = await res.json();
-          onAddMediaAsset({
-            tenantId: tenant.id,
-            title: fileTitle,
-            url: data.secure_url,
-            type: isVideo ? 'video' : 'image',
-            cloudName: activeCloudinaryConfig.cloudName,
-            fileSize: `${(file.size / (1024 * 1024)).toFixed(1)} MB`
-          });
-          successCount++;
-        } else {
-          console.error(`Upload failed for ${file.name}: HTTP ${res.status}`);
-        }
+        onAddMediaAsset({
+          tenantId: tenant.id,
+          title: fileTitle,
+          url: asset.secureUrl,
+          type: isVideo ? 'video' : 'image',
+          cloudName: asset.cloudName,
+          fileSize: `${(file.size / (1024 * 1024)).toFixed(1)} MB`
+        });
+        successCount++;
       } catch (err) {
-        console.error(`Upload error for ${file.name}:`, err);
+        failures.push(`${file.name}: ${err instanceof Error ? err.message : 'upload failed'}`);
       }
     }
 
@@ -155,8 +151,17 @@ export const MediaVaultView: React.FC<MediaVaultViewProps> = ({
     setShowAddModal(false);
     setTitleInput('');
     setUploadProgress('');
-    setNotification(`✅ Successfully uploaded & saved ${successCount} media assets to Cloudinary Media Vault!`);
-    setTimeout(() => setNotification(null), 3500);
+    if (failures.length > 0) {
+      setNotification(
+        successCount > 0
+          ? `Uploaded ${successCount} of ${successCount + failures.length}. Failed — ${failures.join('; ')}`
+          : `Upload failed. ${failures.join('; ')}`
+      );
+      setTimeout(() => setNotification(null), 8000);
+    } else {
+      setNotification(`Uploaded ${successCount} asset${successCount === 1 ? '' : 's'} to your Media Vault.`);
+      setTimeout(() => setNotification(null), 3500);
+    }
   };
 
   // BULK URL IMPORT Handler (pasting multiple URLs separated by newlines)

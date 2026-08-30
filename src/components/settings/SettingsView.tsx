@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Tenant, CloudinaryConfig, CloudinaryAccountItem } from '../../types';
+import { uploadToMediaVault } from '../../lib/media';
+import { InvoicesPanel } from './InvoicesPanel';
 import { auth, type Profile } from '../../lib/api';
 import { supabase } from '../../lib/supabase';
 import { 
@@ -36,7 +38,8 @@ import {
   Palette,
   Sun,
   Moon,
-  Laptop
+  Laptop,
+  Receipt,
 } from 'lucide-react';
 import { ChatGPTConnectorSettings } from './ChatGPTConnectorSettings';
 import { ThemeToggle } from '../layout/ThemeToggle';
@@ -58,7 +61,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   onUpdateTenantProfile,
   initialTab = 'user'
 }) => {
-  const [activeTab, setActiveTab] = useState<'user' | 'storage' | 'api' | 'social_keys' | 'org' | 'chatgpt'>(initialTab);
+  const [activeTab, setActiveTab] = useState<'user' | 'storage' | 'api' | 'social_keys' | 'org' | 'invoices' | 'chatgpt'>(initialTab);
 
   // Cloudinary Local State (Multiple Accounts with 3 Fields: Cloud Name, Upload Preset, Bucket Name)
   const cldConfig = tenant.cloudinaryConfig || GLOBAL_DEFAULT_CLOUDINARY;
@@ -354,68 +357,29 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     setAvatarUploading(true);
     setNotification(null);
 
-    let finalAvatarUrl = '';
-
-    // Robust client-side compression / DataURL conversion as guaranteed durable fallback
-    const fileReaderPromise = new Promise<string>((resolve) => {
+    // Show the picked file immediately while the upload runs. A data: URL only
+    // exists in this browser, so it is a preview and never the stored avatar.
+    const localPreview = await new Promise<string>((resolve) => {
       const reader = new FileReader();
-      reader.onload = (event) => {
-        const dataUrl = (event.target?.result as string) || '';
-        resolve(dataUrl);
-      };
+      reader.onload = (event) => resolve((event.target?.result as string) || '');
       reader.onerror = () => resolve('');
       reader.readAsDataURL(file);
     });
+    if (localPreview) setAvatarUrl(localPreview);
 
-    const localDataUrl = await fileReaderPromise;
-    if (localDataUrl) {
-      finalAvatarUrl = localDataUrl;
-    }
+    let finalAvatarUrl = '';
 
-    // Strategy 1: Upload to Cloudinary CDN directly
     try {
-      const activeCloudName = tenant.cloudinaryConfig?.cloudName || GLOBAL_DEFAULT_CLOUDINARY.cloudName;
-      const activeUploadPreset = tenant.cloudinaryConfig?.uploadPreset || GLOBAL_DEFAULT_CLOUDINARY.uploadPreset;
-      
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('upload_preset', activeUploadPreset);
-      formData.append('folder', 'socialspree_avatars');
-
-      const res = await fetch(`https://api.cloudinary.com/v1_1/${activeCloudName}/image/upload`, {
-        method: 'POST',
-        body: formData,
+      const asset = await uploadToMediaVault(file, {
+        subfolder: 'avatars',
+        fallback: {
+          cloudName: tenant.cloudinaryConfig?.cloudName || GLOBAL_DEFAULT_CLOUDINARY.cloudName,
+          uploadPreset: tenant.cloudinaryConfig?.uploadPreset || GLOBAL_DEFAULT_CLOUDINARY.uploadPreset
+        }
       });
-
-      if (res.ok) {
-        const data = await res.json();
-        if (data.secure_url) {
-          finalAvatarUrl = data.secure_url;
-        }
-      }
+      finalAvatarUrl = asset.secureUrl;
     } catch (err) {
-      console.warn('Cloudinary avatar upload note:', err);
-    }
-
-    // Strategy 2: Attempt Supabase Storage bucket 'avatars'
-    if (!finalAvatarUrl || finalAvatarUrl.startsWith('data:')) {
-      try {
-        const fileExt = file.name.split('.').pop() || 'png';
-        const cleanFileName = `avatar_${(userProfile?.id || tenant.id || 'user').replace(/[^a-zA-Z0-9_-]/g, '_')}_${Date.now()}.${fileExt}`;
-        
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from('avatars')
-          .upload(cleanFileName, file, { upsert: true, contentType: file.type });
-
-        if (!uploadError && uploadData) {
-          const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(cleanFileName);
-          if (publicUrl) {
-            finalAvatarUrl = publicUrl;
-          }
-        }
-      } catch (err) {
-        console.warn('Supabase storage avatar upload note:', err);
-      }
+      console.error('Avatar upload failed:', err);
     }
 
     if (finalAvatarUrl) {
@@ -436,7 +400,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         setNotification('✅ Profile photo updated.');
       }
     } else {
-      setNotification('Failed to upload photo.');
+      setNotification('Photo upload failed. The image was not saved — check your connection and try again.');
     }
 
     setAvatarUploading(false);
@@ -553,6 +517,18 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           </button>
 
           <button
+            onClick={() => setActiveTab('invoices')}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold transition-all text-left cursor-pointer ${
+              activeTab === 'invoices'
+                ? 'bg-[#5D3FD3] text-white shadow-md'
+                : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800'
+            }`}
+          >
+            <Receipt className="w-4 h-4" />
+            <span>Invoices</span>
+          </button>
+
+          <button
             onClick={() => setActiveTab('chatgpt')}
             className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-xs font-bold transition-all text-left cursor-pointer ${
               activeTab === 'chatgpt'
@@ -571,6 +547,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         {/* Right Content Panel */}
         <div className="lg:col-span-9 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-xs space-y-6">
           
+          {activeTab === 'invoices' && <InvoicesPanel />}
+
           {activeTab === 'chatgpt' && (
             <ChatGPTConnectorSettings tenant={tenant} />
           )}

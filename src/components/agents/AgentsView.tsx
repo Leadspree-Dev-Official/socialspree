@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Tenant, SocialAccount, Post, SocialPlatform, SelectedAccountRef, AiCreditLog } from '../../types';
 import { executePublishing } from '../../lib/zernio';
+import { uploadToMediaVault } from '../../lib/media';
+import { GLOBAL_DEFAULT_CLOUDINARY } from '../../lib/store';
 import { 
   Bot, 
   Sparkles, 
@@ -18,7 +20,6 @@ import {
   Linkedin, 
   Facebook, 
   Youtube, 
-  Twitter, 
   Store, 
   MessageSquare, 
   ArrowRight,
@@ -104,25 +105,42 @@ export const AgentsView: React.FC<AgentsViewProps> = ({
     chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isThinking]);
 
-  // Handle direct media file upload simulation
-  const handleMediaUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Upload attachments to the Media Vault so the scheduler can fetch them later.
+  const handleMediaUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
 
     setIsUploadingMedia(true);
-    setTimeout(() => {
-      const newUrls = files.map(file => 
-        file.type.startsWith('video/')
-          ? 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4'
-          : 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=80'
-      );
+    const uploaded: string[] = [];
+    const failures: string[] = [];
 
-      setAttachedMediaUrls(prev => [...prev, ...newUrls]);
+    for (const file of files) {
+      try {
+        const asset = await uploadToMediaVault(file, {
+          subfolder: 'agents',
+          fallback: {
+            cloudName: tenant.cloudinaryConfig?.cloudName || GLOBAL_DEFAULT_CLOUDINARY.cloudName,
+            uploadPreset: tenant.cloudinaryConfig?.uploadPreset || GLOBAL_DEFAULT_CLOUDINARY.uploadPreset
+          }
+        });
+        uploaded.push(asset.secureUrl);
+      } catch (err) {
+        failures.push(`${file.name}: ${err instanceof Error ? err.message : 'upload failed'}`);
+      }
+    }
+
+    if (uploaded.length > 0) {
+      setAttachedMediaUrls(prev => [...prev, ...uploaded]);
       setAttachedMediaType(files.some(f => f.type.startsWith('video/')) ? 'video' : 'image');
-      setIsUploadingMedia(false);
-      setNotification(`📎 ${files.length} Media assets attached!`);
-      setTimeout(() => setNotification(null), 2500);
-    }, 600);
+    }
+
+    setIsUploadingMedia(false);
+    setNotification(
+      failures.length === 0
+        ? `${uploaded.length} attachment${uploaded.length === 1 ? '' : 's'} uploaded.`
+        : `Uploaded ${uploaded.length}. Failed — ${failures.join('; ')}`
+    );
+    setTimeout(() => setNotification(null), failures.length ? 8000 : 2500);
   };
 
   const agentsList = [
@@ -349,7 +367,7 @@ You have **3 fast ways** to schedule multiple posts at once:
       return `### 🔗 Connecting Social Media Accounts
 
 - Go to **Social Connections** in the left menu.
-- Click **\`+ Connect Channel\`** for Instagram, LinkedIn, Facebook, YouTube, X (Twitter), or Google Business.
+- Click **\`+ Connect Channel\`** for Instagram, LinkedIn, Facebook, YouTube, TikTok, or Pinterest.
 - Connected accounts are automatically available to your Post Composer and AI Booking Agents!`;
     }
 
@@ -460,7 +478,7 @@ How can I assist you today? 😊`;
           content: lastPostInfo.content,
           mediaUrls: lastPostInfo.mediaUrls || ['https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=80'],
           mediaType: currentType,
-          isCloudflareHosted: false,
+          isCdnHosted: false,
           selectedAccountIds: targetAccountRefs,
           status: 'scheduled',
           scheduledFor: newScheduledIso,
@@ -514,7 +532,7 @@ How can I assist you today? 😊`;
           content: generatedContent,
           mediaUrls: currentMediaList.length > 0 ? currentMediaList : ['https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=80'],
           mediaType: currentType,
-          isCloudflareHosted: false,
+          isCdnHosted: false,
           selectedAccountIds: targetAccountRefs,
           status: 'scheduled',
           scheduledFor: scheduledIso,
@@ -561,7 +579,6 @@ How can I assist you today? 😊`;
       case 'linkedin': return <Linkedin className="w-3.5 h-3.5 text-blue-600" />;
       case 'facebook': return <Facebook className="w-3.5 h-3.5 text-blue-700" />;
       case 'youtube': return <Youtube className="w-3.5 h-3.5 text-red-600" />;
-      case 'x': return <Twitter className="w-3.5 h-3.5 text-slate-900" />;
       case 'google_business': return <Store className="w-3.5 h-3.5 text-emerald-600" />;
       default: return <Share2 className="w-3.5 h-3.5 text-purple-600" />;
     }

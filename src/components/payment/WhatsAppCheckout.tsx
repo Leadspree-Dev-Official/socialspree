@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { SubscriptionPlan } from '../../types';
 import { Copy, ExternalLink, Check } from 'lucide-react';
+import { SUPPORT_WHATSAPP_NUMBER } from '../../lib/config';
 
 export const WhatsAppIcon: React.FC<{ className?: string }> = ({ className = "w-6 h-6" }) => (
   <svg className={className} viewBox="0 0 24 24" fill="currentColor">
@@ -23,6 +24,9 @@ export const WhatsAppCheckout: React.FC<WhatsAppCheckoutProps> = ({
   const [email, setEmail] = useState('');
   const [paymentChannel] = useState('Bank Wire / UPI Direct');
   const [copied, setCopied] = useState(false);
+  const [reference, setReference] = useState<string | null>(null);
+  const [creating, setCreating] = useState(false);
+  const [orderError, setOrderError] = useState<string | null>(null);
 
   // Auto-fill details if Supabase user is logged in
   useEffect(() => {
@@ -57,23 +61,72 @@ export const WhatsAppCheckout: React.FC<WhatsAppCheckoutProps> = ({
   const sanitizedOrgName = sanitizeWhatsAppText(orgName);
   const sanitizedEmail = sanitizeWhatsAppText(email);
 
-  const formattedText = `🛒 *SOCIALSPREE SAAS ORDER INVOICE*
+  const buildMessage = (ref?: string | null) => `🛒 *SOCIALSPREE ORDER*
 ----------------------------------
-📋 *Plan:* ${plan.name}
+${ref ? `🔖 *Order Reference:* ${ref}\n` : ''}📋 *Plan:* ${plan.name}
 💳 *Billing Cycle:* ${cycleLabel}
 💰 *Amount Due:* ${amountLabel}
 🏢 *Organization:* ${sanitizedOrgName || 'N/A'}
 📧 *Email:* ${sanitizedEmail || 'N/A'}
 💳 *Payment Method:* ${paymentChannel}
 ----------------------------------
-Please confirm offline payment instructions & instant key provisioning for our workspace.`;
+Please send payment instructions. My workspace will be activated once payment is confirmed against this reference.`;
 
-  const whatsappUrl = `https://wa.me/919051822558?text=${encodeURIComponent(formattedText)}`;
+  const formattedText = buildMessage(reference);
+
+  const whatsappUrl = `https://wa.me/${SUPPORT_WHATSAPP_NUMBER}?text=${encodeURIComponent(formattedText)}`;
 
   const handleCopy = () => {
     navigator.clipboard.writeText(formattedText);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  /**
+   * Records the order before handing the customer to WhatsApp.
+   *
+   * Without this the conversation is the only record of the sale — the operator
+   * has to remember who paid for what. With it, the order sits in the pending
+   * queue with a reference both sides can quote.
+   */
+  const handleStartOrder = async () => {
+    if (reference) {
+      window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
+      return;
+    }
+
+    setCreating(true);
+    setOrderError(null);
+    try {
+      const { data, error } = await supabase.functions.invoke('manual-checkout', {
+        body: {
+          action: 'create',
+          planId: plan.id,
+          billingCycle,
+          currency: plan.currency
+        }
+      });
+
+      if (error || !data?.reference) {
+        throw new Error(data?.error || error?.message || 'Could not create your order.');
+      }
+
+      setReference(data.reference);
+      const text = buildMessage(data.reference);
+      window.open(
+        `https://wa.me/${SUPPORT_WHATSAPP_NUMBER}?text=${encodeURIComponent(text)}`,
+        '_blank',
+        'noopener,noreferrer'
+      );
+    } catch (err: any) {
+      setOrderError(
+        err?.message === 'Unauthorized'
+          ? 'Sign in first so we can attach this order to your workspace.'
+          : err?.message || 'Could not create your order. Please try again.'
+      );
+    } finally {
+      setCreating(false);
+    }
   };
 
   return (
@@ -122,6 +175,18 @@ Please confirm offline payment instructions & instant key provisioning for our w
         </div>
       </div>
 
+      {reference && (
+        <div className="p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-[11px] text-emerald-800 dark:text-emerald-300">
+          <strong>Order {reference} created.</strong> Quote this reference when you pay. Your workspace upgrades as soon as we confirm receipt.
+        </div>
+      )}
+
+      {orderError && (
+        <div className="p-2.5 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-[11px] font-semibold text-red-700 dark:text-red-300">
+          {orderError}
+        </div>
+      )}
+
       {/* Action Buttons */}
       <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex flex-row items-center gap-2">
         <button
@@ -132,16 +197,16 @@ Please confirm offline payment instructions & instant key provisioning for our w
           <span>{copied ? 'Copied' : 'Copy'}</span>
         </button>
 
-        <a
-          href={whatsappUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex-1 py-2.5 px-4 rounded-xl bg-[#25D366] hover:bg-[#1EBE5D] text-white text-xs font-bold shadow-sm shadow-emerald-600/20 transition-all flex items-center justify-center gap-2 no-underline"
+        <button
+          type="button"
+          onClick={handleStartOrder}
+          disabled={creating}
+          className="flex-1 py-2.5 px-4 rounded-xl bg-[#25D366] hover:bg-[#1EBE5D] disabled:opacity-60 disabled:cursor-not-allowed text-white text-xs font-bold shadow-sm shadow-emerald-600/20 transition-all flex items-center justify-center gap-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#25D366]"
         >
           <WhatsAppIcon className="w-4 h-4 text-white" />
-          <span>Launch WhatsApp Direct Order</span>
+          <span>{creating ? 'Creating order…' : reference ? 'Reopen WhatsApp' : 'Send order on WhatsApp'}</span>
           <ExternalLink className="w-3 h-3" />
-        </a>
+        </button>
       </div>
 
     </div>

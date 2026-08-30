@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { SocialAccount, Tenant, Post, SocialPlatform, SelectedAccountRef, CloudinaryConfig, AiCreditLog, MediaAsset } from '../../types';
-import { executePublishing, validateCloudflareMediaForScheduling } from '../../lib/zernio';
+import { executePublishing } from '../../lib/zernio';
+import { validateSchedulableMedia, isVaultHosted, uploadToMediaVault } from '../../lib/media';
+import { canPublish, capabilityFor } from '../../lib/platforms';
 import { GLOBAL_DEFAULT_CLOUDINARY, GLOBAL_CLOUDINARY_POOL } from '../../lib/store';
 import { supabase } from '../../lib/supabase';
 import { LivePreviewDrawer } from './LivePreviewDrawer';
@@ -217,53 +219,39 @@ export const PostComposer: React.FC<PostComposerProps> = ({
     };
 
     try {
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('upload_preset', activeConfig.uploadPreset);
-
-      const endpointUrl = `https://api.cloudinary.com/v1_1/${activeConfig.cloudName}/auto/upload`;
-
-      const res = await fetch(endpointUrl, {
-        method: 'POST',
-        body: formData
+      const asset = await uploadToMediaVault(file, {
+        subfolder: 'composer',
+        fallback: {
+          cloudName: activeConfig.cloudName,
+          uploadPreset: activeConfig.uploadPreset
+        }
       });
 
-      if (res.ok) {
-        const data = await res.json();
-        setCloudinaryUrl(data.secure_url);
-        const isVideo = file.type.startsWith('video/');
-        setMediaType(isVideo ? 'video' : 'image');
+      setCloudinaryUrl(asset.secureUrl);
+      const isVideo = file.type.startsWith('video/');
+      setMediaType(isVideo ? 'video' : 'image');
 
-        if (onAddMediaAsset) {
-          onAddMediaAsset({
-            tenantId: tenant.id,
-            title: file.name.replace(/\.[^/.]+$/, "") || 'Composer Media',
-            url: data.secure_url,
-            type: isVideo ? 'video' : 'image',
-            cloudName: activeConfig.cloudName,
-            fileSize: `${(file.size / (1024 * 1024)).toFixed(1)} MB`
-          });
-        }
-
-        setNotification({
-          type: 'success',
-          title: 'Direct Cloudinary Upload Successful',
-          message: `Hosted on ${activeConfig.cloudName} CDN & saved to Media Vault.`
-        });
-      } else {
-        const errData = await res.json().catch(() => ({}));
-        const errMsg = errData?.error?.message || 'Failed to upload media to Cloudinary.';
-        setNotification({
-          type: 'error',
-          title: 'Cloudinary Upload Failed',
-          message: errMsg
+      if (onAddMediaAsset) {
+        onAddMediaAsset({
+          tenantId: tenant.id,
+          title: file.name.replace(/\.[^/.]+$/, "") || 'Composer Media',
+          url: asset.secureUrl,
+          type: isVideo ? 'video' : 'image',
+          cloudName: asset.cloudName,
+          fileSize: `${(file.size / (1024 * 1024)).toFixed(1)} MB`
         });
       }
+
+      setNotification({
+        type: 'success',
+        title: 'Upload complete',
+        message: `Hosted on ${asset.cloudName} and saved to your Media Vault.`
+      });
     } catch (err: any) {
       setNotification({
         type: 'error',
-        title: 'Upload Error',
-        message: err?.message || 'Network error occurred while uploading file.'
+        title: 'Upload failed',
+        message: err?.message || 'The file could not be uploaded. Check your connection and try again.'
       });
     } finally {
       setIsUploadingCloudinary(false);
@@ -300,8 +288,21 @@ export const PostComposer: React.FC<PostComposerProps> = ({
     if (selectedAccounts.length === 0) {
       setNotification({
         type: 'error',
-        title: 'No Accounts Selected',
-        message: 'Please select at least 1 connected social account to publish.'
+        title: 'No accounts selected',
+        message: 'Choose at least one connected social account to publish to.'
+      });
+      return;
+    }
+
+    // Catch channels that cannot publish here, rather than letting the post
+    // reach the dispatcher and fail after the customer has been told it sent.
+    const blocked = selectedAccounts.filter(a => !canPublish(a.platform));
+    if (blocked.length > 0) {
+      const names = [...new Set(blocked.map(a => a.platform))];
+      setNotification({
+        type: 'error',
+        title: names.length === 1 ? `${names[0]} cannot publish yet` : 'Some channels cannot publish yet',
+        message: `${names.join(', ')} — ${capabilityFor(names[0]).note ?? 'not available yet'} Deselect ${names.length === 1 ? 'it' : 'them'} to continue.`
       });
       return;
     }
@@ -332,17 +333,18 @@ export const PostComposer: React.FC<PostComposerProps> = ({
     setNotification(null);
 
     if (isScheduling && mediaUrls.length > 0) {
-      const { isValid, message } = validateCloudflareMediaForScheduling(mediaUrls, false);
+      const { isValid, message, warning } = validateSchedulableMedia(mediaUrls);
       if (!isValid && message) {
-        setNotification({
-          type: 'error',
-          title: 'Media Validation Warning',
-          message
-        });
+        setNotification({ type: 'error', title: 'Media cannot be scheduled', message });
+        setIsSubmitting(false);
+        return;
+      }
+      if (warning) {
+        setNotification({ type: 'error', title: 'Check this media', message: warning });
       }
     }
 
-    const isCdnHosted = mediaUrls.some(u => u.includes('cloudinary.com') || u.includes('cloudflare') || u.includes('r2.dev'));
+    const isCdnHosted = isVaultHosted(mediaUrls);
 
     const postPayload: Post = {
       id: crypto.randomUUID(),
@@ -350,7 +352,7 @@ export const PostComposer: React.FC<PostComposerProps> = ({
       content: content.trim(),
       mediaUrls,
       mediaType,
-      isCloudflareHosted: isCdnHosted,
+      isCdnHosted: isCdnHosted,
       selectedAccountIds: selectedAccounts,
       status: isScheduling ? 'scheduled' : 'publishing',
       scheduledFor: isScheduling ? scheduledDate : undefined,
@@ -473,7 +475,6 @@ export const PostComposer: React.FC<PostComposerProps> = ({
                         case 'facebook': return 'Facebook';
                         case 'linkedin': return 'LinkedIn';
                         case 'youtube': return 'YouTube';
-                        case 'x': return 'X (Twitter)';
                         case 'tiktok': return 'TikTok';
                         case 'google_business': return 'Google Business';
                         case 'threads': return 'Threads';

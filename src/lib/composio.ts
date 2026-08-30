@@ -6,23 +6,25 @@
 import { Post, Tenant, PostLog, SocialPlatform } from '../types';
 import { supabase } from './supabase';
 
-/** Map SocialSpree platform keys to Composio Toolkit IDs */
+/**
+ * Composio tool slugs, verified against the live v3 catalogue.
+ * An empty string means no publishing tool exists for that channel.
+ */
 export const COMPOSIO_TOOLKIT_MAP: Record<SocialPlatform, string> = {
   instagram: 'INSTAGRAM_CREATE_POST',
   facebook: 'FACEBOOK_CREATE_POST',
-  linkedin: 'LINKEDIN_CREATE_SHARE',
-  x: 'TWITTER_CREATETWEET',
+  linkedin: 'LINKEDIN_CREATE_LINKED_IN_POST',
   youtube: 'YOUTUBE_UPLOAD_VIDEO',
-  google_business: 'GOOGLE_BUSINESS_POST',
-  tiktok: 'TIKTOK_CREATE_POST',
-  threads: 'THREADS_POST',
-  bluesky: 'BLUESKY_POST',
+  google_business: '',
+  tiktok: 'TIKTOK_PUBLISH_VIDEO',
+  threads: '',
+  bluesky: '',
   pinterest: 'PINTEREST_CREATE_PIN',
-  reddit: 'REDDIT_SUBMIT_POST',
+  reddit: 'REDDIT_CREATE_REDDIT_POST',
   telegram: 'TELEGRAM_SEND_MESSAGE',
-  discord: 'DISCORD_SEND_WEBHOOK',
+  discord: '',
   whatsapp: 'WHATSAPP_SEND_MESSAGE',
-  snapchat: 'SNAPCHAT_POST_STORY',
+  snapchat: '',
 };
 
 export interface ComposioSession {
@@ -89,13 +91,13 @@ export async function getComposioUserSession(tenant: Tenant): Promise<ComposioSe
     return {
       sessionId: data.sessionId,
       userId: data.userId || userId,
-      connectedApps: data.connectedApps || ['INSTAGRAM', 'FACEBOOK', 'LINKEDIN', 'TWITTER']
+      connectedApps: data.connectedApps || ['INSTAGRAM', 'FACEBOOK', 'LINKEDIN', 'YOUTUBE']
     };
   } catch {
     return {
       sessionId: `composio_fallback_${tenant.id}`,
       userId,
-      connectedApps: ['INSTAGRAM', 'FACEBOOK', 'LINKEDIN', 'TWITTER']
+      connectedApps: ['INSTAGRAM', 'FACEBOOK', 'LINKEDIN', 'YOUTUBE']
     };
   }
 }
@@ -154,7 +156,7 @@ export async function executeComposioPublishing(
     content: post.content,
     media_urls: post.mediaUrls,
     media_type: post.mediaType,
-    is_cloudflare_hosted: post.isCloudflareHosted,
+    is_cdn_hosted: post.isCdnHosted,
     selected_account_ids: post.selectedAccountIds,
     status: post.status,
     scheduled_for: finalScheduledFor || null,

@@ -31,6 +31,8 @@ Deno.serve(async req => {
     if (!provider.ok) return json({ error: 'Unable to create payment order' }, 502, req);
     const order = await provider.json();
 
+    const { data: reference } = await db.rpc('next_checkout_reference');
+
     const { data: local, error: localError } = await db.from('checkout_orders').insert({
       tenant_id: profile.tenant_id,
       user_id: user.id,
@@ -38,11 +40,13 @@ Deno.serve(async req => {
       provider_order_id: order.id,
       amount_minor: amount,
       currency,
-      billing_cycle: billingCycle
-    }).select('id').single();
+      billing_cycle: billingCycle,
+      payment_method: 'razorpay',
+      reference
+    }).select('id, reference').single();
     if (localError) throw localError;
 
-    return json({ checkoutId: local.id, orderId: order.id, keyId, amount, currency, planName: plan.name, billingCycle }, 200, req);
+    return json({ checkoutId: local.id, reference: local.reference, orderId: order.id, keyId, amount, currency, planName: plan.name, billingCycle }, 200, req);
   } catch (e) {
     return json({ error: e instanceof Error ? e.message : 'Request failed' }, 500, req);
   }

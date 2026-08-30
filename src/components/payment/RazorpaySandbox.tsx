@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { SubscriptionPlan } from '../../types';
-import { CreditCard, QrCode, Building, CheckCircle2, RefreshCw, Lock, ShieldCheck, ArrowRight } from 'lucide-react';
+import { CheckCircle2, RefreshCw, Lock, ShieldCheck, ArrowRight } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
 interface RazorpaySandboxProps {
@@ -17,7 +17,6 @@ export const RazorpaySandbox: React.FC<RazorpaySandboxProps> = ({
   const [orgName, setOrgName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState<'card' | 'upi' | 'netbanking'>('card');
   const [state, setState] = useState<'form' | 'processing' | 'success'>('form');
 
   const [errorMessage, setErrorMessage] = useState('');
@@ -30,6 +29,43 @@ export const RazorpaySandbox: React.FC<RazorpaySandboxProps> = ({
   const baseMonthly = plan.priceMonthly;
   const finalMonthly = billingCycle === 'yearly' ? Math.round(baseMonthly * 0.8) : baseMonthly;
   const totalAmount = billingCycle === 'yearly' ? finalMonthly * 12 : finalMonthly;
+
+  /**
+   * Waits for the payment webhook to mark the order paid.
+   *
+   * Razorpay's browser callback fires when the modal closes successfully, but
+   * entitlement is granted server-side by the webhook. Showing success off the
+   * callback alone would tell a customer their plan is live before it is.
+   */
+  const confirmPayment = async (checkoutId: string) => {
+    const deadline = Date.now() + 60_000;
+
+    while (Date.now() < deadline) {
+      const { data: order } = await supabase
+        .from('checkout_orders')
+        .select('status')
+        .eq('id', checkoutId)
+        .maybeSingle();
+
+      if (order?.status === 'paid') {
+        setState('success');
+        return;
+      }
+      if (order?.status === 'failed' || order?.status === 'cancelled') {
+        setErrorMessage('That payment did not complete. No charge was captured.');
+        setState('form');
+        return;
+      }
+
+      await new Promise(resolve => setTimeout(resolve, 2000));
+    }
+
+    // Payment may still settle; say so rather than claiming failure.
+    setErrorMessage(
+      'Payment received, but confirmation is taking longer than usual. Your plan activates automatically once it clears — no need to pay again.'
+    );
+    setState('form');
+  };
 
   const handlePay = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -63,7 +99,7 @@ export const RazorpaySandbox: React.FC<RazorpaySandboxProps> = ({
       key: data.keyId, order_id: data.orderId, amount: data.amount, currency: data.currency,
       name: 'SocialSpree', description: data.planName,
       prefill: { name: orgName, email, contact: phone },
-      handler: () => setState('success'),
+      handler: () => { setState('processing'); void confirmPayment(data.checkoutId); },
       modal: { ondismiss: () => setState('form') },
       theme: { color: '#5D3FD3' },
     });
@@ -149,111 +185,12 @@ export const RazorpaySandbox: React.FC<RazorpaySandboxProps> = ({
             </div>
           </div>
 
-          {/* Payment Method Selector Tabs */}
-          <div className="space-y-3">
-            <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-              Select Payment Option
-            </h4>
-
-            <div className="grid grid-cols-3 gap-2">
-              <button
-                type="button"
-                onClick={() => setPaymentMethod('card')}
-                className={`p-3 rounded-xl border text-xs font-bold flex flex-col items-center gap-1 transition-all ${
-                  paymentMethod === 'card'
-                    ? 'bg-blue-50 dark:bg-blue-950/40 border-[#0052FF] text-[#0052FF] dark:text-blue-400 shadow-xs'
-                    : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-750'
-                }`}
-              >
-                <CreditCard className="w-5 h-5" />
-                <span>Credit / Debit Card</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setPaymentMethod('upi')}
-                className={`p-3 rounded-xl border text-xs font-bold flex flex-col items-center gap-1 transition-all ${
-                  paymentMethod === 'upi'
-                    ? 'bg-blue-50 dark:bg-blue-950/40 border-[#0052FF] text-[#0052FF] dark:text-blue-400 shadow-xs'
-                    : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-750'
-                }`}
-              >
-                <QrCode className="w-5 h-5" />
-                <span>UPI / QR Code</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setPaymentMethod('netbanking')}
-                className={`p-3 rounded-xl border text-xs font-bold flex flex-col items-center gap-1 transition-all ${
-                  paymentMethod === 'netbanking'
-                    ? 'bg-blue-50 dark:bg-blue-950/40 border-[#0052FF] text-[#0052FF] dark:text-blue-400 shadow-xs'
-                    : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-750'
-                }`}
-              >
-                <Building className="w-5 h-5" />
-                <span>Net Banking</span>
-              </button>
-            </div>
-
-            {/* Payment Method Inputs Simulation */}
-            <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-800 space-y-3">
-              {paymentMethod === 'card' && (
-                <div className="space-y-3">
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1">Card Number (Sandbox Test)</label>
-                    <input
-                      type="text"
-                      readOnly
-                      value="4111 2222 3333 4444"
-                      className="w-full px-3 py-2 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700 font-mono text-xs text-slate-700 dark:text-slate-300"
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1">Expiry</label>
-                      <input
-                        type="text"
-                        readOnly
-                        value="12 / 28"
-                        className="w-full px-3 py-2 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700 font-mono text-xs text-slate-700 dark:text-slate-300"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1">CVV</label>
-                      <input
-                        type="password"
-                        readOnly
-                        value="123"
-                        className="w-full px-3 py-2 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700 font-mono text-xs text-slate-700 dark:text-slate-300"
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {paymentMethod === 'upi' && (
-                <div className="text-center py-2 space-y-2">
-                  <div className="w-32 h-32 bg-white rounded-xl border border-slate-300 mx-auto flex items-center justify-center p-2">
-                    <QrCode className="w-24 h-24 text-slate-800" />
-                  </div>
-                  <p className="text-xs font-mono text-slate-600 dark:text-slate-400">Scan QR or Pay via VPA: <strong>agency@okhdfcbank</strong></p>
-                </div>
-              )}
-
-              {paymentMethod === 'netbanking' && (
-                <div className="space-y-2">
-                  <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300">Select Bank</label>
-                  <select className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 text-xs bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-medium">
-                    <option>HDFC Bank (Sandbox)</option>
-                    <option>ICICI Bank (Sandbox)</option>
-                    <option>State Bank of India (Sandbox)</option>
-                    <option>Axis Bank (Sandbox)</option>
-                  </select>
-                </div>
-              )}
-            </div>
-
+          <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-800">
+            <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+              Card, UPI and net banking are all handled inside Razorpay's secure checkout,
+              which opens next. Your card details are never entered on this page or sent to
+              our servers.
+            </p>
           </div>
 
           {/* Action Buttons */}

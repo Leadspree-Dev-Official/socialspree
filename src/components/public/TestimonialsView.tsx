@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { SUPPORT_WHATSAPP_DISPLAY } from '../../lib/config';
 import { 
   Star, 
   ShieldCheck, 
@@ -44,7 +45,7 @@ export const TestimonialsView: React.FC = () => {
       avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
       rating: 5,
       metric: '100% White-labeled SLA compliance',
-      quote: 'The Cloudflare CDN media integration delivers video reels effortlessly. Super Admin controls give us total visibility and control over API slot allocations without exposing raw keys to clients.'
+      quote: 'The Cloudinary media vault delivers video reels effortlessly. Super Admin controls give us total visibility and control over API slot allocations without exposing raw keys to clients.'
     },
     {
       name: 'Elena Rostova',
@@ -77,7 +78,7 @@ export const TestimonialsView: React.FC = () => {
 
   const trustBadges = [
     { label: '99.99% Uptime SLA', icon: Zap, detail: 'High Availability Multi-Region Infrastructure' },
-    { label: 'Cloudflare CDN Secured', icon: ShieldCheck, detail: 'Global R2 Edge Media Pipeline' },
+    { label: 'Cloudinary CDN Secured', icon: ShieldCheck, detail: 'Signed uploads, global edge delivery' },
     { label: 'Razorpay & WhatsApp Verified', icon: CheckCircle2, detail: 'Authentic Dual Payment Gateways' },
     { label: '100% White-Labeled', icon: Building2, detail: 'Custom Branded Tenant Portals' },
   ];
@@ -93,11 +94,11 @@ export const TestimonialsView: React.FC = () => {
     },
     {
       q: 'How do I check out via WhatsApp Direct Order?',
-      a: 'Selecting WhatsApp Direct Checkout generates a formatted invoice breakdown pre-filled into wa.me/919051822558. You can review your order breakdown and chat directly with Super Admin sales for immediate activation via wire or UPI.'
+      a: `Choosing WhatsApp checkout creates a real order with a reference number and opens a pre-filled message to ${SUPPORT_WHATSAPP_DISPLAY}. Quote that reference when you pay by wire or UPI, and your workspace is activated as soon as we confirm receipt.`
     },
     {
-      q: 'Can I connect my own Cloudinary or Cloudflare CDN storage bucket?',
-      a: 'Yes! Super Admin manages global CDN defaults, but individual tenant administrators can configure custom Cloudflare R2 bucket domains or multi-Cloudinary account pools in System Settings.'
+      q: 'Can I connect my own Cloudinary account?',
+      a: 'Yes. Super Admin manages the global CDN default, and individual tenant administrators can point the workspace at their own Cloudinary cloud, or a pool of several, in System Settings.'
     },
     {
       q: 'Is SocialSpree 100% white-labeled for client agencies?',
@@ -105,7 +106,7 @@ export const TestimonialsView: React.FC = () => {
     },
     {
       q: 'Which social media networks are natively supported?',
-      a: 'SocialSpree supports Instagram, TikTok, LinkedIn, YouTube, X (Twitter), Facebook, Threads, Bluesky, Pinterest, Reddit, Telegram, Discord, WhatsApp, Snapchat, and Google Business Profile.'
+      a: 'SocialSpree supports Instagram, TikTok, LinkedIn, YouTube, Facebook, Pinterest, Reddit, Telegram, WhatsApp, Bluesky, Discord, and Snapchat. Threads and Google Business Profile are on the roadmap.'
     },
     {
       q: 'How does the AI Viral Content & Hashtag Generator work?',

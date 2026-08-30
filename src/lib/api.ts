@@ -441,7 +441,7 @@ function mapPost(r: any): Post {
     id: r.id, tenantId: r.tenant_id, provider: r.provider ?? 'composio', content: r.content ?? '',
     mediaUrls: Array.isArray(r.media_urls) ? r.media_urls.map(String) : [],
     mediaType: (r.media_type ?? 'none') as Post['mediaType'],
-    isCloudflareHosted: r.is_cloudflare_hosted === true,
+    isCdnHosted: r.is_cdn_hosted === true,
     selectedAccountIds: Array.isArray(r.selected_account_ids) ? r.selected_account_ids : [],
     status: (r.status ?? 'draft') as Post['status'],
     scheduledFor: r.scheduled_for ?? undefined,
@@ -453,7 +453,7 @@ function mapPost(r: any): Post {
 function postToRow(p: Post): any {
   return {
     tenant_id: p.tenantId, provider: p.provider ?? 'composio', content: p.content, media_urls: p.mediaUrls,
-    media_type: p.mediaType, is_cloudflare_hosted: p.isCloudflareHosted,
+    media_type: p.mediaType, is_cdn_hosted: p.isCdnHosted,
     selected_account_ids: p.selectedAccountIds, status: p.status,
     scheduled_for: p.scheduledFor, published_at: p.publishedAt,
     error_message: p.errorMessage,

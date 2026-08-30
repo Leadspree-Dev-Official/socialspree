@@ -13,7 +13,8 @@ Deno.serve(async req => {
     const { data } = await zernioClient(key).accounts.listAccounts();
     const accounts = data?.accounts ?? [];
     for (const account of accounts) {
-      const platform = account.platform === 'twitter' ? 'x' : account.platform === 'googlebusiness' ? 'google_business' : account.platform;
+      if (account.platform === 'twitter' || account.platform === 'x') continue; // X is not a supported channel
+      const platform = account.platform === 'googlebusiness' ? 'google_business' : account.platform;
       await db.from('social_connections').upsert({ tenant_id: tenantId, platform, channel_account_id: account._id, provider_profile_id: typeof account.profileId === 'string' ? account.profileId : account.profileId?._id, account_name: account.displayName || account.username || account._id, account_handle: account.username ? `@${account.username}` : null, account_avatar: account.profilePicture || null, slot_number: Number(String(label).replace(/\D/g, '')) || 1, status: account.isActive ? 'active' : 'disconnected', health_status: account.needsReconnection ? 'reconnect_required' : 'healthy', provider_payload: account, last_synced_at: new Date().toISOString() }, { onConflict: 'tenant_id,channel_account_id' });
     }
     return json({ accounts }, 200, req);

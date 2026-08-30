@@ -125,25 +125,27 @@ Deno.serve(async req => {
     if (jobError) throw jobError;
     await db.from('posts').update({ status: 'scheduled' }).eq('id', post.id);
 
-    // Register precise one-shot trigger if pg_cron is enabled
-    try {
-      const scheduledDate = new Date(post.scheduled_for);
-      if (!isNaN(scheduledDate.getTime())) {
-        const min = scheduledDate.getUTCMinutes();
-        const hour = scheduledDate.getUTCHours();
-        const day = scheduledDate.getUTCDate();
-        const month = scheduledDate.getUTCMonth() + 1;
-        const cronExpr = `${min} ${hour} ${day} ${month} *`;
-        const jobName = `pub_post_${post.id.replace(/-/g, '_').slice(0, 20)}`;
+    // Ask for an exact-time trigger. The recurring sweeper delivers the post
+    // either way, so a failure here changes latency, not whether it publishes.
+    let precise = false;
+    let scheduleNote: string | undefined;
 
-        await db.rpc('schedule_precise_post_publish', {
-          job_name: jobName,
-          cron_expr: cronExpr,
-          target_post_id: post.id
-        }).catch(() => null);
+    const scheduledDate = new Date(post.scheduled_for);
+    if (!isNaN(scheduledDate.getTime())) {
+      const { data: scheduleResult, error: scheduleError } = await db.rpc(
+        'schedule_precise_post_publish',
+        { target_post_id: post.id, run_at: scheduledDate.toISOString() }
+      );
+
+      if (scheduleError) {
+        scheduleNote = `Exact-time trigger unavailable (${scheduleError.message}). The post will publish on the next worker sweep.`;
+        console.warn('schedule_precise_post_publish failed:', scheduleError.message);
+      } else {
+        precise = scheduleResult?.precise === true;
+        if (!precise) {
+          scheduleNote = `Queued for the worker sweep (${scheduleResult?.reason ?? 'no precise trigger'}).`;
+        }
       }
-    } catch {
-      // Dynamic one-shot cron helper graceful fallback
     }
 
     return json({
@@ -151,7 +153,9 @@ Deno.serve(async req => {
       queued: true,
       status: 'scheduled',
       jobId: job.id,
-      scheduledFor: post.scheduled_for
+      scheduledFor: post.scheduled_for,
+      preciseTrigger: precise,
+      ...(scheduleNote ? { note: scheduleNote } : {})
     }, 200, req);
 
   } catch (e) {

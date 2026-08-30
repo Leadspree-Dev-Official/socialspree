@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Tenant, ChatGPTKeyConfig } from '../../types';
 import { GLOBAL_DEFAULT_CLOUDINARY } from '../../lib/store';
+import { SUPABASE_URL } from '../../lib/supabase';
 import { 
   Bot, 
   Key, 
@@ -57,7 +58,7 @@ export const ChatGPTConnectorSettings: React.FC<ChatGPTConnectorSettingsProps> =
   const activeCloud = tenant.cloudinaryConfig?.cloudName || GLOBAL_DEFAULT_CLOUDINARY.cloudName;
 
   const customGptSystemPrompt = `You are the SocialSpree Social Media AI Assistant.
-Your role is to help users brainstorm high-converting captions, create or refine images, and schedule or publish them directly into SocialSpree across Instagram, Facebook, LinkedIn, X (Twitter), TikTok, and YouTube.
+Your role is to help users brainstorm high-converting captions, create or refine images, and schedule or publish them directly into SocialSpree across Instagram, Facebook, LinkedIn, TikTok, and YouTube.
 
 Core Rules & Workflow:
 1. Connected Channels:
@@ -87,7 +88,7 @@ Core Rules & Workflow:
       version: "2.2.0"
     },
     servers: [
-      { url: "https://foeqlfzlcrkfmatkdxzh.supabase.co/functions/v1/chatgpt-connector" }
+      { url: `${SUPABASE_URL}/functions/v1/chatgpt-connector` }
     ],
     paths: {
       "/": {
@@ -123,7 +124,7 @@ Core Rules & Workflow:
                     targetChannels: { 
                       type: "array", 
                       items: { type: "string" }, 
-                      description: "Platforms: ['instagram', 'facebook', 'linkedin', 'x', 'tiktok', 'youtube']" 
+                      description: "Platforms: ['instagram', 'facebook', 'linkedin', 'tiktok', 'youtube']" 
                     },
                     scheduledAt: { type: "string", description: "ISO 8601 Timestamp (e.g. 2026-08-30T18:00:00Z)" },
                     publishNow: { type: "boolean", description: "True to publish immediately, false to schedule" }
@@ -220,7 +221,7 @@ Core Rules & Workflow:
     }
 
     try {
-      const response = await fetch("https://foeqlfzlcrkfmatkdxzh.supabase.co/functions/v1/chatgpt-connector", {
+      const response = await fetch(`${SUPABASE_URL}/functions/v1/chatgpt-connector`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -578,7 +579,7 @@ Core Rules & Workflow:
             <div className="space-y-2">
               <label className="block font-semibold text-slate-700 dark:text-slate-300">Target Social Channels</label>
               <div className="flex flex-wrap gap-2">
-                {['instagram', 'facebook', 'linkedin', 'x', 'tiktok', 'youtube'].map((channel) => (
+                {['instagram', 'facebook', 'linkedin', 'tiktok', 'youtube'].map((channel) => (
                   <button
                     key={channel}
                     type="button"
@@ -590,7 +591,7 @@ Core Rules & Workflow:
                     }`}
                   >
                     <CheckCircle2 className={`w-3.5 h-3.5 ${testChannels.includes(channel) ? 'text-purple-600' : 'text-slate-300'}`} />
-                    <span className="capitalize">{channel === 'x' ? 'X (Twitter)' : channel}</span>
+                    <span className="capitalize">{channel}</span>
                   </button>
                 ))}
               </div>
